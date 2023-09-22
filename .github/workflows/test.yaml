@@ -1,0 +1,72 @@
+name: unittest
+on:
+  push:
+    branches:
+      - "*"
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: go
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      - name: Install dependencies
+        run: |
+          go get .
+      - name: Build
+        run: make build
+      - name: Run Go tests
+        run: make test
+      - name: Code Coverage Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage.xml
+          badge: true
+          fail_below_min: true
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: true
+          indicators: true
+          output: both
+          thresholds: '60 80'
+      - uses: jwalton/gh-find-current-pr@v1
+        id: finder
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          number: ${{ steps.finder.outputs.pr }}
+          path: code-coverage-results.md
+          recreate: true
+  helm:
+    name: helm
+    runs-on: ubuntu-latest
+    env:
+      HELM_UNITTEST_VERSION: v0.3.5
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install helm-unittest
+        run: helm plugin install --version $HELM_UNITTEST_VERSION https://github.com/helm-unittest/helm-unittest.git
+      - name: Run Helm test
+        run: make helm-test
+  kubeconform:
+    name: kubeconform
+    runs-on: ubuntu-latest
+    env:
+      KUBECONFORM_VERSION: 0.6.2
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install kubeconform
+        run: |
+          curl -sSLo /tmp/kubeconform.tar.gz "https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+          && tar -C /usr/local/bin/ -xzvf /tmp/kubeconform.tar.gz
+      - name: Run Kubeconform test
+        run: make kubeconform

@@ -1,0 +1,50 @@
+name: build
+run-name: building and publishing new release
+on:
+  push:
+    # run only against tags
+    tags:
+      - "*"
+permissions:
+  contents: write # allows the action to create a Github release
+  id-token: write # This is required for requesting the AWS JWT
+
+jobs:
+  build-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1 # ECR Public can only be logged into from the us-east-1 region
+          role-to-assume: arn:aws:iam::202662887508:role/ecr-prometheus-rds-exporter
+          role-session-name: githubActions
+
+      - name: Login to Amazon ECR
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@v1
+        with:
+          registry-type: public
+          mask-password: 'true'
+
+      - run: git fetch --force --tags
+
+      - uses: actions/setup-go@v4
+        with:
+          go-version: stable
+
+      - uses: goreleaser/goreleaser-action@v5
+        with:
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Helm release
+        run: make helm-release

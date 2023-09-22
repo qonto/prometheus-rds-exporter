@@ -1,0 +1,143 @@
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+env:
+  - BUILD_INFO_PACKAGE_PATH=github.com/qonto/prometheus-rds-exporter/internal/infra/build
+  - DOCKER_REGISTRY=public.ecr.aws/g1r8z6f4
+  - DOCKER_IMAGE_NAME=prometheus-rds-exporter
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    ldflags:
+        - '-s'
+        - '-w'
+        - '-X "{{ .Env.BUILD_INFO_PACKAGE_PATH }}.Version={{.Version}}"'
+        - '-X "{{ .Env.BUILD_INFO_PACKAGE_PATH }}.Commit={{.Commit}}"'
+        - '-X "{{ .Env.BUILD_INFO_PACKAGE_PATH }}.Date={{.Date}}"'
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - format: tar.gz
+    # this name template makes the OS and Arch compatible with the results of uname.
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    # use zip for windows archives
+    format_overrides:
+    - goos: windows
+      format: zip
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+# changelog:
+#   sort: asc
+#   use: github
+#   filters:
+#     exclude:
+#       - "^test:"
+#       - "^chore"
+#       - "merge conflict"
+#       - Merge pull request
+#       - Merge remote-tracking branch
+#       - Merge branch
+#       - go mod tidy
+#   groups:
+#     - title: Dependency updates
+#       regexp: '^.*?(feat|fix)\(deps\)!?:.+$'
+#       order: 300
+#     - title: "New Features"
+#       regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+#       order: 100
+#     - title: "Security updates"
+#       regexp: '^.*?sec(\([[:word:]]+\))??!?:.+$'
+#       order: 150
+#     - title: "Bug fixes"
+#       regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+#       order: 200
+#     - title: "Documentation updates"
+#       regexp: ^.*?doc(\([[:word:]]+\))??!?:.+$
+#       order: 400
+#     - title: "Build process updates"
+#       regexp: ^.*?build(\([[:word:]]+\))??!?:.+$
+#       order: 400
+#     - title: Other work
+#       order: 9999
+
+dockers:
+- image_templates:
+    - "{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:{{ .Tag }}-amd64"
+    - "{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:v{{ .Major }}-amd64"
+    - "{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:v{{ .Major }}.{{ .Minor }}-amd64"
+    - "{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:latest-amd64"
+  dockerfile: configs/goreleaser/Dockerfile
+  build_flag_templates:
+  - --label=org.opencontainers.image.title={{ .ProjectName }}
+  - --label=org.opencontainers.image.description={{ .ProjectName }}
+  - --label=org.opencontainers.image.url=https://github.com/goreleaser/example
+  - --label=org.opencontainers.image.source=https://github.com/goreleaser/example
+  - --label=org.opencontainers.image.version={{ .Version }}
+  - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+  - --label=org.opencontainers.image.revision={{ .FullCommit }}
+  - --label=org.opencontainers.image.licenses=MIT
+  - "--pull"
+  - "--platform=linux/amd64"
+  - "--builder=desktop-linux" # TODO remove before public release
+  use: buildx
+- image_templates:
+    - "{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:{{ .Tag }}-arm64"
+    - "{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:v{{ .Major }}-arm64"
+    - "{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:v{{ .Major }}.{{ .Minor }}-arm64"
+    - "{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:latest-arm64"
+  dockerfile: configs/goreleaser/Dockerfile
+  build_flag_templates:
+  - --label=org.opencontainers.image.title={{ .ProjectName }}
+  - --label=org.opencontainers.image.description={{ .ProjectName }}
+  - --label=org.opencontainers.image.url=https://github.com/goreleaser/example
+  - --label=org.opencontainers.image.source=https://github.com/goreleaser/example
+  - --label=org.opencontainers.image.version={{ .Version }}
+  - --label=org.opencontainers.image.created={{ time "2006-01-02T15:04:05Z07:00" }}
+  - --label=org.opencontainers.image.revision={{ .FullCommit }}
+  - --label=org.opencontainers.image.licenses=MIT
+  - "--pull"
+  - "--platform=linux/arm64"
+  - "--builder=desktop-linux" # TODO remove before public release
+  goarch: arm64
+
+docker_manifests:
+- name_template: '{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:{{ .Tag }}'
+  image_templates:
+  - '{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:{{ .Tag }}-amd64'
+  - '{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:{{ .Tag }}-arm64'
+- name_template: '{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:v{{ .Major }}'
+  image_templates:
+  - '{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:v{{ .Major }}-amd64'
+  - '{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:v{{ .Major }}-arm64'
+- name_template: '{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:v{{ .Major }}.{{ .Minor }}'
+  image_templates:
+  - '{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:v{{ .Major }}.{{ .Minor }}-amd64'
+  - '{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:v{{ .Major }}.{{ .Minor }}-arm64'
+- name_template: '{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:latest'
+  image_templates:
+  - '{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:latest-amd64'
+  - '{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:latest-arm64'
+
+release:
+  disable: true
+  github:
+    owner: qonto
+    name: prometheus-rds-exporter
+  name_template: "v{{.Version}}"
+  footer: |
+    **Full Changelog**: https://github.com/qonto/poc-goreleaser/compare/{{ .PreviousTag }}...{{ .Tag }}
