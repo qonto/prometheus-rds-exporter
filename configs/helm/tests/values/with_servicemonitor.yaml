@@ -1,0 +1,5 @@
+serviceMonitor:
+  enabled: true
+  interval: 120s
+  additionalLabels:
+    additionalLabel1: value1

@@ -1,0 +1,19 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "AllowFetchingRDSMetrics",
+            "Effect": "Allow",
+            "Action": [
+                "cloudwatch:GetMetricData",
+                "ec2:DescribeInstanceTypes",
+                "rds:DescribeAccountAttributes",
+                "rds:DescribeDBInstances",
+                "rds:DescribeDBLogFiles",
+                "rds:DescribePendingMaintenanceActions",
+                "servicequotas:GetServiceQuota"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
