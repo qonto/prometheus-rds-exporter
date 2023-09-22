@@ -1,0 +1,80 @@
+# Default values for prometheus-rds-exporter.
+
+replicaCount: 1
+
+image:
+  repository: public.ecr.aws/g1r8z6f4/prometheus-rds-exporter
+  pullPolicy: IfNotPresent
+  tag: "" # Defined by chart appVersion parameter
+
+# Define environment variables
+env: {}
+
+# Set additional labels on all resources
+additionalLabels: {}
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext:
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsGroup: 1001
+  runAsUser: 1001
+
+service:
+  type: ClusterIP
+  port: 9043
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+    # kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  hosts:
+    - host: prometheus-rds-exporter.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+serviceMonitor:
+  enabled: true
+  interval: 60s
+  additionalLabels: {}
+
+resources:
+  limits:
+    # cpu: 100m
+    memory: 64Mi
+  requests:
+    cpu: 100m
+    memory: 48Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

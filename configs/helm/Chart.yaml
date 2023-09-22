@@ -1,0 +1,23 @@
+apiVersion: v2
+type: application
+
+# version and appVersion values are overrided during build step
+version: 0.0.0
+appVersion: 0.0.0
+
+name: prometheus-rds-exporter-chart
+description: Prometheus RDS exporter
+home: https://github.com/qonto/prometheus-rds-exporter
+sources:
+  - https://github.com/qonto/prometheus-rds-exporter
+annotations:
+  artifacthub.io/category: database
+  artifacthub.io/links: |
+    - name: Chart Source
+      url: https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-statsd-exporter
+keywords:
+  - aws
+  - rds
+  - prometheus
+  - exporter
+  - postgresql

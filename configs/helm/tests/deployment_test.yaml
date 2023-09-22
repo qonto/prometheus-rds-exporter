@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+suite: deployment tests
+templates:
+  - deployment.yaml
+tests:
+  - it: render default deployment
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-prometheus-rds-exporter-chart
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: public.ecr.aws/g1r8z6f4/prometheus-rds-exporter:0.0.0
+      - equal:
+          path: spec.replicas
+          value: 1
+  - it: render deployment with image tag
+    values:
+      - ./values/with_image_tag.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: public.ecr.aws/g1r8z6f4/prometheus-rds-exporter:1.0
+  - it: render deployment with environment variables
+    values:
+      - ./values/with_environment_variables.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: variable1
+      - equal:
+          path: spec.template.spec.containers[0].env[0].value
+          value: value1
+      - equal:
+          path: spec.template.spec.containers[0].env[1].name
+          value: variable2
+      - equal:
+          path: spec.template.spec.containers[0].env[1].value
+          value: value2
+  - it: render with additional labels
+    values:
+      - ./values/with_additional_labels.yaml
+    asserts:
+      - equal:
+          path: metadata.labels.label1
+          value: value1
+      - equal:
+          path: metadata.labels.label2
+          value: value2

@@ -1,0 +1,45 @@
+version: '3.1'
+
+volumes:
+  prometheus_data: {}
+  grafana_data: {}
+
+services:
+
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./.prometheus_data:/prometheus
+    ports:
+      - 9090:9090
+
+  grafana:
+    image: grafana/grafana:10.0.1
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=hackme
+    volumes:
+      - ./.grafana_data:/var/lib/grafana
+    ports:
+      - 3000:3000
+    depends_on:
+      - prometheus
+
+  rds-exporter:
+    build:
+      context: ../../
+      dockerfile: scripts/prometheus/Dockerfile
+    environment:
+      - AWS_SDK_LOAD_CONFIG=1
+      - AWS_PROFILE=${AWS_PROFILE-}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY-}
+    volumes:
+      - $HOME/.aws:/app/.aws:ro
+      - ./../../rds_exporter:/mnt/rds_exporprometheus-rds-exporterter
+    command: ["./prometheus-rds-exporter", "--debug"]
+    ports:
+      - 9043:9043
+    depends_on:
+      - prometheus
