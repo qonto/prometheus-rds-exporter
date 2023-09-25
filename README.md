@@ -1,4 +1,4 @@
-# RDS exporter
+# Prometheus RDS exporter
 
 Are you ready to take your AWS RDS monitoring to the next level? Say hello to prometheus-rds-exporter, your ultimate solution for comprehensive, real-time insights into your Amazon RDS instances!
 
