@@ -17,7 +17,7 @@ annotations:
       url: https://github.com/qonto/prometheus-rds-exporter/tree/main/configs/helm
 keywords:
   - aws
-  - rds
-  - prometheus
   - exporter
   - postgresql
+  - prometheus
+  - rds
