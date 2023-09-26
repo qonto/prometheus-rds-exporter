@@ -14,7 +14,7 @@ annotations:
   artifacthub.io/category: database
   artifacthub.io/links: |
     - name: Chart Source
-      url: https://github.com/prometheus-community/helm-charts/blob/main/charts/prometheus-statsd-exporter
+      url: https://github.com/qonto/prometheus-rds-exporter/tree/main/configs/helm
 keywords:
   - aws
   - rds
