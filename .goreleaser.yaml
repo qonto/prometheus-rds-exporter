@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 env:
   - BUILD_INFO_PACKAGE_PATH=github.com/qonto/prometheus-rds-exporter/internal/infra/build
-  - DOCKER_REGISTRY=public.ecr.aws/g1r8z6f4
+  - DOCKER_REGISTRY=public.ecr.aws/qonto
   - DOCKER_IMAGE_NAME=prometheus-rds-exporter
 
 builds:

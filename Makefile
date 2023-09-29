@@ -3,7 +3,7 @@ BUILD_INFO_PACKAGE_PATH=github.com/qonto/prometheus-rds-exporter/internal/infra/
 BUILD_DATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
 RELEASE_VERSION=$(shell jq .tag dist/metadata.json)
 GIT_COMMIT_SHA=$(shell git rev-parse HEAD)
-AWS_ECR_PUBLIC_ORGANIZATION=g1r8z6f4
+AWS_ECR_PUBLIC_ORGANIZATION=qonto
 BINARY=prometheus-rds-exporter
 HELM_CHART_NAME=prometheus-rds-exporter-chart
 
