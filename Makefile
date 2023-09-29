@@ -1,3 +1,4 @@
+SHELL=/bin/bash -o pipefail
 kubeconform_command := kubeconform -kubernetes-version $${KUBERNETES_VERSION-1.25.0} -cache $${KUBECONFORM_CACHE_DIRECTORY-/tmp} -summary -exit-on-error --strict -schema-location default -schema-location 'kubeconform/{{ .ResourceKind }}{{ .KindSuffix }}.json' -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json'
 BUILD_INFO_PACKAGE_PATH=github.com/qonto/prometheus-rds-exporter/internal/infra/build
 BUILD_DATE=$(shell date -u +'%Y-%m-%dT%H:%M:%SZ')
