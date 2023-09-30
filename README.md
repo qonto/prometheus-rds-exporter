@@ -120,13 +120,18 @@ Grafana dashoards are available on Grafana labs:
 ![Instances overview](docs/screenshots/instances-overview.png)
 
 <a href="https://grafana.com/grafana/dashboards/19647-rds-instances-overview/">RDS instances overview</a> (ID `19647`)
-
 </td>
 <td>
 
 ![Instance details](docs/screenshots/instance-details.png)
 
 <a href="https://grafana.com/grafana/dashboards/19646-rds-instance-details/">RDS instance details</a> (ID: `19646`)
+</td>
+<td>
+
+![Instance details](docs/screenshots/rds-exporter.png)
+
+<a href="https://grafana.com/grafana/dashboards/19679-rds-exporter/">RDS exporters</a> (ID: `19679`)
 </td>
 </tr>
 </table>
