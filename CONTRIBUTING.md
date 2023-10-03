@@ -2,7 +2,7 @@
 
 Prometheus RDS exporter uses GitHub to manage reviews of pull requests.
 
-* If you are a new contributor see: [Steps to Contribute](#steps-to-contribute)
+* If you are a new contributor, see: [Steps to Contribute](#steps-to-contribute)
 
 * If you have a trivial fix or improvement, go ahead and create a pull request
 
@@ -12,13 +12,13 @@ Prometheus RDS exporter uses GitHub to manage reviews of pull requests.
   Practices for Production
   Environments](https://peter.bourgon.org/go-in-production/#formatting-and-style).
 
-* Be sure to enabled [signed commits](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits)
+* Be sure to enable [signed commits](https://docs.github.com/en/authentication/managing-commit-signature-verification/signing-commits)
 
 ## Steps to Contribute
 
 Should you wish to work on an issue, please claim it first by commenting on the GitHub issue that you want to work on it. This is to prevent duplicated efforts from contributors on the same issue.
 
-All our issues are regularly tagged so that you can also filter down the issues involving the components you want to work on.
+All our issues are regularly tagged so you can filter down the issues involving the components you want to work on.
 
 For quickly compiling and testing your changes do:
 
@@ -33,13 +33,13 @@ make test         # Make sure all the tests pass before you commit and push :)
 
 We use [`golangci-lint`](https://github.com/golangci/golangci-lint) for linting the code. If it reports an issue and you think that the warning needs to be disregarded or is a false-positive, you can add a special comment `//nolint:linter1[,linter2,...]` before the offending line. Use this sparingly though, fixing the code to comply with the linter's recommendation is in general the preferred course of action.
 
-We also use [`pre-commit`](https://pre-commit.com) to make perfect commits, enable it for this repository with `pre-commit install`.
+We also use [`pre-commit`](https://pre-commit.com) to make perfect commits. Enable it for this repository with `pre-commit install`.
 
 ## Pull Request Checklist
 
 * Branch from the `main` branch and, if needed, rebase to the current main branch before submitting your pull request. If it doesn't merge cleanly with main you may be asked to rebase your changes.
 
-* Commits should be as small as possible, while ensuring that each commit is correct independently (i.e., each commit should compile and pass tests).
+* Commits should be as small as possible while ensuring each commit is correct independently (i.e., each commit should compile and pass tests).
 
 * Add tests relevant to the fixed bug or new feature.
 
