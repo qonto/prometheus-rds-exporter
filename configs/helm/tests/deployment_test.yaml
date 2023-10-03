@@ -49,3 +49,25 @@ tests:
       - equal:
           path: metadata.labels.label2
           value: value2
+  - it: render with AWS credentials secret
+    values:
+      - ./values/with_awsCredentialsSecret.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: AWS_ACCESS_KEY_ID
+      - equal:
+          path: spec.template.spec.containers[0].env[0].valueFrom.secretKeyRef.name
+          value: my_aws_credentials
+      - equal:
+          path: spec.template.spec.containers[0].env[0].valueFrom.secretKeyRef.key
+          value: AWS_ACCESS_KEY_ID
+      - equal:
+          path: spec.template.spec.containers[0].env[1].name
+          value: AWS_SECRET_ACCESS_KEY
+      - equal:
+          path: spec.template.spec.containers[0].env[1].valueFrom.secretKeyRef.name
+          value: my_aws_credentials
+      - equal:
+          path: spec.template.spec.containers[0].env[1].valueFrom.secretKeyRef.key
+          value: AWS_SECRET_ACCESS_KEY

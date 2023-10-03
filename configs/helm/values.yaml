@@ -10,6 +10,9 @@ image:
 # Define environment variables
 env: {}
 
+# Name of the secret containing AWS credentials
+awsCredentialsSecret: ""
+
 # Set additional labels on all resources
 additionalLabels: {}
 

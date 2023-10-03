@@ -33,6 +33,18 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             {{- include "prometheus-rds-exporter.env" . | nindent 12 }}
+            {{- if .Values.awsCredentialsSecret }}
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.awsCredentialsSecret }}
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.awsCredentialsSecret }}
+                  key: AWS_SECRET_ACCESS_KEY
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
