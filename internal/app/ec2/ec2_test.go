@@ -7,6 +7,7 @@ import (
 	aws_ec2 "github.com/aws/aws-sdk-go-v2/service/ec2"
 	aws_ec2_types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/ec2"
+	"github.com/qonto/prometheus-rds-exporter/internal/app/ec2/mocks"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -26,42 +27,32 @@ var t3Small = ec2.EC2InstanceMetrics{
 	Vcpu:              2,
 }
 
-type mockEC2Client struct{}
+func TestGetDBInstanceTypeInformation(t *testing.T) {
+	mock := mocks.NewEC2Client(t)
 
-func (m mockEC2Client) DescribeInstanceTypes(ctx context.Context, input *aws_ec2.DescribeInstanceTypesInput, optFns ...func(*aws_ec2.Options)) (*aws_ec2.DescribeInstanceTypesOutput, error) {
 	var instances []aws_ec2_types.InstanceTypeInfo
 
-	for _, instanceType := range input.InstanceTypes {
-		//nolint // Hide "missing cases in switch" alert because instanceType has many values. Mock with return empty result for unknown instances
-		switch instanceType {
-		case "t3.large":
-			instances = append(instances, aws_ec2_types.InstanceTypeInfo{
-				InstanceType: instanceType,
-				VCpuInfo:     &aws_ec2_types.VCpuInfo{DefaultVCpus: &t3Large.Vcpu},
-				MemoryInfo:   &aws_ec2_types.MemoryInfo{SizeInMiB: &t3Large.Memory},
-				EbsInfo: &aws_ec2_types.EbsInfo{EbsOptimizedInfo: &aws_ec2_types.EbsOptimizedInfo{
-					MaximumIops:             &t3Large.MaximumIops,
-					MaximumThroughputInMBps: &t3Large.MaximumThroughput,
-				}},
-			})
-		case "t3.small":
-			instances = append(instances, aws_ec2_types.InstanceTypeInfo{
-				InstanceType: instanceType,
-				VCpuInfo:     &aws_ec2_types.VCpuInfo{DefaultVCpus: &t3Small.Vcpu},
-				MemoryInfo:   &aws_ec2_types.MemoryInfo{SizeInMiB: &t3Small.Memory},
-				EbsInfo: &aws_ec2_types.EbsInfo{EbsOptimizedInfo: &aws_ec2_types.EbsOptimizedInfo{
-					MaximumIops:             &t3Small.MaximumIops,
-					MaximumThroughputInMBps: &t3Small.MaximumThroughput,
-				}},
-			})
-		}
-	}
+	instances = append(instances, aws_ec2_types.InstanceTypeInfo{
+		InstanceType: "t3.large",
+		VCpuInfo:     &aws_ec2_types.VCpuInfo{DefaultVCpus: &t3Large.Vcpu},
+		MemoryInfo:   &aws_ec2_types.MemoryInfo{SizeInMiB: &t3Large.Memory},
+		EbsInfo: &aws_ec2_types.EbsInfo{EbsOptimizedInfo: &aws_ec2_types.EbsOptimizedInfo{
+			MaximumIops:             &t3Large.MaximumIops,
+			MaximumThroughputInMBps: &t3Large.MaximumThroughput,
+		}},
+	})
+	instances = append(instances, aws_ec2_types.InstanceTypeInfo{
+		InstanceType: "t3.small",
+		VCpuInfo:     &aws_ec2_types.VCpuInfo{DefaultVCpus: &t3Small.Vcpu},
+		MemoryInfo:   &aws_ec2_types.MemoryInfo{SizeInMiB: &t3Small.Memory},
+		EbsInfo: &aws_ec2_types.EbsInfo{EbsOptimizedInfo: &aws_ec2_types.EbsOptimizedInfo{
+			MaximumIops:             &t3Small.MaximumIops,
+			MaximumThroughputInMBps: &t3Small.MaximumThroughput,
+		}},
+	})
 
-	return &aws_ec2.DescribeInstanceTypesOutput{InstanceTypes: instances}, nil
-}
-
-func TestGetDBInstanceTypeInformation(t *testing.T) {
-	mock := mockEC2Client{}
+	response := aws_ec2.DescribeInstanceTypesOutput{InstanceTypes: instances}
+	mock.On("DescribeInstanceTypes", context.TODO(), &aws_ec2.DescribeInstanceTypesInput{InstanceTypes: []aws_ec2_types.InstanceType{"t3.large", "t3.small"}}).Return(&response, nil).Once()
 
 	instanceTypes := []string{"db.t3.large", "db.t3.small"}
 	client := ec2.NewFetcher(mock)
