@@ -11,7 +11,7 @@ builds:
         - '-s'
         - '-w'
         - '-X "{{ .Env.BUILD_INFO_PACKAGE_PATH }}.Version={{.Version}}"'
-        - '-X "{{ .Env.BUILD_INFO_PACKAGE_PATH }}.Commit={{.Commit}}"'
+        - '-X "{{ .Env.BUILD_INFO_PACKAGE_PATH }}.CommitSHA={{.Commit}}"'
         - '-X "{{ .Env.BUILD_INFO_PACKAGE_PATH }}.Date={{.Date}}"'
     goos:
       - linux
