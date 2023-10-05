@@ -41,7 +41,7 @@ app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- range $key, $value := .Values.additionalLabels }}
-{{ $key | quote }}: {{ $value | quote }}
+{{ $key }}: {{ $value | quote }}
 {{- end -}}
 {{- end }}
 
