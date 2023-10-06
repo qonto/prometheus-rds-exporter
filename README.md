@@ -1,4 +1,4 @@
-# RDS exporter
+# Prometheus RDS exporter
 
 Are you ready to take your AWS RDS monitoring to the next level? Say hello to prometheus-rds-exporter, your ultimate solution for comprehensive, real-time insights into your Amazon RDS instances!
 
@@ -120,13 +120,18 @@ Grafana dashoards are available on Grafana labs:
 ![Instances overview](docs/screenshots/instances-overview.png)
 
 <a href="https://grafana.com/grafana/dashboards/19647-rds-instances-overview/">RDS instances overview</a> (ID `19647`)
-
 </td>
 <td>
 
 ![Instance details](docs/screenshots/instance-details.png)
 
 <a href="https://grafana.com/grafana/dashboards/19646-rds-instance-details/">RDS instance details</a> (ID: `19646`)
+</td>
+<td>
+
+![RDS exporters](docs/screenshots/rds-exporter.png)
+
+<a href="https://grafana.com/grafana/dashboards/19679-rds-exporter/">RDS exporters</a> (ID: `19679`)
 </td>
 </tr>
 </table>
@@ -206,7 +211,7 @@ Minimal required IAM permissions:
 2. Start application
 
     ```bash
-    docker run -p 9043:9043 -e AWS_PROFILE=${AWS_PROFILE} -v $HOME/.aws:/app/.aws public.ecr.aws/g1r8z6f4/prometheus-rds-exporter:latest
+    docker run -p 9043:9043 -e AWS_PROFILE=${AWS_PROFILE} -v $HOME/.aws:/app/.aws public.ecr.aws/qonto/prometheus-rds-exporter:latest
     ```
 
 ### EKS (using IRSA and Helm)
@@ -232,7 +237,7 @@ Minimal required IAM permissions:
 3. Deploy chart with service account annotation
 
     ```bash
-    helm install prometheus-rds-exporter oci://public.ecr.aws/g1r8z6f4/prometheus-rds-exporter-chart --namespace ${KUBERNETES_NAMESPACE} --set serviceAccount.annotations."eks\.amazonaws\.com\/role-arn"="arn:aws:iam::${AWS_ACCOUNT_ID}:role/${IAM_ROLE_NAME}"
+    helm install prometheus-rds-exporter oci://public.ecr.aws/qonto/prometheus-rds-exporter-chart --namespace ${KUBERNETES_NAMESPACE} --set serviceAccount.annotations."eks\.amazonaws\.com\/role-arn"="arn:aws:iam::${AWS_ACCOUNT_ID}:role/${IAM_ROLE_NAME}"
     ```
 
 ### Terraform

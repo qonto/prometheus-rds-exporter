@@ -45,9 +45,11 @@ type RdsInstanceMetrics struct {
 
 const (
 	InstanceStatusAvailable                int    = 1
-	InstanceStatusStopped                  int    = 0
-	InstanceStatusUnknown                  int    = -1
 	InstanceStatusBackingUp                int    = 2
+	InstanceStatusStarting                 int    = 3
+	InstanceStatusStopped                  int    = 0
+	InstanceStatusStopping                 int    = -2
+	InstanceStatusUnknown                  int    = -1
 	NoPendingMaintenanceOperation          string = "no"
 	UnscheduledPendingMaintenanceOperation string = "pending"
 	AutoAppliedPendingMaintenanceOperation string = "auto-applied"
@@ -71,8 +73,10 @@ const (
 
 var instanceStatuses = map[string]int{
 	"available":  InstanceStatusAvailable,
-	"stopped":    InstanceStatusStopped,
 	"backing-up": InstanceStatusBackingUp,
+	"starting":   InstanceStatusStarting,
+	"stopped":    InstanceStatusStopped,
+	"stopping":   InstanceStatusStopping,
 	"unknown":    InstanceStatusUnknown,
 }
 

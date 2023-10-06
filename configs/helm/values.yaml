@@ -3,12 +3,15 @@
 replicaCount: 1
 
 image:
-  repository: public.ecr.aws/g1r8z6f4/prometheus-rds-exporter
+  repository: public.ecr.aws/qonto/prometheus-rds-exporter
   pullPolicy: IfNotPresent
   tag: "" # Defined by chart appVersion parameter
 
 # Define environment variables
 env: {}
+
+# Name of the secret containing AWS credentials
+awsCredentialsSecret: ""
 
 # Set additional labels on all resources
 additionalLabels: {}

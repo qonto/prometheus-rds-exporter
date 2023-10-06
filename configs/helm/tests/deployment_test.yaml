@@ -12,7 +12,7 @@ tests:
           value: RELEASE-NAME-prometheus-rds-exporter-chart
       - equal:
           path: spec.template.spec.containers[0].image
-          value: public.ecr.aws/g1r8z6f4/prometheus-rds-exporter:0.0.0
+          value: public.ecr.aws/qonto/prometheus-rds-exporter:0.0.0
       - equal:
           path: spec.replicas
           value: 1
@@ -22,7 +22,7 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.containers[0].image
-          value: public.ecr.aws/g1r8z6f4/prometheus-rds-exporter:1.0
+          value: public.ecr.aws/qonto/prometheus-rds-exporter:1.0
   - it: render deployment with environment variables
     values:
       - ./values/with_environment_variables.yaml
@@ -49,3 +49,25 @@ tests:
       - equal:
           path: metadata.labels.label2
           value: value2
+  - it: render with AWS credentials secret
+    values:
+      - ./values/with_awsCredentialsSecret.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].env[0].name
+          value: AWS_ACCESS_KEY_ID
+      - equal:
+          path: spec.template.spec.containers[0].env[0].valueFrom.secretKeyRef.name
+          value: my_aws_credentials
+      - equal:
+          path: spec.template.spec.containers[0].env[0].valueFrom.secretKeyRef.key
+          value: AWS_ACCESS_KEY_ID
+      - equal:
+          path: spec.template.spec.containers[0].env[1].name
+          value: AWS_SECRET_ACCESS_KEY
+      - equal:
+          path: spec.template.spec.containers[0].env[1].valueFrom.secretKeyRef.name
+          value: my_aws_credentials
+      - equal:
+          path: spec.template.spec.containers[0].env[1].valueFrom.secretKeyRef.key
+          value: AWS_SECRET_ACCESS_KEY
