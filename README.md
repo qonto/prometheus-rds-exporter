@@ -129,7 +129,7 @@ Grafana dashoards are available on Grafana labs:
 </td>
 <td>
 
-![Instance details](docs/screenshots/rds-exporter.png)
+![RDS exporters](docs/screenshots/rds-exporter.png)
 
 <a href="https://grafana.com/grafana/dashboards/19679-rds-exporter/">RDS exporters</a> (ID: `19679`)
 </td>
