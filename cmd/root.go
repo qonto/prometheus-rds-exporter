@@ -50,11 +50,18 @@ func run(configuration exporterConfig) {
 		os.Exit(awsErrorExitCode)
 	}
 
+	awsAccountID, awsRegion, err := getAWSSessionInformation(cfg)
+	if err != nil {
+		logger.Error("can't identify AWS account and/or region", "reason", err)
+		os.Exit(awsErrorExitCode)
+	}
+
 	rdsClient := rds.NewFromConfig(cfg)
 	ec2Client := ec2.NewFromConfig(cfg)
 	cloudWatchClient := cloudwatch.NewFromConfig(cfg)
 	servicequotasClient := servicequotas.NewFromConfig(cfg)
-	collector := exporter.NewCollector(*logger, rdsClient, ec2Client, cloudWatchClient, servicequotasClient)
+
+	collector := exporter.NewCollector(*logger, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient)
 
 	prometheus.MustRegister(collector)
 
