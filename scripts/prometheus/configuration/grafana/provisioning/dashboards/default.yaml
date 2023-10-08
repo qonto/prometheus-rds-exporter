@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: 'default'
+    folder: ''
+    folderUid: ''
+    type: file
+    allowUiUpdates: true # Allow change from UI
+    disableDeletion: true # Do not delete dashboard
+    options:
+      path: /var/tmp/dashboards

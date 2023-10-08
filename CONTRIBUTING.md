@@ -67,3 +67,17 @@ GO111MODULE=on go mod tidy
 ```
 
 You have to commit the changes to `go.mod` and `go.sum` before submitting the pull request.
+
+## Update dashboard
+
+1. Start local development environment
+
+1. Update dashboard
+
+1. Export the dashboard
+
+    Click on `Share dashboard > Export`, then select `Export for sharing externally` and click on `View JSON`.
+
+1. Open an issue with the suggestion
+
+1. The project manager will review it and submit it to Grafana.com.
