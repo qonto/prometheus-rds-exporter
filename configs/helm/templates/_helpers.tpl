@@ -39,6 +39,8 @@ helm.sh/chart: {{ include "prometheus-rds-exporter.chart" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
+app.kubernetes.io/component: exporter
+app.kubernetes.io/part-of: database-monitoring-framework
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- range $key, $value := .Values.additionalLabels }}
 {{ $key }}: {{ $value | quote }}
