@@ -159,7 +159,7 @@ func NewCollector(logger slog.Logger, awsAccountID string, awsRegion string, rds
 			"Maximum throughput of underlying EC2 instance",
 			[]string{"aws_account_id", "aws_region", "instance_class"}, nil,
 		),
-		instanceMaximumIops: prometheus.NewDesc("rds_instance_maxIops_average",
+		instanceMaximumIops: prometheus.NewDesc("rds_instance_max_iops_average",
 			"Maximum IOPS of underlying EC2 instance",
 			[]string{"aws_account_id", "aws_region", "instance_class"}, nil,
 		),

@@ -48,7 +48,7 @@ It collect key metrics about:
 | rds_freeable_memory_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Amount of available random access memory. For MariaDB, MySQL, Oracle, and PostgreSQL DB instances, this metric reports the value of the MemAvailable field of /proc/meminfo |
 | rds_instance_info | `aws_account_id`, `aws_region`, `dbi_resource_id`, `dbidentifier`, `deletion_protection`, `engine`, `engine_version`, `instance_class`, `multi_az`, `pending_maintenance`, `pending_modified_values`, `role`, `source_dbidentifier`, `storage_type` | RDS instance information |
 | rds_instance_log_files_size_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Total of log files on the instance |
-| rds_instance_maxIops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Maximum IOPS of underlying EC2 instance |
+| rds_instance_max_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Maximum IOPS of underlying EC2 instance |
 | rds_instance_max_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Maximum throughput of underlying EC2 instance |
 | rds_instance_memory_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Instance memory |
 | rds_instance_status | `aws_account_id`, `aws_region`, `dbidentifier` | Instance status (1: ok, 0: can't scrap metrics) |
