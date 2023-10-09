@@ -21,8 +21,12 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=hackme
     volumes:
       - ./.grafana_data:/var/lib/grafana
+      - ./configuration/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources/
+      - ./configuration/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards/
+      - ./configuration/grafana/entrypoint.sh:/usr/share/grafana/entrypoint.sh
     ports:
       - 3000:3000
+    entrypoint: ["/usr/share/grafana/entrypoint.sh"]
     depends_on:
       - prometheus
 
