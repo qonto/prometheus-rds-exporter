@@ -38,5 +38,5 @@ func getAWSSessionInformation(cfg aws.Config) (string, string, error) {
 		return "", "", fmt.Errorf("can't fetch information about current session: %w", err)
 	}
 
-	return cfg.Region, *output.Account, nil
+	return *output.Account, cfg.Region, nil
 }
