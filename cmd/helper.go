@@ -29,3 +29,14 @@ func getAWSConfiguration(logger *slog.Logger, roleArn string, sessionName string
 
 	return cfg, nil
 }
+
+func getAWSSessionInformation(cfg aws.Config) (string, string, error) {
+	client := sts.NewFromConfig(cfg)
+
+	output, err := client.GetCallerIdentity(context.TODO(), nil)
+	if err != nil {
+		return "", "", fmt.Errorf("can't fetch information about current session: %w", err)
+	}
+
+	return cfg.Region, *output.Account, nil
+}
