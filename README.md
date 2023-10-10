@@ -146,7 +146,7 @@ Configuration could be defined in `.prometheus-rds-exporter.yaml` or environment
 | aws-assume-role-session | AWS assume role session name | prometheus-rds-exporter |
 | debug | Enable debug mode | |
 | listen-address | Address to listen on for web interface | :9043 |
-| log-format | Log format (`text` or `json`) | text |
+| log-format | Log format (`text` or `json`) | json |
 | metrics-path | Path under which to expose metrics | /metrics |
 
 Configuration parameters priorities:
