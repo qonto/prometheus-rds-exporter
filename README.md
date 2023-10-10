@@ -5,6 +5,7 @@ Are you ready to take your AWS RDS monitoring to the next level? Say hello to pr
 Built by SRE Engineers, designed for production: Meticulously crafted by a team of Site Reliability Engineers with years of hands-on experience in managing RDS production systems. Trust in their expertise to supercharge your monitoring.
 
 It collect key metrics about:
+
 - Hardware resource usage
 - Underlying EC2 instances hard limits
 - Pending AWS RDS maintenances
@@ -12,7 +13,7 @@ It collect key metrics about:
 - Logs size
 - RDS quota usage information
 
-### Key metrics
+## Key metrics
 
 📊 Advanced Metrics: Gain deep visibility with advanced metrics for AWS RDS. Monitor performance, query efficiency, and resource utilization like never before.
 
@@ -146,7 +147,7 @@ Configuration could be defined in `.prometheus-rds-exporter.yaml` or environment
 | aws-assume-role-session | AWS assume role session name | prometheus-rds-exporter |
 | debug | Enable debug mode | |
 | listen-address | Address to listen on for web interface | :9043 |
-| log-format | Log format (`text` or `json`) | text |
+| log-format | Log format (`text` or `json`) | json |
 | metrics-path | Path under which to expose metrics | /metrics |
 
 Configuration parameters priorities:
@@ -160,9 +161,9 @@ Configuration parameters priorities:
 
 Prometheus RDS exporter needs read only AWS IAM permissions to fetch metrics from AWS RDS, CloudWatch, EC2 and ServiceQuota AWS APIs.
 
-Standard AWS authentication methods (AWS credentials, SSO and assume role), see https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html.
+Standard AWS authentication methods (AWS credentials, SSO and assume role), see <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html>.
 
-If you are running on [AWS EKS](), we strongly recommend to use [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html)
+If you are running on [AWS EKS](https://aws.amazon.com/eks/), we strongly recommend to use [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html)
 
 Minimal required IAM permissions:
 
@@ -288,6 +289,6 @@ It will start and configure Grafana, Prometheus, and the RDS exporter:
 
 1. Connect on the services
 
-    - Grafana: http://localhost:3000 (credential: admin/hackme)
-    - Prometheus: http://localhost:9090
-    - Prometheus RDS exporter: http://localhost:9043
+    - Grafana: <http://localhost:3000> (credential: admin/hackme)
+    - Prometheus: <http://localhost:9090>
+    - Prometheus RDS exporter: <http://localhost:9043>

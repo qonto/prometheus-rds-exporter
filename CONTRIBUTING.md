@@ -31,9 +31,13 @@ make build
 make test         # Make sure all the tests pass before you commit and push :)
 ```
 
-We use [`golangci-lint`](https://github.com/golangci/golangci-lint) for linting the code. If it reports an issue and you think that the warning needs to be disregarded or is a false-positive, you can add a special comment `//nolint:linter1[,linter2,...]` before the offending line. Use this sparingly though, fixing the code to comply with the linter's recommendation is in general the preferred course of action.
+We use:
 
-We also use [`pre-commit`](https://pre-commit.com) to make perfect commits. Enable it for this repository with `pre-commit install`.
+* [`pre-commit`](https://pre-commit.com) to make right first time changes. Enable it for this repository with `pre-commit install`.
+
+* [`golangci-lint`](https://github.com/golangci/golangci-lint) for linting the code. If it reports an issue and you think that the warning needs to be disregarded or is a false-positive, you can add a special comment `//nolint:linter1[,linter2,...]` before the offending line. Use this sparingly though, fixing the code to comply with the linter's recommendation is in general the preferred course of action.
+
+* [`markdownlint-cli2`](https://github.com/DavidAnson/markdownlint-cli2) for linting the Markdown documents.
 
 ## Pull Request Checklist
 
@@ -67,6 +71,18 @@ GO111MODULE=on go mod tidy
 ```
 
 You have to commit the changes to `go.mod` and `go.sum` before submitting the pull request.
+
+## Install pre-commit
+
+1. Install [pre-commit](https://pre-commit.com/)
+
+1. Install [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2)
+
+1. Enable pre-commit for the repository
+
+    ```bash
+    pre-commit install
+    ```
 
 ## Update dashboard
 

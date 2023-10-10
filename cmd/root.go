@@ -97,7 +97,7 @@ func NewRootCommand() (*cobra.Command, error) {
 
 	cmd.Flags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.prometheus-rds-exporter.yaml)")
 	cmd.Flags().BoolP("debug", "d", false, "Enable debug mode")
-	cmd.Flags().StringP("log-format", "l", "text", "Log format (text or json)")
+	cmd.Flags().StringP("log-format", "l", "json", "Log format (text or json)")
 	cmd.Flags().StringP("metrics-path", "", "/metrics", "Path under which to expose metrics")
 	cmd.Flags().StringP("listen-address", "", ":9043", "Address to listen on for web interface")
 	cmd.Flags().StringP("aws-assume-role-arn", "", "", "AWS IAM ARN role to assume to fetch metrics")
