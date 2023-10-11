@@ -410,9 +410,11 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(c.replicaLag, prometheus.GaugeValue, instance.ReplicaLag, c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.replicationSlotDiskUsage, prometheus.GaugeValue, instance.ReplicationSlotDiskUsage, c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.swapUsage, prometheus.GaugeValue, instance.SwapUsage, c.awsAccountID, c.awsRegion, dbidentifier)
+		ch <- prometheus.MustNewConstMetric(c.readIOPS, prometheus.GaugeValue, instance.ReadIOPS, c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.writeIOPS, prometheus.GaugeValue, instance.WriteIOPS, c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.writeThroughput, prometheus.GaugeValue, instance.WriteThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.DBLoad, prometheus.GaugeValue, instance.DBLoad, c.awsAccountID, c.awsRegion, dbidentifier)
+		ch <- prometheus.MustNewConstMetric(c.cpuUtilisation, prometheus.GaugeValue, instance.CPUUtilization, c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.dBLoadCPU, prometheus.GaugeValue, instance.DBLoadCPU, c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.dBLoadNonCPU, prometheus.GaugeValue, instance.DBLoadNonCPU, c.awsAccountID, c.awsRegion, dbidentifier)
 	}
