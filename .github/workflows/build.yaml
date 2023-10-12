@@ -2,8 +2,7 @@ name: build
 run-name: building and publishing new release
 on:
   push:
-    # run only against tags
-    tags:
+    branches:
       - "*"
 permissions:
   contents: write # allows the action to create a Github release
@@ -34,20 +33,20 @@ jobs:
 
       - run: git fetch --force --tags
 
-      - uses: actions/setup-go@v4
-        with:
-          go-version: stable
+      # - uses: actions/setup-go@v4
+      #   with:
+      #     go-version: stable
 
-      - name: Set up QEMU for ARM64 build
-        uses: docker/setup-qemu-action@v3
+      # - name: Set up QEMU for ARM64 build
+      #   uses: docker/setup-qemu-action@v3
 
-      - uses: goreleaser/goreleaser-action@v5
-        with:
-          distribution: goreleaser
-          version: latest
-          args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - uses: goreleaser/goreleaser-action@v5
+      #   with:
+      #     distribution: goreleaser
+      #     version: latest
+      #     args: release --clean
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure AWS credentials for helm chart
         uses: aws-actions/configure-aws-credentials@v4
@@ -63,4 +62,4 @@ jobs:
           mask-password: 'true'
 
       - name: Helm release
-        run: make helm-release
+        run: ./scripts/helm-release.sh prometheus-rds-exporter-chart configs/helm 0.2.3-rc2 qonto

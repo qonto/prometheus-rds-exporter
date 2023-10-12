@@ -58,7 +58,7 @@ build() {
 }
 
 publish() {
-    helm push ${CHART_NAME}-${RELEASE_VERSION}.tgz oci://public.ecr.aws/${REPOSITORY}
+    helm push --debug ${CHART_NAME}-${RELEASE_VERSION}.tgz oci://public.ecr.aws/${REPOSITORY}
 }
 
 check_parameters
