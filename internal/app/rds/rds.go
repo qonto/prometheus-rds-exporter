@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_rds "github.com/aws/aws-sdk-go-v2/service/rds"
 	aws_rds_types "github.com/aws/aws-sdk-go-v2/service/rds/types"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
@@ -224,7 +225,7 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 		MultiAZ:                    dbInstance.MultiAZ,
 		PendingMaintenanceAction:   pendingMaintenanceAction,
 		PendingModifiedValues:      pendingModifiedValues,
-		PerformanceInsightsEnabled: *dbInstance.PerformanceInsightsEnabled,
+		PerformanceInsightsEnabled: aws.ToBool(dbInstance.PerformanceInsightsEnabled),
 		PubliclyAccessible:         dbInstance.PubliclyAccessible,
 		Role:                       role,
 		SourceDBInstanceIdentifier: sourceDBInstanceIdentifier,
