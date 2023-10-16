@@ -39,6 +39,7 @@ services:
       - AWS_PROFILE=${AWS_PROFILE-}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY-}
+      - PROMETHEUS_RDS_EXPORTER_LOG_FORMAT=text
     volumes:
       - $HOME/.aws:/app/.aws:ro
       - ./../../rds_exporter:/mnt/rds_exporprometheus-rds-exporterter

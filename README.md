@@ -5,6 +5,7 @@ Are you ready to take your AWS RDS monitoring to the next level? Say hello to pr
 Built by SRE Engineers, designed for production: Meticulously crafted by a team of Site Reliability Engineers with years of hands-on experience in managing RDS production systems. Trust in their expertise to supercharge your monitoring.
 
 It collect key metrics about:
+
 - Hardware resource usage
 - Underlying EC2 instances hard limits
 - Pending AWS RDS maintenances
@@ -12,7 +13,7 @@ It collect key metrics about:
 - Logs size
 - RDS quota usage information
 
-### Key metrics
+## Key metrics
 
 📊 Advanced Metrics: Gain deep visibility with advanced metrics for AWS RDS. Monitor performance, query efficiency, and resource utilization like never before.
 
@@ -46,7 +47,7 @@ It collect key metrics about:
 | rds_exporter_errors_total | | Total number of errors encountered by the exporter |
 | rds_free_storage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Free storage on the instance |
 | rds_freeable_memory_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Amount of available random access memory. For MariaDB, MySQL, Oracle, and PostgreSQL DB instances, this metric reports the value of the MemAvailable field of /proc/meminfo |
-| rds_instance_info | `aws_account_id`, `aws_region`, `dbi_resource_id`, `dbidentifier`, `deletion_protection`, `engine`, `engine_version`, `instance_class`, `multi_az`, `pending_maintenance`, `pending_modified_values`, `role`, `source_dbidentifier`, `storage_type` | RDS instance information |
+| rds_instance_info | `aws_account_id`, `aws_region`, `dbi_resource_id`, `dbidentifier`, `deletion_protection`, `engine`, `engine_version`, `instance_class`, `multi_az`, `performance_insights_enabled`, `pending_maintenance`, `pending_modified_values`, `role`, `source_dbidentifier`, `storage_type` | RDS instance information |
 | rds_instance_log_files_size_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Total of log files on the instance |
 | rds_instance_max_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Maximum IOPS of underlying EC2 instance |
 | rds_instance_max_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Maximum throughput of underlying EC2 instance |
@@ -146,7 +147,7 @@ Configuration could be defined in `.prometheus-rds-exporter.yaml` or environment
 | aws-assume-role-session | AWS assume role session name | prometheus-rds-exporter |
 | debug | Enable debug mode | |
 | listen-address | Address to listen on for web interface | :9043 |
-| log-format | Log format (`text` or `json`) | text |
+| log-format | Log format (`text` or `json`) | json |
 | metrics-path | Path under which to expose metrics | /metrics |
 
 Configuration parameters priorities:
@@ -160,9 +161,9 @@ Configuration parameters priorities:
 
 Prometheus RDS exporter needs read only AWS IAM permissions to fetch metrics from AWS RDS, CloudWatch, EC2 and ServiceQuota AWS APIs.
 
-Standard AWS authentication methods (AWS credentials, SSO and assume role), see https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html.
+Standard AWS authentication methods (AWS credentials, SSO and assume role), see <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html>.
 
-If you are running on [AWS EKS](), we strongly recommend to use [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html)
+If you are running on [AWS EKS](https://aws.amazon.com/eks/), we strongly recommend to use [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html)
 
 Minimal required IAM permissions:
 
@@ -246,7 +247,7 @@ You can take example on Terraform code in `configs/terraform/`.
 
 ## Alternative
 
-[percona/rds_exporter](https://github.com/percona/rds_exporter) and [mtanda/rds_enhanced_monitoring_exporter](https://github.com/mtanda/rds_enhanced_monitoring_exporter) provides are great alternatives.
+[percona/rds_exporter](https://github.com/percona/rds_exporter) and [mtanda/rds_enhanced_monitoring_exporter](https://github.com/mtanda/rds_enhanced_monitoring_exporter) are great alternatives.
 
 [prometheus/cloudwatch_exporter](https://github.com/prometheus/cloudwatch_exporter) could be used to collect additional CloudWatch metrics.
 
@@ -288,6 +289,6 @@ It will start and configure Grafana, Prometheus, and the RDS exporter:
 
 1. Connect on the services
 
-    - Grafana: http://localhost:3000 (credential: admin/hackme)
-    - Prometheus: http://localhost:9090
-    - Prometheus RDS exporter: http://localhost:9043
+    - Grafana: <http://localhost:3000> (credential: admin/hackme)
+    - Prometheus: <http://localhost:9090>
+    - Prometheus RDS exporter: <http://localhost:9043>
