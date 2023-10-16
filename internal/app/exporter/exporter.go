@@ -136,7 +136,7 @@ func NewCollector(logger slog.Logger, awsAccountID string, awsRegion string, rds
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		status: prometheus.NewDesc("rds_instance_status",
-			"Instance status",
+			fmt.Sprintf("Instance status (%d: ok, %d: can't scrap metrics)", int(exporterUpStatusCode), int(exporterDownStatusCode)),
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		logFilesSize: prometheus.NewDesc("rds_instance_log_files_size_bytes",
