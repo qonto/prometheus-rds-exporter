@@ -21,6 +21,7 @@ type mockRDSClient struct {
 	DescribeDBInstancesOutput               *aws_rds.DescribeDBInstancesOutput
 	DescribePendingMaintenanceActionsOutput *aws_rds.DescribePendingMaintenanceActionsOutput
 	DescribeDBLogFilesOutput                *aws_rds.DescribeDBLogFilesOutput
+	DescribeDBLogFilesOutputError           error
 	Error                                   error
 }
 
@@ -34,8 +35,8 @@ func (m mockRDSClient) DescribePendingMaintenanceActions(context.Context, *aws_r
 	return m.DescribePendingMaintenanceActionsOutput, m.Error
 }
 
-func (m mockRDSClient) DescribeDBLogFiles(context.Context, *aws_rds.DescribeDBLogFilesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBLogFilesOutput, error) {
-	return m.DescribeDBLogFilesOutput, nil
+func (m mockRDSClient) DescribeDBLogFiles(ctx context.Context, input *aws_rds.DescribeDBLogFilesInput, fn ...func(*aws_rds.Options)) (*aws_rds.DescribeDBLogFilesOutput, error) {
+	return m.DescribeDBLogFilesOutput, m.DescribeDBLogFilesOutputError
 }
 
 func (m mockRDSClient) DescribeDBInstances(context.Context, *aws_rds.DescribeDBInstancesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBInstancesOutput, error) {
@@ -212,6 +213,22 @@ func TestLogSize(t *testing.T) {
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
 	assert.Equal(t, expectedLogFilesSize, metrics.Instances[*rdsInstance.DBInstanceIdentifier].LogFilesSize, "Log files size mismatch")
+}
+
+func TestLogSizeInCreation(t *testing.T) {
+	// Mock RDS instance
+	rdsInstance := newRdsInstance()
+	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
+
+	mock := mockRDSClient{
+		DescribeDBInstancesOutput:     mockDescribeDBInstancesOutput,
+		DescribeDBLogFilesOutputError: &aws_rds_types.DBInstanceNotFoundFault{},
+	}
+	client := rds.NewFetcher(mock)
+	metrics, err := client.GetInstancesMetrics()
+
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+	assert.Equal(t, int64(0), metrics.Instances[*rdsInstance.DBInstanceIdentifier].LogFilesSize, "Log files size mismatch")
 }
 
 func TestReplicaNode(t *testing.T) {
