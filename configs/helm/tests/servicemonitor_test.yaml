@@ -13,6 +13,9 @@ tests:
       - equal:
           path: spec.endpoints[0].interval
           value: 60s
+      - equal:
+          path: spec.sampleLimit
+          value: 0
   - it: render custom service monitor
     values:
       - ./values/with_servicemonitor.yaml
@@ -23,3 +26,34 @@ tests:
       - equal:
           path: metadata.labels.additionalLabel1
           value: value1
+  - it: render custom service monitor
+    values:
+      - ./values/with_servicemonitor.yaml
+    asserts:
+      - equal:
+          path: spec.endpoints[0].interval
+          value: 120s
+      - equal:
+          path: spec.endpoints[0].scrapeTimeout
+          value: 60s
+      - equal:
+          path: metadata.labels.additionalLabel1
+          value: value1
+      - equal:
+          path: spec.endpoints[0].externalLabels.externalLabel1
+          value: externalValue1
+      - equal:
+          path: spec.endpoints[0].relabelings[0].targetLabel
+          value: team
+      - equal:
+          path: spec.endpoints[0].relabelings[0].sourceLabels[0]
+          value: __meta_kubernetes_pod_label_team
+      - equal:
+          path: spec.endpoints[0].metricRelabelings[0].sourceLabels[0]
+          value: __name__
+      - equal:
+          path: spec.endpoints[0].metricRelabelings[0].regex
+          value: example
+      - equal:
+          path: spec.endpoints[0].metricRelabelings[0].action
+          value: drop

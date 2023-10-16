@@ -1,5 +1,17 @@
 serviceMonitor:
   enabled: true
   interval: 120s
+  scrapeTimeout: 60s
   additionalLabels:
     additionalLabel1: value1
+  externalLabels:
+    externalLabel1: externalValue1
+  sampleLimit: 42
+  relabelings:
+    - sourceLabels:
+        - __meta_kubernetes_pod_label_team
+      targetLabel: team
+  metricRelabelings:
+    - sourceLabels: [__name__]
+      regex: example
+      action: drop

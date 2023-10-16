@@ -11,10 +11,28 @@ metadata:
     {{- end }}
 spec:
   jobLabel: app.kubernetes.io/name # Ensure prometheus job name match application's name
+  sampleLimit: {{ .Values.serviceMonitor.sampleLimit }}
   endpoints:
     - path: /metrics
       port: http
       interval: {{ .Values.serviceMonitor.interval }}
+      {{- if .Values.serviceMonitor.scrapeTimeout }}
+      scrapeTimeout: {{ .Values.serviceMonitor.scrapeTimeout }}
+      {{- end }}
+      {{- if .Values.serviceMonitor.externalLabels }}
+      externalLabels:
+        {{- with .Values.serviceMonitor.externalLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.serviceMonitor.relabelings }}
+      relabelings:
+        {{- toYaml .Values.serviceMonitor.relabelings | nindent 10 }}
+      {{- end }}
+      {{- if .Values.serviceMonitor.metricRelabelings }}
+      metricRelabelings:
+        {{- toYaml .Values.serviceMonitor.metricRelabelings | nindent 10 }}
+      {{- end }}
   namespaceSelector:
     matchNames:
       - {{ .Release.Namespace }}
