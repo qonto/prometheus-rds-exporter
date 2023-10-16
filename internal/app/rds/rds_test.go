@@ -268,6 +268,8 @@ func TestGetDBInstanceStatusCode(t *testing.T) {
 		{input: "available", want: rds.InstanceStatusAvailable},
 		{input: "stopped", want: rds.InstanceStatusStopped},
 		{input: "backing-up", want: rds.InstanceStatusBackingUp},
+		{input: "creating", want: rds.InstanceStatusCreating},
+		{input: "deleting", want: rds.InstanceStatusDeleting},
 		{input: "unknown", want: rds.InstanceStatusUnknown},
 		{input: "future", want: rds.InstanceStatusUnknown},
 	}

@@ -50,8 +50,10 @@ const (
 	InstanceStatusBackingUp                int    = 2
 	InstanceStatusStarting                 int    = 3
 	InstanceStatusStopped                  int    = 0
-	InstanceStatusStopping                 int    = -2
 	InstanceStatusUnknown                  int    = -1
+	InstanceStatusStopping                 int    = -2
+	InstanceStatusCreating                 int    = -3
+	InstanceStatusDeleting                 int    = -4
 	NoPendingMaintenanceOperation          string = "no"
 	UnscheduledPendingMaintenanceOperation string = "pending"
 	AutoAppliedPendingMaintenanceOperation string = "auto-applied"
@@ -76,6 +78,8 @@ const (
 var instanceStatuses = map[string]int{
 	"available":  InstanceStatusAvailable,
 	"backing-up": InstanceStatusBackingUp,
+	"creating":   InstanceStatusCreating,
+	"deleting":   InstanceStatusDeleting,
 	"starting":   InstanceStatusStarting,
 	"stopped":    InstanceStatusStopped,
 	"stopping":   InstanceStatusStopping,
