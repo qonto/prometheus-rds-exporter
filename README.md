@@ -247,7 +247,7 @@ You can take example on Terraform code in `configs/terraform/`.
 
 ## Alternative
 
-[percona/rds_exporter](https://github.com/percona/rds_exporter) and [mtanda/rds_enhanced_monitoring_exporter](https://github.com/mtanda/rds_enhanced_monitoring_exporter) provides are great alternatives.
+[percona/rds_exporter](https://github.com/percona/rds_exporter) and [mtanda/rds_enhanced_monitoring_exporter](https://github.com/mtanda/rds_enhanced_monitoring_exporter) are great alternatives.
 
 [prometheus/cloudwatch_exporter](https://github.com/prometheus/cloudwatch_exporter) could be used to collect additional CloudWatch metrics.
 
