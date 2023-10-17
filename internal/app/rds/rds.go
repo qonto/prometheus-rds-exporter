@@ -3,6 +3,7 @@ package rds
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -243,12 +244,17 @@ func (r *RDSFetcher) getLogFilesSize(dbidentifier string) (int64, error) {
 
 	input := &aws_rds.DescribeDBLogFilesInput{DBInstanceIdentifier: &dbidentifier}
 
+	r.statistics.RdsAPICall++
+
 	result, err := r.client.DescribeDBLogFiles(context.TODO(), input)
 	if err != nil {
+		var notFoundError *aws_rds_types.DBInstanceNotFoundFault
+		if errors.As(err, &notFoundError) { // Replica in "creating" status may return notFoundError exception
+			return 0, nil
+		}
+
 		return 0, fmt.Errorf("can't describe db logs files for %s: %w", dbidentifier, err)
 	}
-
-	r.statistics.RdsAPICall++
 
 	if result != nil {
 		for _, file := range result.DescribeDBLogFiles {
