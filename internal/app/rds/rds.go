@@ -31,7 +31,7 @@ type RdsInstanceMetrics struct {
 	StorageThroughput                int64
 	MaxAllocatedStorage              int64
 	MaxIops                          int64
-	LogFilesSize                     int64
+	LogFilesSize                     *int64
 	PendingMaintenanceAction         string
 	PendingModifiedValues            bool
 	BackupRetentionPeriod            int32
@@ -243,8 +243,8 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 }
 
 // getLogFilesSize returns the size of all logs on the specified instance
-func (r *RDSFetcher) getLogFilesSize(dbidentifier string) (int64, error) {
-	var filesSize int64
+func (r *RDSFetcher) getLogFilesSize(dbidentifier string) (*int64, error) {
+	var filesSize *int64
 
 	input := &aws_rds.DescribeDBLogFilesInput{DBInstanceIdentifier: &dbidentifier}
 
@@ -254,15 +254,19 @@ func (r *RDSFetcher) getLogFilesSize(dbidentifier string) (int64, error) {
 	if err != nil {
 		var notFoundError *aws_rds_types.DBInstanceNotFoundFault
 		if errors.As(err, &notFoundError) { // Replica in "creating" status may return notFoundError exception
-			return 0, nil
+			return filesSize, nil
 		}
 
-		return 0, fmt.Errorf("can't describe db logs files for %s: %w", dbidentifier, err)
+		return filesSize, fmt.Errorf("can't describe db logs files for %s: %w", dbidentifier, err)
 	}
 
-	if result != nil {
+	if result != nil && len(result.DescribeDBLogFiles) > 0 {
+		if filesSize == nil {
+			filesSize = new(int64)
+		}
+
 		for _, file := range result.DescribeDBLogFiles {
-			filesSize += file.Size
+			*filesSize += file.Size
 		}
 	}
 

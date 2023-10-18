@@ -391,32 +391,80 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 	for dbidentifier, instance := range c.metrics.rds.Instances {
 		ch <- prometheus.MustNewConstMetric(c.allocatedStorage, prometheus.GaugeValue, float64(instance.AllocatedStorage), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.information, prometheus.GaugeValue, 1, c.awsAccountID, c.awsRegion, dbidentifier, instance.DbiResourceID, instance.DBInstanceClass, instance.Engine, instance.EngineVersion, instance.StorageType, strconv.FormatBool(instance.MultiAZ), strconv.FormatBool(instance.DeletionProtection), instance.Role, instance.SourceDBInstanceIdentifier, strconv.FormatBool(instance.PendingModifiedValues), instance.PendingMaintenanceAction, strconv.FormatBool(instance.PerformanceInsightsEnabled))
-		ch <- prometheus.MustNewConstMetric(c.logFilesSize, prometheus.GaugeValue, float64(instance.LogFilesSize), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.maxAllocatedStorage, prometheus.GaugeValue, float64(instance.MaxAllocatedStorage), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.maxIops, prometheus.GaugeValue, float64(instance.MaxIops), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.status, prometheus.GaugeValue, float64(instance.Status), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.storageThroughput, prometheus.GaugeValue, float64(instance.StorageThroughput), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.backupRetentionPeriod, prometheus.GaugeValue, float64(instance.BackupRetentionPeriod), c.awsAccountID, c.awsRegion, dbidentifier)
+
+		if instance.LogFilesSize != nil {
+			ch <- prometheus.MustNewConstMetric(c.logFilesSize, prometheus.GaugeValue, float64(*instance.LogFilesSize), c.awsAccountID, c.awsRegion, dbidentifier)
+		}
 	}
 
 	// Cloudwatch metrics
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.cloudwatchAPICalls, c.awsAccountID, c.awsRegion, "cloudwatch")
+
 	for dbidentifier, instance := range c.metrics.cloudwatchInstances.Instances {
-		ch <- prometheus.MustNewConstMetric(c.databaseConnections, prometheus.GaugeValue, instance.DatabaseConnections, c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.freeStorageSpace, prometheus.GaugeValue, instance.FreeStorageSpace, c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.freeableMemory, prometheus.GaugeValue, instance.FreeableMemory, c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.maximumUsedTransactionIDs, prometheus.GaugeValue, instance.MaximumUsedTransactionIDs, c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.readThroughput, prometheus.GaugeValue, instance.ReadThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.replicaLag, prometheus.GaugeValue, instance.ReplicaLag, c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.replicationSlotDiskUsage, prometheus.GaugeValue, instance.ReplicationSlotDiskUsage, c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.swapUsage, prometheus.GaugeValue, instance.SwapUsage, c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.readIOPS, prometheus.GaugeValue, instance.ReadIOPS, c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.writeIOPS, prometheus.GaugeValue, instance.WriteIOPS, c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.writeThroughput, prometheus.GaugeValue, instance.WriteThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.DBLoad, prometheus.GaugeValue, instance.DBLoad, c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.cpuUtilisation, prometheus.GaugeValue, instance.CPUUtilization, c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.dBLoadCPU, prometheus.GaugeValue, instance.DBLoadCPU, c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.dBLoadNonCPU, prometheus.GaugeValue, instance.DBLoadNonCPU, c.awsAccountID, c.awsRegion, dbidentifier)
+		if instance.DatabaseConnections != nil {
+			ch <- prometheus.MustNewConstMetric(c.databaseConnections, prometheus.GaugeValue, *instance.DatabaseConnections, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.FreeStorageSpace != nil {
+			ch <- prometheus.MustNewConstMetric(c.freeStorageSpace, prometheus.GaugeValue, *instance.FreeStorageSpace, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.FreeableMemory != nil {
+			ch <- prometheus.MustNewConstMetric(c.freeableMemory, prometheus.GaugeValue, *instance.FreeableMemory, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.MaximumUsedTransactionIDs != nil {
+			ch <- prometheus.MustNewConstMetric(c.maximumUsedTransactionIDs, prometheus.GaugeValue, *instance.MaximumUsedTransactionIDs, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.ReadThroughput != nil {
+			ch <- prometheus.MustNewConstMetric(c.readThroughput, prometheus.GaugeValue, *instance.ReadThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.ReplicaLag != nil {
+			ch <- prometheus.MustNewConstMetric(c.replicaLag, prometheus.GaugeValue, *instance.ReplicaLag, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.ReplicationSlotDiskUsage != nil {
+			ch <- prometheus.MustNewConstMetric(c.replicationSlotDiskUsage, prometheus.GaugeValue, *instance.ReplicationSlotDiskUsage, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.SwapUsage != nil {
+			ch <- prometheus.MustNewConstMetric(c.swapUsage, prometheus.GaugeValue, *instance.SwapUsage, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.ReadIOPS != nil {
+			ch <- prometheus.MustNewConstMetric(c.readIOPS, prometheus.GaugeValue, *instance.ReadIOPS, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.WriteIOPS != nil {
+			ch <- prometheus.MustNewConstMetric(c.writeIOPS, prometheus.GaugeValue, *instance.WriteIOPS, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.WriteThroughput != nil {
+			ch <- prometheus.MustNewConstMetric(c.writeThroughput, prometheus.GaugeValue, *instance.WriteThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.DBLoad != nil {
+			ch <- prometheus.MustNewConstMetric(c.DBLoad, prometheus.GaugeValue, *instance.DBLoad, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.CPUUtilization != nil {
+			ch <- prometheus.MustNewConstMetric(c.cpuUtilisation, prometheus.GaugeValue, *instance.CPUUtilization, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.DBLoadCPU != nil {
+			ch <- prometheus.MustNewConstMetric(c.dBLoadCPU, prometheus.GaugeValue, *instance.DBLoadCPU, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.DBLoadNonCPU != nil {
+			ch <- prometheus.MustNewConstMetric(c.dBLoadNonCPU, prometheus.GaugeValue, *instance.DBLoadNonCPU, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
 	}
 
 	// usage metrics

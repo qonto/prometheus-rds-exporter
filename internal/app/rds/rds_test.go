@@ -88,10 +88,12 @@ func TestGetMetrics(t *testing.T) {
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
 
+	var emptyInt64 *int64
+
 	m := metrics.Instances[*rdsInstance.DBInstanceIdentifier]
 	assert.Equal(t, rds.InstanceStatusAvailable, m.Status, "Instance is available")
 	assert.Equal(t, "primary", m.Role, "Should be primary node")
-	assert.Equal(t, int64(0), m.LogFilesSize, "Log file size mismatch")
+	assert.Equal(t, emptyInt64, m.LogFilesSize, "Log file size mismatch")
 
 	assert.Equal(t, converter.GigaBytesToBytes(rdsInstance.AllocatedStorage), m.AllocatedStorage, "Allocated storage mismatch")
 	assert.Equal(t, converter.GigaBytesToBytes(*rdsInstance.MaxAllocatedStorage), m.MaxAllocatedStorage, "Max allocated storage (aka autoscaling) mismatch")
@@ -212,7 +214,7 @@ func TestLogSize(t *testing.T) {
 	metrics, err := client.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
-	assert.Equal(t, expectedLogFilesSize, metrics.Instances[*rdsInstance.DBInstanceIdentifier].LogFilesSize, "Log files size mismatch")
+	assert.Equal(t, aws.Int64(expectedLogFilesSize), metrics.Instances[*rdsInstance.DBInstanceIdentifier].LogFilesSize, "Log files size mismatch")
 }
 
 func TestLogSizeInCreation(t *testing.T) {
@@ -227,8 +229,10 @@ func TestLogSizeInCreation(t *testing.T) {
 	client := rds.NewFetcher(mock)
 	metrics, err := client.GetInstancesMetrics()
 
+	var emptyInt64 *int64
+
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
-	assert.Equal(t, int64(0), metrics.Instances[*rdsInstance.DBInstanceIdentifier].LogFilesSize, "Log files size mismatch")
+	assert.Equal(t, emptyInt64, metrics.Instances[*rdsInstance.DBInstanceIdentifier].LogFilesSize, "Log files size mismatch")
 }
 
 func TestReplicaNode(t *testing.T) {
