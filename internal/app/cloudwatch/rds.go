@@ -27,55 +27,55 @@ type CloudWatchMetrics struct {
 }
 
 type RdsMetrics struct {
-	CPUUtilization            float64
-	DBLoad                    float64
-	DBLoadCPU                 float64
-	DBLoadNonCPU              float64
-	DatabaseConnections       float64
-	FreeStorageSpace          float64
-	FreeableMemory            float64
-	MaximumUsedTransactionIDs float64
-	ReadIOPS                  float64
-	ReadThroughput            float64
-	ReplicaLag                float64
-	ReplicationSlotDiskUsage  float64
-	SwapUsage                 float64
-	WriteIOPS                 float64
-	WriteThroughput           float64
+	CPUUtilization            *float64
+	DBLoad                    *float64
+	DBLoadCPU                 *float64
+	DBLoadNonCPU              *float64
+	DatabaseConnections       *float64
+	FreeStorageSpace          *float64
+	FreeableMemory            *float64
+	MaximumUsedTransactionIDs *float64
+	ReadIOPS                  *float64
+	ReadThroughput            *float64
+	ReplicaLag                *float64
+	ReplicationSlotDiskUsage  *float64
+	SwapUsage                 *float64
+	WriteIOPS                 *float64
+	WriteThroughput           *float64
 }
 
 func (m *RdsMetrics) Update(field string, value float64) error {
 	switch field {
 	case "DBLoad":
-		m.DBLoad = value
+		m.DBLoad = &value
 	case "DBLoadCPU":
-		m.DBLoadCPU = value
+		m.DBLoadCPU = &value
 	case "DBLoadNonCPU":
-		m.DBLoadNonCPU = value
+		m.DBLoadNonCPU = &value
 	case "CPUUtilization":
-		m.CPUUtilization = value
+		m.CPUUtilization = &value
 	case "DatabaseConnections":
-		m.DatabaseConnections = value
+		m.DatabaseConnections = &value
 	case "FreeStorageSpace":
-		m.FreeStorageSpace = value
+		m.FreeStorageSpace = &value
 	case "FreeableMemory":
-		m.FreeableMemory = value
+		m.FreeableMemory = &value
 	case "SwapUsage":
-		m.SwapUsage = value
+		m.SwapUsage = &value
 	case "WriteIOPS":
-		m.WriteIOPS = value
+		m.WriteIOPS = &value
 	case "ReadIOPS":
-		m.ReadIOPS = value
+		m.ReadIOPS = &value
 	case "ReplicaLag":
-		m.ReplicaLag = value
+		m.ReplicaLag = &value
 	case "ReplicationSlotDiskUsage":
-		m.ReplicationSlotDiskUsage = value
+		m.ReplicationSlotDiskUsage = &value
 	case "MaximumUsedTransactionIDs":
-		m.MaximumUsedTransactionIDs = value
+		m.MaximumUsedTransactionIDs = &value
 	case "ReadThroughput":
-		m.ReadThroughput = value
+		m.ReadThroughput = &value
 	case "WriteThroughput":
-		m.WriteThroughput = value
+		m.WriteThroughput = &value
 	default:
 		return fmt.Errorf("can't process '%s' metrics: %w", field, errUnknownMetric)
 	}
