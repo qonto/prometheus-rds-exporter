@@ -145,6 +145,7 @@ Configuration could be defined in `.prometheus-rds-exporter.yaml` or environment
 | --- | --- | --- |
 | aws-assume-role-arn | AWS IAM ARN role to assume to fetch metrics | |
 | aws-assume-role-session | AWS assume role session name | prometheus-rds-exporter |
+| collect-quotas | Collect AWS RDS quotas (AWS quotas API) | true |
 | debug | Enable debug mode | |
 | listen-address | Address to listen on for web interface | :9043 |
 | log-format | Log format (`text` or `json`) | json |

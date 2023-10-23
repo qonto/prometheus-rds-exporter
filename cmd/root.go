@@ -35,6 +35,7 @@ type exporterConfig struct {
 	ListenAddress        string `mapstructure:"listen-address"`
 	AWSAssumeRoleSession string `mapstructure:"aws-assume-role-session"`
 	AWSAssumeRoleArn     string `mapstructure:"aws-assume-role-arn"`
+	CollectQuotas        bool   `mapstructure:"collect-quotas"`
 }
 
 func run(configuration exporterConfig) {
@@ -61,7 +62,11 @@ func run(configuration exporterConfig) {
 	cloudWatchClient := cloudwatch.NewFromConfig(cfg)
 	servicequotasClient := servicequotas.NewFromConfig(cfg)
 
-	collector := exporter.NewCollector(*logger, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient)
+	collectorConfiguration := exporter.Configuration{
+		CollectQuotas: configuration.CollectQuotas,
+	}
+
+	collector := exporter.NewCollector(*logger, collectorConfiguration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient)
 
 	prometheus.MustRegister(collector)
 
@@ -102,6 +107,7 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().StringP("listen-address", "", ":9043", "Address to listen on for web interface")
 	cmd.Flags().StringP("aws-assume-role-arn", "", "", "AWS IAM ARN role to assume to fetch metrics")
 	cmd.Flags().StringP("aws-assume-role-session", "", "prometheus-rds-exporter", "AWS assume role session name")
+	cmd.Flags().BoolP("collect-quotas", "", true, "Collect AWS RDS quotas")
 
 	err := viper.BindPFlag("debug", cmd.Flags().Lookup("debug"))
 	if err != nil {
@@ -131,6 +137,11 @@ func NewRootCommand() (*cobra.Command, error) {
 	err = viper.BindPFlag("aws-assume-role-session", cmd.Flags().Lookup("aws-assume-role-session"))
 	if err != nil {
 		return cmd, fmt.Errorf("failed to bind 'aws-assume-role-session' parameter: %w", err)
+	}
+
+	err = viper.BindPFlag("collect-quotas", cmd.Flags().Lookup("collect-quotas"))
+	if err != nil {
+		return cmd, fmt.Errorf("failed to bind 'collect-quotas' parameter: %w", err)
 	}
 
 	return cmd, nil
