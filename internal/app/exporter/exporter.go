@@ -22,6 +22,7 @@ const (
 
 type Configuration struct {
 	CollectQuotas bool
+	CollectUsages bool
 }
 
 type counters struct {
@@ -273,8 +274,10 @@ func (c *rdsCollector) fetchMetrics() error {
 	}
 
 	// Fetch usages metrics
-	go c.getUsagesMetrics(c.cloudWatchClient)
-	c.wg.Add(1)
+	if c.configuration.CollectUsages {
+		go c.getUsagesMetrics(c.cloudWatchClient)
+		c.wg.Add(1)
+	}
 
 	// Fetch RDS instances metrics
 	c.logger.Info("get RDS metrics")
@@ -477,10 +480,12 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	// usage metrics
-	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.usageAPIcalls, c.awsAccountID, c.awsRegion, "usage")
-	ch <- prometheus.MustNewConstMetric(c.usageAllocatedStorage, prometheus.GaugeValue, c.metrics.cloudWatchUsage.AllocatedStorage, c.awsAccountID, c.awsRegion)
-	ch <- prometheus.MustNewConstMetric(c.usageDBInstances, prometheus.GaugeValue, c.metrics.cloudWatchUsage.DBInstances, c.awsAccountID, c.awsRegion)
-	ch <- prometheus.MustNewConstMetric(c.usageManualSnapshots, prometheus.GaugeValue, c.metrics.cloudWatchUsage.ManualSnapshots, c.awsAccountID, c.awsRegion)
+	if c.configuration.CollectUsages {
+		ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.usageAPIcalls, c.awsAccountID, c.awsRegion, "usage")
+		ch <- prometheus.MustNewConstMetric(c.usageAllocatedStorage, prometheus.GaugeValue, c.metrics.cloudWatchUsage.AllocatedStorage, c.awsAccountID, c.awsRegion)
+		ch <- prometheus.MustNewConstMetric(c.usageDBInstances, prometheus.GaugeValue, c.metrics.cloudWatchUsage.DBInstances, c.awsAccountID, c.awsRegion)
+		ch <- prometheus.MustNewConstMetric(c.usageManualSnapshots, prometheus.GaugeValue, c.metrics.cloudWatchUsage.ManualSnapshots, c.awsAccountID, c.awsRegion)
+	}
 
 	// EC2 metrics
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.ec2APIcalls, c.awsAccountID, c.awsRegion, "ec2")

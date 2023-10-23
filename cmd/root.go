@@ -36,6 +36,8 @@ type exporterConfig struct {
 	AWSAssumeRoleSession string `mapstructure:"aws-assume-role-session"`
 	AWSAssumeRoleArn     string `mapstructure:"aws-assume-role-arn"`
 	CollectQuotas        bool   `mapstructure:"collect-quotas"`
+	CollectLogsSize      bool   `mapstructure:"collect-logs-size"`
+	CollectUsages        bool   `mapstructure:"collect-usages"`
 }
 
 func run(configuration exporterConfig) {
@@ -64,6 +66,7 @@ func run(configuration exporterConfig) {
 
 	collectorConfiguration := exporter.Configuration{
 		CollectQuotas: configuration.CollectQuotas,
+		CollectUsages: configuration.CollectUsages,
 	}
 
 	collector := exporter.NewCollector(*logger, collectorConfiguration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient)
@@ -108,6 +111,7 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().StringP("aws-assume-role-arn", "", "", "AWS IAM ARN role to assume to fetch metrics")
 	cmd.Flags().StringP("aws-assume-role-session", "", "prometheus-rds-exporter", "AWS assume role session name")
 	cmd.Flags().BoolP("collect-quotas", "", true, "Collect AWS RDS quotas")
+	cmd.Flags().BoolP("collect-usages", "", true, "Collect AWS RDS usages")
 
 	err := viper.BindPFlag("debug", cmd.Flags().Lookup("debug"))
 	if err != nil {
@@ -142,6 +146,11 @@ func NewRootCommand() (*cobra.Command, error) {
 	err = viper.BindPFlag("collect-quotas", cmd.Flags().Lookup("collect-quotas"))
 	if err != nil {
 		return cmd, fmt.Errorf("failed to bind 'collect-quotas' parameter: %w", err)
+	}
+
+	err = viper.BindPFlag("collect-usages", cmd.Flags().Lookup("collect-usages"))
+	if err != nil {
+		return cmd, fmt.Errorf("failed to bind 'collect-usages' parameter: %w", err)
 	}
 
 	return cmd, nil
