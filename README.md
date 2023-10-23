@@ -145,6 +145,7 @@ Configuration could be defined in `.prometheus-rds-exporter.yaml` or environment
 | --- | --- | --- |
 | aws-assume-role-arn | AWS IAM ARN role to assume to fetch metrics | |
 | aws-assume-role-session | AWS assume role session name | prometheus-rds-exporter |
+| collect-instances-metrics | Collect AWS instances metrics (AWS Cloudwatch API) | true |
 | collect-instance-types | Collect AWS instance types information (AWS EC2 API) | true |
 | collect-logs-size | Collect AWS instances logs size (AWS RDS API) | true |
 | collect-maintenances | Collect AWS instances maintenances (AWS RDS API) | true |

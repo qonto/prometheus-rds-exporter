@@ -21,11 +21,12 @@ const (
 )
 
 type Configuration struct {
-	CollectQuotas        bool
-	CollectUsages        bool
-	CollectInstanceTypes bool
-	CollectLogsSize      bool
-	CollectMaintenances  bool
+	CollectInstanceMetrics bool
+	CollectInstanceTypes   bool
+	CollectLogsSize        bool
+	CollectMaintenances    bool
+	CollectQuotas          bool
+	CollectUsages          bool
 }
 
 type counters struct {
@@ -309,8 +310,10 @@ func (c *rdsCollector) fetchMetrics() error {
 	}
 
 	// Fetch Cloudwatch metrics for instances
-	go c.getCloudwatchMetrics(c.cloudWatchClient, instanceIdentifiers)
-	c.wg.Add(1)
+	if c.configuration.CollectInstanceMetrics {
+		go c.getCloudwatchMetrics(c.cloudWatchClient, instanceIdentifiers)
+		c.wg.Add(1)
+	}
 
 	// Wait for all go routines to finish
 	c.wg.Wait()

@@ -29,17 +29,18 @@ const (
 var cfgFile string
 
 type exporterConfig struct {
-	Debug                bool   `mapstructure:"debug"`
-	LogFormat            string `mapstructure:"log-format"`
-	MetricPath           string `mapstructure:"metrics-path"`
-	ListenAddress        string `mapstructure:"listen-address"`
-	AWSAssumeRoleSession string `mapstructure:"aws-assume-role-session"`
-	AWSAssumeRoleArn     string `mapstructure:"aws-assume-role-arn"`
-	CollectInstanceTypes bool   `mapstructure:"collect-instances-types"`
-	CollectLogsSize      bool   `mapstructure:"collect-logs-size"`
-	CollectMaintenances  bool   `mapstructure:"collect-maintenances"`
-	CollectQuotas        bool   `mapstructure:"collect-quotas"`
-	CollectUsages        bool   `mapstructure:"collect-usages"`
+	Debug                  bool   `mapstructure:"debug"`
+	LogFormat              string `mapstructure:"log-format"`
+	MetricPath             string `mapstructure:"metrics-path"`
+	ListenAddress          string `mapstructure:"listen-address"`
+	AWSAssumeRoleSession   string `mapstructure:"aws-assume-role-session"`
+	AWSAssumeRoleArn       string `mapstructure:"aws-assume-role-arn"`
+	CollectInstanceMetrics bool   `mapstructure:"collect-instance-metrics"`
+	CollectInstanceTypes   bool   `mapstructure:"collect-instance-types"`
+	CollectLogsSize        bool   `mapstructure:"collect-logs-size"`
+	CollectMaintenances    bool   `mapstructure:"collect-maintenances"`
+	CollectQuotas          bool   `mapstructure:"collect-quotas"`
+	CollectUsages          bool   `mapstructure:"collect-usages"`
 }
 
 func run(configuration exporterConfig) {
@@ -67,11 +68,12 @@ func run(configuration exporterConfig) {
 	servicequotasClient := servicequotas.NewFromConfig(cfg)
 
 	collectorConfiguration := exporter.Configuration{
-		CollectLogsSize:      configuration.CollectLogsSize,
-		CollectMaintenances:  configuration.CollectMaintenances,
-		CollectQuotas:        configuration.CollectQuotas,
-		CollectUsages:        configuration.CollectUsages,
-		CollectInstanceTypes: configuration.CollectInstanceTypes,
+		CollectInstanceMetrics: configuration.CollectInstanceMetrics,
+		CollectInstanceTypes:   configuration.CollectInstanceTypes,
+		CollectLogsSize:        configuration.CollectLogsSize,
+		CollectMaintenances:    configuration.CollectMaintenances,
+		CollectQuotas:          configuration.CollectQuotas,
+		CollectUsages:          configuration.CollectUsages,
 	}
 
 	collector := exporter.NewCollector(*logger, collectorConfiguration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient)
@@ -116,6 +118,7 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().StringP("aws-assume-role-arn", "", "", "AWS IAM ARN role to assume to fetch metrics")
 	cmd.Flags().StringP("aws-assume-role-session", "", "prometheus-rds-exporter", "AWS assume role session name")
 	cmd.Flags().BoolP("collect-instance-types", "", true, "Collect AWS instance types")
+	cmd.Flags().BoolP("collect-instance-metrics", "", true, "Collect AWS instance metrics")
 	cmd.Flags().BoolP("collect-logs-size", "", true, "Collect AWS instances logs size")
 	cmd.Flags().BoolP("collect-maintenances", "", true, "Collect AWS instances maintenances")
 	cmd.Flags().BoolP("collect-quotas", "", true, "Collect AWS RDS quotas")
@@ -149,6 +152,11 @@ func NewRootCommand() (*cobra.Command, error) {
 	err = viper.BindPFlag("aws-assume-role-session", cmd.Flags().Lookup("aws-assume-role-session"))
 	if err != nil {
 		return cmd, fmt.Errorf("failed to bind 'aws-assume-role-session' parameter: %w", err)
+	}
+
+	err = viper.BindPFlag("collect-instance-metrics", cmd.Flags().Lookup("collect-instance-metrics"))
+	if err != nil {
+		return cmd, fmt.Errorf("failed to bind 'collect-instance-metrics' parameter: %w", err)
 	}
 
 	err = viper.BindPFlag("collect-instance-types", cmd.Flags().Lookup("collect-instance-types"))
