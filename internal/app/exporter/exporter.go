@@ -21,10 +21,11 @@ const (
 )
 
 type Configuration struct {
-	CollectQuotas       bool
-	CollectUsages       bool
-	CollectLogsSize     bool
-	CollectMaintenances bool
+	CollectQuotas        bool
+	CollectUsages        bool
+	CollectInstanceTypes bool
+	CollectLogsSize      bool
+	CollectMaintenances  bool
 }
 
 type counters struct {
@@ -302,7 +303,7 @@ func (c *rdsCollector) fetchMetrics() error {
 	instanceIdentifiers, instanceTypes := getUniqTypeAndIdentifiers(rdsMetrics.Instances)
 
 	// Fetch EC2 Metrics for instance types
-	if len(instanceTypes) > 0 {
+	if c.configuration.CollectInstanceTypes && len(instanceTypes) > 0 {
 		go c.getEC2Metrics(c.EC2Client, instanceTypes)
 		c.wg.Add(1)
 	}

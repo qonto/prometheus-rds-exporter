@@ -35,6 +35,7 @@ type exporterConfig struct {
 	ListenAddress        string `mapstructure:"listen-address"`
 	AWSAssumeRoleSession string `mapstructure:"aws-assume-role-session"`
 	AWSAssumeRoleArn     string `mapstructure:"aws-assume-role-arn"`
+	CollectInstanceTypes bool   `mapstructure:"collect-instances-types"`
 	CollectLogsSize      bool   `mapstructure:"collect-logs-size"`
 	CollectMaintenances  bool   `mapstructure:"collect-maintenances"`
 	CollectQuotas        bool   `mapstructure:"collect-quotas"`
@@ -66,10 +67,11 @@ func run(configuration exporterConfig) {
 	servicequotasClient := servicequotas.NewFromConfig(cfg)
 
 	collectorConfiguration := exporter.Configuration{
-		CollectLogsSize:     configuration.CollectLogsSize,
-		CollectMaintenances: configuration.CollectMaintenances,
-		CollectQuotas:       configuration.CollectQuotas,
-		CollectUsages:       configuration.CollectUsages,
+		CollectLogsSize:      configuration.CollectLogsSize,
+		CollectMaintenances:  configuration.CollectMaintenances,
+		CollectQuotas:        configuration.CollectQuotas,
+		CollectUsages:        configuration.CollectUsages,
+		CollectInstanceTypes: configuration.CollectInstanceTypes,
 	}
 
 	collector := exporter.NewCollector(*logger, collectorConfiguration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient)
@@ -113,6 +115,7 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().StringP("listen-address", "", ":9043", "Address to listen on for web interface")
 	cmd.Flags().StringP("aws-assume-role-arn", "", "", "AWS IAM ARN role to assume to fetch metrics")
 	cmd.Flags().StringP("aws-assume-role-session", "", "prometheus-rds-exporter", "AWS assume role session name")
+	cmd.Flags().BoolP("collect-instance-types", "", true, "Collect AWS instance types")
 	cmd.Flags().BoolP("collect-logs-size", "", true, "Collect AWS instances logs size")
 	cmd.Flags().BoolP("collect-maintenances", "", true, "Collect AWS instances maintenances")
 	cmd.Flags().BoolP("collect-quotas", "", true, "Collect AWS RDS quotas")
@@ -146,6 +149,11 @@ func NewRootCommand() (*cobra.Command, error) {
 	err = viper.BindPFlag("aws-assume-role-session", cmd.Flags().Lookup("aws-assume-role-session"))
 	if err != nil {
 		return cmd, fmt.Errorf("failed to bind 'aws-assume-role-session' parameter: %w", err)
+	}
+
+	err = viper.BindPFlag("collect-instance-types", cmd.Flags().Lookup("collect-instance-types"))
+	if err != nil {
+		return cmd, fmt.Errorf("failed to bind 'collect-instance-types' parameter: %w", err)
 	}
 
 	err = viper.BindPFlag("collect-quotas", cmd.Flags().Lookup("collect-quotas"))
