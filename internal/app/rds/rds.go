@@ -14,7 +14,8 @@ import (
 )
 
 type Configuration struct {
-	CollectLogsSize bool
+	CollectLogsSize     bool
+	CollectMaintenances bool
 }
 
 type Metrics struct {
@@ -59,6 +60,7 @@ const (
 	InstanceStatusCreating                 int    = -3
 	InstanceStatusDeleting                 int    = -4
 	NoPendingMaintenanceOperation          string = "no"
+	UnknownMaintenanceOperation            string = "unknown"
 	UnscheduledPendingMaintenanceOperation string = "pending"
 	AutoAppliedPendingMaintenanceOperation string = "auto-applied"
 	ForcedPendingMaintenanceOperation      string = "forced"
@@ -153,9 +155,15 @@ func (r *RDSFetcher) getPendingMaintenances() (map[string]string, error) {
 func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 	metrics := make(map[string]RdsInstanceMetrics)
 
-	instanceMaintenances, err := r.getPendingMaintenances()
-	if err != nil {
-		return Metrics{}, fmt.Errorf("can't get RDS maintenances: %w", err)
+	var err error
+
+	var instanceMaintenances map[string]string
+
+	if r.configuration.CollectMaintenances {
+		instanceMaintenances, err = r.getPendingMaintenances()
+		if err != nil {
+			return Metrics{}, fmt.Errorf("can't get RDS maintenances: %w", err)
+		}
 	}
 
 	input := &aws_rds.DescribeDBInstancesInput{}
@@ -211,8 +219,12 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 	}
 
 	pendingMaintenanceAction := NoPendingMaintenanceOperation
-	if maintenanceMode, isFound := instanceMaintenances[*dbIdentifier]; isFound {
-		pendingMaintenanceAction = maintenanceMode
+	if !r.configuration.CollectMaintenances {
+		pendingMaintenanceAction = UnknownMaintenanceOperation
+	} else {
+		if maintenanceMode, isFound := instanceMaintenances[*dbIdentifier]; isFound {
+			pendingMaintenanceAction = maintenanceMode
+		}
 	}
 
 	var logFilesSize *int64

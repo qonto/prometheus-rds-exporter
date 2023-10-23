@@ -36,6 +36,7 @@ type exporterConfig struct {
 	AWSAssumeRoleSession string `mapstructure:"aws-assume-role-session"`
 	AWSAssumeRoleArn     string `mapstructure:"aws-assume-role-arn"`
 	CollectLogsSize      bool   `mapstructure:"collect-logs-size"`
+	CollectMaintenances  bool   `mapstructure:"collect-maintenances"`
 	CollectQuotas        bool   `mapstructure:"collect-quotas"`
 	CollectUsages        bool   `mapstructure:"collect-usages"`
 }
@@ -65,9 +66,10 @@ func run(configuration exporterConfig) {
 	servicequotasClient := servicequotas.NewFromConfig(cfg)
 
 	collectorConfiguration := exporter.Configuration{
-		CollectLogsSize: configuration.CollectLogsSize,
-		CollectQuotas:   configuration.CollectQuotas,
-		CollectUsages:   configuration.CollectUsages,
+		CollectLogsSize:     configuration.CollectLogsSize,
+		CollectMaintenances: configuration.CollectMaintenances,
+		CollectQuotas:       configuration.CollectQuotas,
+		CollectUsages:       configuration.CollectUsages,
 	}
 
 	collector := exporter.NewCollector(*logger, collectorConfiguration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient)
@@ -112,6 +114,7 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().StringP("aws-assume-role-arn", "", "", "AWS IAM ARN role to assume to fetch metrics")
 	cmd.Flags().StringP("aws-assume-role-session", "", "prometheus-rds-exporter", "AWS assume role session name")
 	cmd.Flags().BoolP("collect-logs-size", "", true, "Collect AWS instances logs size")
+	cmd.Flags().BoolP("collect-maintenances", "", true, "Collect AWS instances maintenances")
 	cmd.Flags().BoolP("collect-quotas", "", true, "Collect AWS RDS quotas")
 	cmd.Flags().BoolP("collect-usages", "", true, "Collect AWS RDS usages")
 
@@ -158,6 +161,11 @@ func NewRootCommand() (*cobra.Command, error) {
 	err = viper.BindPFlag("collect-logs-size", cmd.Flags().Lookup("collect-logs-size"))
 	if err != nil {
 		return cmd, fmt.Errorf("failed to bind 'collect-logs-size' parameter: %w", err)
+	}
+
+	err = viper.BindPFlag("collect-maintenances", cmd.Flags().Lookup("collect-maintenances"))
+	if err != nil {
+		return cmd, fmt.Errorf("failed to bind 'collect-maintenances' parameter: %w", err)
 	}
 
 	return cmd, nil

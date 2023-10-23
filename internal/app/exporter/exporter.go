@@ -21,9 +21,10 @@ const (
 )
 
 type Configuration struct {
-	CollectQuotas   bool
-	CollectUsages   bool
-	CollectLogsSize bool
+	CollectQuotas       bool
+	CollectUsages       bool
+	CollectLogsSize     bool
+	CollectMaintenances bool
 }
 
 type counters struct {
@@ -284,7 +285,8 @@ func (c *rdsCollector) fetchMetrics() error {
 	c.logger.Info("get RDS metrics")
 
 	rdsFetcher := rds.NewFetcher(c.rdsClient, rds.Configuration{
-		CollectLogsSize: c.configuration.CollectLogsSize,
+		CollectLogsSize:     c.configuration.CollectLogsSize,
+		CollectMaintenances: c.configuration.CollectMaintenances,
 	})
 
 	rdsMetrics, err := rdsFetcher.GetInstancesMetrics()
