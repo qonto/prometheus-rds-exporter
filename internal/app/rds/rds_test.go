@@ -83,7 +83,8 @@ func TestGetMetrics(t *testing.T) {
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
 	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
-	client := rds.NewFetcher(mock)
+	configuration := rds.Configuration{CollectLogsSize: true}
+	client := rds.NewFetcher(mock, configuration)
 	metrics, err := client.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -107,7 +108,6 @@ func TestGetMetrics(t *testing.T) {
 	assert.Equal(t, rdsInstance.PubliclyAccessible, m.PubliclyAccessible, "PubliclyAccessible mismatch")
 	assert.Equal(t, *rdsInstance.DbiResourceId, m.DbiResourceID, "DbiResourceId mismatch")
 	assert.Equal(t, *rdsInstance.DBInstanceClass, m.DBInstanceClass, "DBInstanceIdentifier mismatch")
-	assert.Equal(t, *rdsInstance.DBInstanceClass, m.DBInstanceClass, "DBInstanceIdentifier mismatch")
 }
 
 func TestGP2StorageType(t *testing.T) {
@@ -125,7 +125,8 @@ func TestGP2StorageType(t *testing.T) {
 
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallDisk, *rdsInstanceWithMediumDisk, *rdsInstanceWithLargeDisk}}
 	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
-	client := rds.NewFetcher(mock)
+	configuration := rds.Configuration{}
+	client := rds.NewFetcher(mock, configuration)
 	metrics, err := client.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -152,7 +153,8 @@ func TestGP3StorageType(t *testing.T) {
 
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallDisk, *rdsInstanceWithLargeDisk}}
 	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
-	client := rds.NewFetcher(mock)
+	configuration := rds.Configuration{}
+	client := rds.NewFetcher(mock, configuration)
 	metrics, err := client.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -179,7 +181,8 @@ func TestIO1StorageType(t *testing.T) {
 
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallIOPS, *rdsInstanceWithMediumIOPS, *rdsInstanceWithLargeIOPS, *rdsInstanceWithHighIOPS}}
 	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
-	client := rds.NewFetcher(mock)
+	configuration := rds.Configuration{}
+	client := rds.NewFetcher(mock, configuration)
 	metrics, err := client.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -210,7 +213,8 @@ func TestLogSize(t *testing.T) {
 		DescribeDBInstancesOutput: mockDescribeDBInstancesOutput,
 		DescribeDBLogFilesOutput:  mockDescribeDBLogFilesOutput,
 	}
-	client := rds.NewFetcher(mock)
+	configuration := rds.Configuration{CollectLogsSize: true}
+	client := rds.NewFetcher(mock, configuration)
 	metrics, err := client.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -226,7 +230,8 @@ func TestLogSizeInCreation(t *testing.T) {
 		DescribeDBInstancesOutput:     mockDescribeDBInstancesOutput,
 		DescribeDBLogFilesOutputError: &aws_rds_types.DBInstanceNotFoundFault{},
 	}
-	client := rds.NewFetcher(mock)
+	configuration := rds.Configuration{CollectLogsSize: true}
+	client := rds.NewFetcher(mock, configuration)
 	metrics, err := client.GetInstancesMetrics()
 
 	var emptyInt64 *int64
@@ -244,7 +249,8 @@ func TestReplicaNode(t *testing.T) {
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
 	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
-	client := rds.NewFetcher(mock)
+	configuration := rds.Configuration{CollectLogsSize: true}
+	client := rds.NewFetcher(mock, configuration)
 	metrics, err := client.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
