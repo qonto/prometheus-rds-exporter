@@ -280,6 +280,7 @@ func TestGetDBInstanceStatusCode(t *testing.T) {
 		{input: "creating", want: rds.InstanceStatusCreating},
 		{input: "deleting", want: rds.InstanceStatusDeleting},
 		{input: "future", want: rds.InstanceStatusUnknown},
+		{input: "modifying", want: rds.InstanceStatusModifying},
 		{input: "stopped", want: rds.InstanceStatusStopped},
 		{input: "stopping", want: rds.InstanceStatusStopping},
 		{input: "unknown", want: rds.InstanceStatusUnknown},
