@@ -214,8 +214,17 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 	}
 
 	pendingModifiedValues := false
-	if !reflect.DeepEqual(dbInstance.PendingModifiedValues, &aws_rds_types.PendingModifiedValues{}) {
+
+	// PendingModifiedValues reports only instance changes
+	if dbInstance.PendingModifiedValues != nil && !reflect.DeepEqual(dbInstance.PendingModifiedValues, &aws_rds_types.PendingModifiedValues{}) {
 		pendingModifiedValues = true
+	}
+
+	// Report pending modified values if at lease one parameter group is not applied
+	for _, parameterGroup := range dbInstance.DBParameterGroups {
+		if *parameterGroup.ParameterApplyStatus != "in-sync" {
+			pendingModifiedValues = true
+		}
 	}
 
 	pendingMaintenanceAction := NoPendingMaintenanceOperation

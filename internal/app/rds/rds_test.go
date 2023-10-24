@@ -292,3 +292,48 @@ func TestGetDBInstanceStatusCode(t *testing.T) {
 		}
 	}
 }
+
+func TestPendingModification(t *testing.T) {
+	// Mock RDS instance
+	rdsInstance := newRdsInstance()
+	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
+
+	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	configuration := rds.Configuration{}
+	client := rds.NewFetcher(mock, configuration)
+	metrics, err := client.GetInstancesMetrics()
+
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+	assert.Equal(t, false, metrics.Instances[*rdsInstance.DBInstanceIdentifier].PendingModifiedValues, "Should not have any pending modification")
+}
+
+func TestPendingModificationDueToInstanceModification(t *testing.T) {
+	// Mock RDS instance
+	rdsInstance := newRdsInstance()
+	pendingModifications := aws_rds_types.PendingModifiedValues{AllocatedStorage: aws.Int32(int32(42))}
+	rdsInstance.PendingModifiedValues = &pendingModifications
+	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
+
+	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	configuration := rds.Configuration{}
+	client := rds.NewFetcher(mock, configuration)
+	metrics, err := client.GetInstancesMetrics()
+
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+	assert.Equal(t, true, metrics.Instances[*rdsInstance.DBInstanceIdentifier].PendingModifiedValues, "Should have allocated storage pending modification")
+}
+
+func TestPendingModificationDueToUnappliedParameterGroup(t *testing.T) {
+	// Mock RDS instance
+	rdsInstance := newRdsInstance()
+	rdsInstance.DBParameterGroups = []aws_rds_types.DBParameterGroupStatus{{DBParameterGroupName: aws.String("my_parameter_group"), ParameterApplyStatus: aws.String("pending-reboot")}}
+	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
+
+	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	configuration := rds.Configuration{}
+	client := rds.NewFetcher(mock, configuration)
+	metrics, err := client.GetInstancesMetrics()
+
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+	assert.Equal(t, true, metrics.Instances[*rdsInstance.DBInstanceIdentifier].PendingModifiedValues, "Should have pending modification")
+}
