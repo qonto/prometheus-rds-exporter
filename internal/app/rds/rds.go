@@ -13,6 +13,11 @@ import (
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 )
 
+type Configuration struct {
+	CollectLogsSize     bool
+	CollectMaintenances bool
+}
+
 type Metrics struct {
 	Instances map[string]RdsInstanceMetrics
 }
@@ -55,6 +60,7 @@ const (
 	InstanceStatusCreating                 int    = -3
 	InstanceStatusDeleting                 int    = -4
 	NoPendingMaintenanceOperation          string = "no"
+	UnknownMaintenanceOperation            string = "unknown"
 	UnscheduledPendingMaintenanceOperation string = "pending"
 	AutoAppliedPendingMaintenanceOperation string = "auto-applied"
 	ForcedPendingMaintenanceOperation      string = "forced"
@@ -92,15 +98,17 @@ type RDSClient interface {
 	DescribeDBLogFiles(context.Context, *aws_rds.DescribeDBLogFilesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBLogFilesOutput, error)
 }
 
-func NewFetcher(client RDSClient) RDSFetcher {
+func NewFetcher(client RDSClient, configuration Configuration) RDSFetcher {
 	return RDSFetcher{
-		client: client,
+		client:        client,
+		configuration: configuration,
 	}
 }
 
 type RDSFetcher struct {
-	client     RDSClient
-	statistics Statistics
+	client        RDSClient
+	statistics    Statistics
+	configuration Configuration
 }
 
 func (r *RDSFetcher) GetStatistics() Statistics {
@@ -147,9 +155,15 @@ func (r *RDSFetcher) getPendingMaintenances() (map[string]string, error) {
 func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 	metrics := make(map[string]RdsInstanceMetrics)
 
-	instanceMaintenances, err := r.getPendingMaintenances()
-	if err != nil {
-		return Metrics{}, fmt.Errorf("can't get RDS maintenances: %w", err)
+	var err error
+
+	var instanceMaintenances map[string]string
+
+	if r.configuration.CollectMaintenances {
+		instanceMaintenances, err = r.getPendingMaintenances()
+		if err != nil {
+			return Metrics{}, fmt.Errorf("can't get RDS maintenances: %w", err)
+		}
 	}
 
 	input := &aws_rds.DescribeDBInstancesInput{}
@@ -205,13 +219,23 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 	}
 
 	pendingMaintenanceAction := NoPendingMaintenanceOperation
-	if maintenanceMode, isFound := instanceMaintenances[*dbIdentifier]; isFound {
-		pendingMaintenanceAction = maintenanceMode
+	if !r.configuration.CollectMaintenances {
+		pendingMaintenanceAction = UnknownMaintenanceOperation
+	} else {
+		if maintenanceMode, isFound := instanceMaintenances[*dbIdentifier]; isFound {
+			pendingMaintenanceAction = maintenanceMode
+		}
 	}
 
-	logFilesSize, err := r.getLogFilesSize(*dbIdentifier)
-	if err != nil {
-		return RdsInstanceMetrics{}, fmt.Errorf("can't get log files size for %d: %w", dbIdentifier, err)
+	var logFilesSize *int64
+
+	if r.configuration.CollectLogsSize {
+		var err error
+		logFilesSize, err = r.getLogFilesSize(*dbIdentifier)
+
+		if err != nil {
+			return RdsInstanceMetrics{}, fmt.Errorf("can't get log files size for %d: %w", dbIdentifier, err)
+		}
 	}
 
 	role, sourceDBInstanceIdentifier := getRoleInCluster(&dbInstance)
