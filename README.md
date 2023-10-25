@@ -120,7 +120,7 @@ Grafana dashoards are available on Grafana labs:
 
 ![Instances overview](docs/screenshots/instances-overview.png)
 
-<a href="https://grafana.com/grafana/dashboards/19647/">RDS instances overview</a> (ID `19647`)
+<a href="https://grafana.com/grafana/dashboards/19647/">RDS instances</a> (ID `19647`)
 </td>
 <td>
 
