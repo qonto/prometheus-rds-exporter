@@ -58,7 +58,11 @@ metrics-list:
 debian-test:
 	#GORELEASER_CURRENT_TAG=0.0.0 goreleaser release --clean --skip-publish --skip-docker --snapshot
 	docker build configs/debian/tests -t test
-	docker run -it -v ./dist/prometheus-rds-exporter_0.0.1~next_$(ARCHITECTURE).deb:/mnt/prometheus-rds-exporter.deb test
+	docker run -v ./dist/prometheus-rds-exporter_0.0.1~next_$(ARCHITECTURE).deb:/mnt/prometheus-rds-exporter.deb test
+
+debian-test-ci:
+	docker build configs/debian/tests -t test
+	docker run -v ./dist/prometheus-rds-exporter_0.0.1~next_amd64.deb:/mnt/prometheus-rds-exporter.deb test
 
 .PHONY: all-tests
 all-tests: test kubeconform helm-test goreleaser-check
