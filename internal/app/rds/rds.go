@@ -54,6 +54,7 @@ const (
 	InstanceStatusAvailable                int    = 1
 	InstanceStatusBackingUp                int    = 2
 	InstanceStatusStarting                 int    = 3
+	InstanceStatusModifying                int    = 4
 	InstanceStatusStopped                  int    = 0
 	InstanceStatusUnknown                  int    = -1
 	InstanceStatusStopping                 int    = -2
@@ -86,6 +87,7 @@ var instanceStatuses = map[string]int{
 	"backing-up": InstanceStatusBackingUp,
 	"creating":   InstanceStatusCreating,
 	"deleting":   InstanceStatusDeleting,
+	"modifying":  InstanceStatusModifying,
 	"starting":   InstanceStatusStarting,
 	"stopped":    InstanceStatusStopped,
 	"stopping":   InstanceStatusStopping,
