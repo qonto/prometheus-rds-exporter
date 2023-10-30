@@ -20,6 +20,32 @@ builds:
       - amd64
       - arm64
 
+nfpms:
+  - file_name_template: "{{ .ConventionalFileName }}"
+    homepage: https://github.com/qonto/prometheus-rds-exporter
+    description: Prometheus exporter for AWS RDS
+    maintainer: SRE Team <opensource+sre@qonto.com>
+    vendor: Qonto
+    section: misc
+    license: MIT
+    formats:
+      - deb
+    dependencies:
+      - adduser
+    recommends:
+      - awscli
+    contents:
+      - src: configs/prometheus-rds-exporter/prometheus-rds-exporter.yaml
+        dst: /usr/share/prometheus-rds-exporter/prometheus-rds-exporter.yaml.sample
+        type: config
+      - src: configs/debian/prometheus-rds-exporter.service
+        dst: /etc/systemd/system/prometheus-rds-exporter.service
+        type: config
+    scripts:
+      postinstall: "configs/debian/postinstall.sh"
+      preremove: "configs/debian/preremove.sh"
+      postremove: "configs/debian/postremove.sh"
+
 archives:
   - format: tar.gz
     # this name template makes the OS and Arch compatible with the results of uname.
@@ -34,6 +60,9 @@ archives:
     format_overrides:
     - goos: windows
       format: zip
+    files:
+      - src: configs/prometheus-rds-exporter/prometheus-rds-exporter.yaml
+        dst: prometheus-rds-exporter.yaml
 
 checksum:
   name_template: 'checksums.txt'

@@ -1,0 +1,15 @@
+[Unit]
+Description=Prometheus RDS exporter
+After=network-online.target
+Documentation=https://github.com/qonto/prometheus-rds-exporter
+
+[Service]
+Restart=on-failure
+User=prometheus-rds-exporter
+Group=prometheus-rds-exporter
+Type=simple
+ExecStart=/usr/bin/prometheus-rds-exporter
+TimeoutStopSec=20s
+
+[Install]
+WantedBy=multi-user.target

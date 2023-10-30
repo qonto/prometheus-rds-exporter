@@ -7,6 +7,7 @@ GIT_COMMIT_SHA=$(shell git rev-parse HEAD)
 AWS_ECR_PUBLIC_ORGANIZATION=qonto
 BINARY=prometheus-rds-exporter
 HELM_CHART_NAME=prometheus-rds-exporter-chart
+ARCHITECTURE=$(shell uname -m)
 
 all: build
 
@@ -44,11 +45,24 @@ helm-release:
 kubeconform:
 	helm template configs/helm | $(kubeconform_command)
 
+.PHONY: goreleaser-check
+goreleaser-check:
+	goreleaser check
+
 .PHONY: metrics-list
 metrics-list:
 	echo "| Name | Description |" > metrics
 	echo "| ------ | ----------- |" >> metrics
 	curl -s localhost:9043/metrics | grep -E '^# HELP' | awk '{metric = $$3; $$1=$$2=$$3=""; print "| " metric " | " $$0 " | "}' | sed -e's/  */ /g' >> metrics
 
+debian-test:
+	#GORELEASER_CURRENT_TAG=0.0.0 goreleaser release --clean --skip-publish --skip-docker --snapshot
+	docker build configs/debian/tests -t test
+	docker run -v ./dist/prometheus-rds-exporter_0.0.1~next_$(ARCHITECTURE).deb:/mnt/prometheus-rds-exporter.deb test
+
+debian-test-ci:
+	docker build configs/debian/tests -t test
+	docker run -v ./dist/prometheus-rds-exporter_0.0.1~next_amd64.deb:/mnt/prometheus-rds-exporter.deb test
+
 .PHONY: all-tests
-all-tests: test kubeconform helm-test
+all-tests: test kubeconform helm-test goreleaser-check

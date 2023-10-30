@@ -158,8 +158,8 @@ Configuration could be defined in `.prometheus-rds-exporter.yaml` or environment
 
 Configuration parameters priorities:
 
-1. `$HOME/.prometheus-rds-exporter.yaml` file
-2. `.prometheus-rds-exporter.yaml` file
+1. `$HOME/prometheus-rds-exporter.yaml` file
+2. `prometheus-rds-exporter.yaml` file
 3. Environment variables
 4. Command line flags
 
@@ -195,9 +195,234 @@ Minimal required IAM permissions:
 }
 ```
 
+For convenience, you can download it using:
+
+```bash
+curl \
+--fail \
+--silent \
+--write-out "Reponse code: %{response_code}\n" \
+https://raw.githubusercontent.com/qonto/prometheus-rds-exporter/main/configs/aws/policy.json \
+-o /tmp/prometheus-rds-exporter.policy.json
+```
+
 ## Installation
 
-### Locally
+See [Development environment](#development-environment) to start the Prometheus RDS exporter, Prometheus, Grafana with dashboards in a minute.
+
+### AWS EKS
+
+**Recommanded method** to deploy on AWS EKS using [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) and Helm.
+
+1. Create an IAM policy
+
+    ```bash
+    IAM_POLICY_NAME=prometheus-rds-exporter
+
+    # Download policy payload
+    curl --fail --silent --write-out "Reponse code: %{response_code}\n" https://raw.githubusercontent.com/qonto/prometheus-rds-exporter/main/configs/aws/policy.json -o /tmp/prometheus-rds-exporter.policy.json
+
+    # Create IAM policy
+    aws iam create-policy --policy-name ${IAM_POLICY_NAME} --policy-document file:///tmp/prometheus-rds-exporter.policy.json
+    ```
+
+1. Attach IAM role to your EKS cluster
+
+    eksctl will create an IAM role and a Kubernetes Service account
+
+    ```bash
+    EKS_CLUSTER_NAME=default # Replace with your EKS cluster name
+    KUBERNETES_NAMESPACE=monitoring # Replace with namespace of your choice
+
+    IAM_ROLE_NAME=prometheus-rds-exporter
+    KUBERNETES_SERVICE_ACCOUNT_NAME=prometheus-rds-exporter
+    AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+
+    eksctl \
+    create iamserviceaccount \
+    --cluster ${EKS_CLUSTER_NAME} \
+    --namespace ${KUBERNETES_NAMESPACE} \
+    --name ${KUBERNETES_SERVICE_ACCOUNT_NAME} \
+    --role-name ${IAM_ROLE_NAME} \
+    --attach-policy-arn arn:aws:iam::${AWS_ACCOUNT_ID}:policy/${IAM_POLICY_NAME} \
+    --approve
+    ```
+
+1. Deploy the exporter
+
+    ```bash
+    PROMETHEUS_RDS_EXPORTER_VERSION=0.3.0 # Replace with latest version
+    SERVICE_ACCOUNT_ANNOTATION="arn:aws:iam::${AWS_ACCOUNT_ID}:role/${IAM_ROLE_NAME}"
+
+    helm upgrade \
+    prometheus-rds-exporter \
+    oci://public.ecr.aws/qonto/prometheus-rds-exporter-chart \
+    --version ${PROMETHEUS_RDS_EXPORTER_VERSION} \
+    --install \
+    --namespace ${KUBERNETES_NAMESPACE} \
+    --set serviceAccount.annotations."eks\.amazonaws\.com\/role-arn"="${SERVICE_ACCOUNT_ANNOTATION}"
+    ```
+
+1. Option. Customize prometheus exporter settings
+
+    Download Helm chart default values
+
+    ```bash
+    helm show values oci://public.ecr.aws/qonto/prometheus-rds-exporter-chart --version ${PROMETHEUS_RDS_EXPORTER_VERSION} > values.yaml
+    ```
+
+    Customize settings
+
+    ```bash
+    vim values.yaml
+    ```
+
+    <details>
+    <summary>Example to enable debug via PROMETHEUS_RDS_EXPORTER_DEBUG environment variable</summary>
+
+    ```bash
+    yq --inplace '.env += {"PROMETHEUS_RDS_EXPORTER_DEBUG": "true"}' values.yaml
+    ```
+
+    </details>
+
+    Update Helm deployment:
+
+    ```bash
+    helm upgrade \
+    prometheus-rds-exporter \
+    oci://public.ecr.aws/qonto/prometheus-rds-exporter-chart \
+    --version ${PROMETHEUS_RDS_EXPORTER_VERSION} \
+    --install \
+    --namespace ${KUBERNETES_NAMESPACE} \
+    --set serviceAccount.annotations."eks\.amazonaws\.com\/role-arn"="${SERVICE_ACCOUNT_ANNOTATION}" \
+    --values values.yaml
+    ```
+
+### Debian/Ubuntu on AWS EC2
+
+1. Grant IAM permissions to the EC2 instance
+
+    <details>
+    <summary>See steps</summary>
+
+    1. Create IAM role
+
+        ```bash
+        IAM_ROLE_NAME=prometheus-rds-exporter
+
+        cat > ec2-role-trust-policy.json << EOF
+        {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": { "Service": "ec2.amazonaws.com"},
+                    "Action": "sts:AssumeRole"
+                }
+            ]
+        }
+        EOF
+
+        aws iam create-role --role-name ${IAM_ROLE_NAME} --assume-role-policy-document file://ec2-role-trust-policy.json
+        ```
+
+    1. Create IAM policy
+
+        ```bash
+        IAM_POLICY_NAME=prometheus-rds-exporter
+
+        # Download Prometheus RDS exporter required IAM permissions
+        curl --fail --silent --write-out "Reponse code: %{response_code}\n" https://raw.githubusercontent.com/qonto/prometheus-rds-exporter/main/configs/aws/policy.json -o prometheus-rds-exporter.policy.json
+
+        # Create IAM policy
+        aws iam create-policy --policy-name ${IAM_POLICY_NAME} --policy-document file://prometheus-rds-exporter.policy.json
+
+        # Attach IAM policy to IAM role
+        AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+        IAM_POLICY_ARN=arn:aws:iam::${AWS_ACCOUNT_ID}:policy/${IAM_POLICY_NAME}
+        aws iam attach-role-policy --role-name ${IAM_ROLE_NAME} --policy-arn ${IAM_POLICY_ARN}
+        ```
+
+    1. Create IAM instance profile
+
+        ```bash
+        EC2_INSTANCE_PROFILE_NAME="prometheus-rds-exporter"
+
+        # Create IAM instance profile
+        aws iam create-instance-profile --instance-profile-name ${EC2_INSTANCE_PROFILE_NAME}
+
+        # Attach IAM role to IAM instance profile
+        aws iam add-role-to-instance-profile  --instance-profile-name ${EC2_INSTANCE_PROFILE_NAME} --role-name ${IAM_ROLE_NAME}
+        ```
+
+    1. Attach IAM instance profile to the EC2 instance
+
+        ```bash
+        EC2_INSTANCE_ID="i-1234567890abcdef0" # Replace with your AWS instance ID
+
+        aws ec2 associate-iam-instance-profile \
+        --instance-id ${EC2_INSTANCE_ID} \
+        --iam-instance-profile Name="${EC2_INSTANCE_PROFILE_NAME}"
+        ```
+
+    </details>
+
+1. Download the Debian package
+
+    ```bash
+    PROMETHEUS_RDS_EXPORTER_VERSION=0.3.0 # Replace with latest version
+
+    PACKAGE_NAME=prometheus-rds-exporter_${PROMETHEUS_RDS_EXPORTER_VERSION}_$(uname -m).deb
+    wget https://github.com/qonto/prometheus-rds-exporter/releases/download/${PROMETHEUS_RDS_EXPORTER_VERSION}/${PACKAGE_NAME}
+    ```
+
+1. Install package
+
+    Prometheus RDS exporter will be automatically started as service.
+
+    ```bash
+    dpkg -i ${PACKAGE_NAME}
+    ```
+
+1. Optional, customize configuration
+
+    ```bash
+    # Copy configuration template
+    cp /usr/share/prometheus-rds-exporter/prometheus-rds-exporter.yaml.sample /var/lib/prometheus-rds-exporter/.prometheus-rds-exporter.yaml
+
+    # Edit configuration
+    vim /var/lib/prometheus-rds-exporter/.prometheus-rds-exporter.yaml
+
+    # Restart service
+    systemctl restart prometheus-rds-exporter
+    ```
+
+### Binary
+
+1. Binary
+
+    ```bash
+    PROMETHEUS_RDS_EXPORTER_VERSION=0.3.0 # Replace with latest version
+    TARBALL_NAME=prometheus-rds-exporter_Linux_$(uname -m).tar.gz
+
+    wget https://github.com/qonto/prometheus-rds-exporter/releases/download/${PROMETHEUS_RDS_EXPORTER_VERSION}/${TARBALL_NAME}
+    tar xvzf ${TARBALL_NAME}
+    ```
+
+1. Optional, customize configuration
+
+    ```bash
+    vim prometheus-rds-exporter.yaml
+    ```
+
+1. Launch the exporter
+
+    ```bash
+    ./prometheus-rds-exporter
+    ```
+
+### Locally with docker
 
 1. Connect on AWS with any method
 
@@ -205,46 +430,10 @@ Minimal required IAM permissions:
     aws configure
     ```
 
-2. Start application
-
-    ```bash
-    prometheus-rds-exporter
-    ```
-
-### Docker
-
-1. Connect on AWS with any method
-
-2. Start application
+1. Start application
 
     ```bash
     docker run -p 9043:9043 -e AWS_PROFILE=${AWS_PROFILE} -v $HOME/.aws:/app/.aws public.ecr.aws/qonto/prometheus-rds-exporter:latest
-    ```
-
-### EKS (using IRSA and Helm)
-
-1. Create an IAM policy
-
-    ```bash
-    IAM_POLICY_NAME=prometheus-rds-exporter
-    aws iam create-policy --policy-name ${IAM_POLICY_NAME} --policy-document file://configs/aws/policy.json
-    ```
-
-2. Create IAM role and EKS service account
-
-    ```bash
-    IAM_ROLE_NAME=prometheus-rds-exporter
-    EKS_CLUSTER_NAME=default # Replace with your EKS cluster name
-    KUBERNETES_NAMESPACE=default # Replace with the namespace that you want to use
-    KUBERNETES_SERVICE_ACCOUNT_NAME=prometheus-rds-exporter
-    AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text) # Replace with your AWS ACCOUNT ID
-    eksctl create iamserviceaccount --cluster ${EKS_CLUSTER_NAME} --namespace ${KUBERNETES_NAMESPACE} --name ${KUBERNETES_SERVICE_ACCOUNT_NAME} --role-name ${IAM_ROLE_NAME} --attach-policy-arn arn:aws:iam::${AWS_ACCOUNT_ID}:policy/${IAM_POLICY_NAME} --approve
-    ```
-
-3. Deploy chart with service account annotation
-
-    ```bash
-    helm install prometheus-rds-exporter oci://public.ecr.aws/qonto/prometheus-rds-exporter-chart --namespace ${KUBERNETES_NAMESPACE} --set serviceAccount.annotations."eks\.amazonaws\.com\/role-arn"="arn:aws:iam::${AWS_ACCOUNT_ID}:role/${IAM_ROLE_NAME}"
     ```
 
 ### Terraform
@@ -259,24 +448,9 @@ You can take example on Terraform code in `configs/terraform/`.
 
 ## Contribute
 
-See CONTRIBUTING.md
+See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Development
-
-### Running the tests
-
-Execute golang tests:
-
-```bash
-make test
-```
-
-Execute Helm chart tests:
-
-```bash
-make helm-test # Helm unit test
-make kubeconform # Kubernetes manifest validation
-```
 
 ### Development environment
 
@@ -298,3 +472,18 @@ It will start and configure Grafana, Prometheus, and the RDS exporter:
     - Grafana: <http://localhost:3000> (credential: admin/hackme)
     - Prometheus: <http://localhost:9090>
     - Prometheus RDS exporter: <http://localhost:9043>
+
+### Running the tests
+
+Execute golang tests:
+
+```bash
+make test
+```
+
+Execute Helm chart tests:
+
+```bash
+make helm-test # Helm unit test
+make kubeconform # Kubernetes manifest validation
+```
