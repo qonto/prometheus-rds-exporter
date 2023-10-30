@@ -83,7 +83,8 @@ func TestGetMetrics(t *testing.T) {
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
 	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
-	client := rds.NewFetcher(mock)
+	configuration := rds.Configuration{CollectLogsSize: true}
+	client := rds.NewFetcher(mock, configuration)
 	metrics, err := client.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -107,7 +108,6 @@ func TestGetMetrics(t *testing.T) {
 	assert.Equal(t, rdsInstance.PubliclyAccessible, m.PubliclyAccessible, "PubliclyAccessible mismatch")
 	assert.Equal(t, *rdsInstance.DbiResourceId, m.DbiResourceID, "DbiResourceId mismatch")
 	assert.Equal(t, *rdsInstance.DBInstanceClass, m.DBInstanceClass, "DBInstanceIdentifier mismatch")
-	assert.Equal(t, *rdsInstance.DBInstanceClass, m.DBInstanceClass, "DBInstanceIdentifier mismatch")
 }
 
 func TestGP2StorageType(t *testing.T) {
@@ -125,7 +125,8 @@ func TestGP2StorageType(t *testing.T) {
 
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallDisk, *rdsInstanceWithMediumDisk, *rdsInstanceWithLargeDisk}}
 	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
-	client := rds.NewFetcher(mock)
+	configuration := rds.Configuration{}
+	client := rds.NewFetcher(mock, configuration)
 	metrics, err := client.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -152,7 +153,8 @@ func TestGP3StorageType(t *testing.T) {
 
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallDisk, *rdsInstanceWithLargeDisk}}
 	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
-	client := rds.NewFetcher(mock)
+	configuration := rds.Configuration{}
+	client := rds.NewFetcher(mock, configuration)
 	metrics, err := client.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -179,7 +181,8 @@ func TestIO1StorageType(t *testing.T) {
 
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallIOPS, *rdsInstanceWithMediumIOPS, *rdsInstanceWithLargeIOPS, *rdsInstanceWithHighIOPS}}
 	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
-	client := rds.NewFetcher(mock)
+	configuration := rds.Configuration{}
+	client := rds.NewFetcher(mock, configuration)
 	metrics, err := client.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -210,7 +213,8 @@ func TestLogSize(t *testing.T) {
 		DescribeDBInstancesOutput: mockDescribeDBInstancesOutput,
 		DescribeDBLogFilesOutput:  mockDescribeDBLogFilesOutput,
 	}
-	client := rds.NewFetcher(mock)
+	configuration := rds.Configuration{CollectLogsSize: true}
+	client := rds.NewFetcher(mock, configuration)
 	metrics, err := client.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -226,7 +230,8 @@ func TestLogSizeInCreation(t *testing.T) {
 		DescribeDBInstancesOutput:     mockDescribeDBInstancesOutput,
 		DescribeDBLogFilesOutputError: &aws_rds_types.DBInstanceNotFoundFault{},
 	}
-	client := rds.NewFetcher(mock)
+	configuration := rds.Configuration{CollectLogsSize: true}
+	client := rds.NewFetcher(mock, configuration)
 	metrics, err := client.GetInstancesMetrics()
 
 	var emptyInt64 *int64
@@ -244,7 +249,8 @@ func TestReplicaNode(t *testing.T) {
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
 	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
-	client := rds.NewFetcher(mock)
+	configuration := rds.Configuration{CollectLogsSize: true}
+	client := rds.NewFetcher(mock, configuration)
 	metrics, err := client.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -274,6 +280,7 @@ func TestGetDBInstanceStatusCode(t *testing.T) {
 		{input: "creating", want: rds.InstanceStatusCreating},
 		{input: "deleting", want: rds.InstanceStatusDeleting},
 		{input: "future", want: rds.InstanceStatusUnknown},
+		{input: "modifying", want: rds.InstanceStatusModifying},
 		{input: "stopped", want: rds.InstanceStatusStopped},
 		{input: "stopping", want: rds.InstanceStatusStopping},
 		{input: "unknown", want: rds.InstanceStatusUnknown},
@@ -285,4 +292,49 @@ func TestGetDBInstanceStatusCode(t *testing.T) {
 			t.Fatalf("expected: %v, got: %v", tc.want, got)
 		}
 	}
+}
+
+func TestPendingModification(t *testing.T) {
+	// Mock RDS instance
+	rdsInstance := newRdsInstance()
+	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
+
+	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	configuration := rds.Configuration{}
+	client := rds.NewFetcher(mock, configuration)
+	metrics, err := client.GetInstancesMetrics()
+
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+	assert.Equal(t, false, metrics.Instances[*rdsInstance.DBInstanceIdentifier].PendingModifiedValues, "Should not have any pending modification")
+}
+
+func TestPendingModificationDueToInstanceModification(t *testing.T) {
+	// Mock RDS instance
+	rdsInstance := newRdsInstance()
+	pendingModifications := aws_rds_types.PendingModifiedValues{AllocatedStorage: aws.Int32(int32(42))}
+	rdsInstance.PendingModifiedValues = &pendingModifications
+	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
+
+	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	configuration := rds.Configuration{}
+	client := rds.NewFetcher(mock, configuration)
+	metrics, err := client.GetInstancesMetrics()
+
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+	assert.Equal(t, true, metrics.Instances[*rdsInstance.DBInstanceIdentifier].PendingModifiedValues, "Should have allocated storage pending modification")
+}
+
+func TestPendingModificationDueToUnappliedParameterGroup(t *testing.T) {
+	// Mock RDS instance
+	rdsInstance := newRdsInstance()
+	rdsInstance.DBParameterGroups = []aws_rds_types.DBParameterGroupStatus{{DBParameterGroupName: aws.String("my_parameter_group"), ParameterApplyStatus: aws.String("pending-reboot")}}
+	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
+
+	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	configuration := rds.Configuration{}
+	client := rds.NewFetcher(mock, configuration)
+	metrics, err := client.GetInstancesMetrics()
+
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+	assert.Equal(t, true, metrics.Instances[*rdsInstance.DBInstanceIdentifier].PendingModifiedValues, "Should have pending modification")
 }

@@ -120,19 +120,19 @@ Grafana dashoards are available on Grafana labs:
 
 ![Instances overview](docs/screenshots/instances-overview.png)
 
-<a href="https://grafana.com/grafana/dashboards/19647-rds-instances-overview/">RDS instances overview</a> (ID `19647`)
+<a href="https://grafana.com/grafana/dashboards/19647/">RDS instances overview</a> (ID `19647`)
 </td>
 <td>
 
 ![Instance details](docs/screenshots/instance-details.png)
 
-<a href="https://grafana.com/grafana/dashboards/19646-rds-instance-details/">RDS instance details</a> (ID: `19646`)
+<a href="https://grafana.com/grafana/dashboards/19646/">RDS instance details</a> (ID: `19646`)
 </td>
 <td>
 
 ![RDS exporters](docs/screenshots/rds-exporter.png)
 
-<a href="https://grafana.com/grafana/dashboards/19679-rds-exporter/">RDS exporters</a> (ID: `19679`)
+<a href="https://grafana.com/grafana/dashboards/19679/">RDS exporters</a> (ID: `19679`)
 </td>
 </tr>
 </table>
@@ -145,6 +145,12 @@ Configuration could be defined in `.prometheus-rds-exporter.yaml` or environment
 | --- | --- | --- |
 | aws-assume-role-arn | AWS IAM ARN role to assume to fetch metrics | |
 | aws-assume-role-session | AWS assume role session name | prometheus-rds-exporter |
+| collect-instances-metrics | Collect AWS instances metrics (AWS Cloudwatch API) | true |
+| collect-instance-types | Collect AWS instance types information (AWS EC2 API) | true |
+| collect-logs-size | Collect AWS instances logs size (AWS RDS API) | true |
+| collect-maintenances | Collect AWS instances maintenances (AWS RDS API) | true |
+| collect-quotas | Collect AWS RDS quotas (AWS quotas API) | true |
+| collect-usages | Collect AWS RDS usages (AWS Cloudwatch API) | true |
 | debug | Enable debug mode | |
 | listen-address | Address to listen on for web interface | :9043 |
 | log-format | Log format (`text` or `json`) | json |

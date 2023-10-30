@@ -20,6 +20,15 @@ const (
 	exporterDownStatusCode float64 = 0
 )
 
+type Configuration struct {
+	CollectInstanceMetrics bool
+	CollectInstanceTypes   bool
+	CollectLogsSize        bool
+	CollectMaintenances    bool
+	CollectQuotas          bool
+	CollectUsages          bool
+}
+
 type counters struct {
 	cloudwatchAPICalls    float64
 	ec2APIcalls           float64
@@ -38,12 +47,13 @@ type metrics struct {
 }
 
 type rdsCollector struct {
-	wg           sync.WaitGroup
-	logger       slog.Logger
-	counters     counters
-	metrics      metrics
-	awsAccountID string
-	awsRegion    string
+	wg            sync.WaitGroup
+	logger        slog.Logger
+	counters      counters
+	metrics       metrics
+	awsAccountID  string
+	awsRegion     string
+	configuration Configuration
 
 	rdsClient           rdsClient
 	EC2Client           EC2Client
@@ -89,7 +99,7 @@ type rdsCollector struct {
 	exporterBuildInformation    *prometheus.Desc
 }
 
-func NewCollector(logger slog.Logger, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient) *rdsCollector {
+func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient) *rdsCollector {
 	return &rdsCollector{
 		logger:              logger,
 		awsAccountID:        awsAccountID,
@@ -98,6 +108,8 @@ func NewCollector(logger slog.Logger, awsAccountID string, awsRegion string, rds
 		servicequotasClient: servicequotasClient,
 		EC2Client:           ec2Client,
 		cloudWatchClient:    cloudWatchClient,
+
+		configuration: collectorConfiguration,
 
 		exporterBuildInformation: prometheus.NewDesc("rds_exporter_build_info",
 			"A metric with constant '1' value labeled by version from which exporter was built",
@@ -260,17 +272,24 @@ func (c *rdsCollector) fetchMetrics() error {
 	c.logger.Debug("received query")
 
 	// Fetch serviceQuotas metrics
-	go c.getQuotasMetrics(c.servicequotasClient)
-	c.wg.Add(1)
+	if c.configuration.CollectQuotas {
+		go c.getQuotasMetrics(c.servicequotasClient)
+		c.wg.Add(1)
+	}
 
 	// Fetch usages metrics
-	go c.getUsagesMetrics(c.cloudWatchClient)
-	c.wg.Add(1)
+	if c.configuration.CollectUsages {
+		go c.getUsagesMetrics(c.cloudWatchClient)
+		c.wg.Add(1)
+	}
 
 	// Fetch RDS instances metrics
 	c.logger.Info("get RDS metrics")
 
-	rdsFetcher := rds.NewFetcher(c.rdsClient)
+	rdsFetcher := rds.NewFetcher(c.rdsClient, rds.Configuration{
+		CollectLogsSize:     c.configuration.CollectLogsSize,
+		CollectMaintenances: c.configuration.CollectMaintenances,
+	})
 
 	rdsMetrics, err := rdsFetcher.GetInstancesMetrics()
 	if err != nil {
@@ -285,14 +304,16 @@ func (c *rdsCollector) fetchMetrics() error {
 	instanceIdentifiers, instanceTypes := getUniqTypeAndIdentifiers(rdsMetrics.Instances)
 
 	// Fetch EC2 Metrics for instance types
-	if len(instanceTypes) > 0 {
+	if c.configuration.CollectInstanceTypes && len(instanceTypes) > 0 {
 		go c.getEC2Metrics(c.EC2Client, instanceTypes)
 		c.wg.Add(1)
 	}
 
 	// Fetch Cloudwatch metrics for instances
-	go c.getCloudwatchMetrics(c.cloudWatchClient, instanceIdentifiers)
-	c.wg.Add(1)
+	if c.configuration.CollectInstanceMetrics {
+		go c.getCloudwatchMetrics(c.cloudWatchClient, instanceIdentifiers)
+		c.wg.Add(1)
+	}
 
 	// Wait for all go routines to finish
 	c.wg.Wait()
@@ -468,10 +489,12 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	// usage metrics
-	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.usageAPIcalls, c.awsAccountID, c.awsRegion, "usage")
-	ch <- prometheus.MustNewConstMetric(c.usageAllocatedStorage, prometheus.GaugeValue, c.metrics.cloudWatchUsage.AllocatedStorage, c.awsAccountID, c.awsRegion)
-	ch <- prometheus.MustNewConstMetric(c.usageDBInstances, prometheus.GaugeValue, c.metrics.cloudWatchUsage.DBInstances, c.awsAccountID, c.awsRegion)
-	ch <- prometheus.MustNewConstMetric(c.usageManualSnapshots, prometheus.GaugeValue, c.metrics.cloudWatchUsage.ManualSnapshots, c.awsAccountID, c.awsRegion)
+	if c.configuration.CollectUsages {
+		ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.usageAPIcalls, c.awsAccountID, c.awsRegion, "usage")
+		ch <- prometheus.MustNewConstMetric(c.usageAllocatedStorage, prometheus.GaugeValue, c.metrics.cloudWatchUsage.AllocatedStorage, c.awsAccountID, c.awsRegion)
+		ch <- prometheus.MustNewConstMetric(c.usageDBInstances, prometheus.GaugeValue, c.metrics.cloudWatchUsage.DBInstances, c.awsAccountID, c.awsRegion)
+		ch <- prometheus.MustNewConstMetric(c.usageManualSnapshots, prometheus.GaugeValue, c.metrics.cloudWatchUsage.ManualSnapshots, c.awsAccountID, c.awsRegion)
+	}
 
 	// EC2 metrics
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.ec2APIcalls, c.awsAccountID, c.awsRegion, "ec2")
@@ -483,8 +506,10 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	// serviceQuotas metrics
-	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.serviceQuotasAPICalls, c.awsAccountID, c.awsRegion, "servicequotas")
-	ch <- prometheus.MustNewConstMetric(c.quotaDBInstances, prometheus.GaugeValue, c.metrics.serviceQuota.DBinstances, c.awsAccountID, c.awsRegion)
-	ch <- prometheus.MustNewConstMetric(c.quotaTotalStorage, prometheus.GaugeValue, c.metrics.serviceQuota.TotalStorage, c.awsAccountID, c.awsRegion)
-	ch <- prometheus.MustNewConstMetric(c.quotaMaxDBInstanceSnapshots, prometheus.GaugeValue, c.metrics.serviceQuota.ManualDBInstanceSnapshots, c.awsAccountID, c.awsRegion)
+	if c.configuration.CollectQuotas {
+		ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.serviceQuotasAPICalls, c.awsAccountID, c.awsRegion, "servicequotas")
+		ch <- prometheus.MustNewConstMetric(c.quotaDBInstances, prometheus.GaugeValue, c.metrics.serviceQuota.DBinstances, c.awsAccountID, c.awsRegion)
+		ch <- prometheus.MustNewConstMetric(c.quotaTotalStorage, prometheus.GaugeValue, c.metrics.serviceQuota.TotalStorage, c.awsAccountID, c.awsRegion)
+		ch <- prometheus.MustNewConstMetric(c.quotaMaxDBInstanceSnapshots, prometheus.GaugeValue, c.metrics.serviceQuota.ManualDBInstanceSnapshots, c.awsAccountID, c.awsRegion)
+	}
 }

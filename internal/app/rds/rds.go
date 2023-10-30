@@ -13,6 +13,11 @@ import (
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 )
 
+type Configuration struct {
+	CollectLogsSize     bool
+	CollectMaintenances bool
+}
+
 type Metrics struct {
 	Instances map[string]RdsInstanceMetrics
 }
@@ -49,12 +54,14 @@ const (
 	InstanceStatusAvailable                int    = 1
 	InstanceStatusBackingUp                int    = 2
 	InstanceStatusStarting                 int    = 3
+	InstanceStatusModifying                int    = 4
 	InstanceStatusStopped                  int    = 0
 	InstanceStatusUnknown                  int    = -1
 	InstanceStatusStopping                 int    = -2
 	InstanceStatusCreating                 int    = -3
 	InstanceStatusDeleting                 int    = -4
 	NoPendingMaintenanceOperation          string = "no"
+	UnknownMaintenanceOperation            string = "unknown"
 	UnscheduledPendingMaintenanceOperation string = "pending"
 	AutoAppliedPendingMaintenanceOperation string = "auto-applied"
 	ForcedPendingMaintenanceOperation      string = "forced"
@@ -80,6 +87,7 @@ var instanceStatuses = map[string]int{
 	"backing-up": InstanceStatusBackingUp,
 	"creating":   InstanceStatusCreating,
 	"deleting":   InstanceStatusDeleting,
+	"modifying":  InstanceStatusModifying,
 	"starting":   InstanceStatusStarting,
 	"stopped":    InstanceStatusStopped,
 	"stopping":   InstanceStatusStopping,
@@ -92,15 +100,17 @@ type RDSClient interface {
 	DescribeDBLogFiles(context.Context, *aws_rds.DescribeDBLogFilesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBLogFilesOutput, error)
 }
 
-func NewFetcher(client RDSClient) RDSFetcher {
+func NewFetcher(client RDSClient, configuration Configuration) RDSFetcher {
 	return RDSFetcher{
-		client: client,
+		client:        client,
+		configuration: configuration,
 	}
 }
 
 type RDSFetcher struct {
-	client     RDSClient
-	statistics Statistics
+	client        RDSClient
+	statistics    Statistics
+	configuration Configuration
 }
 
 func (r *RDSFetcher) GetStatistics() Statistics {
@@ -147,9 +157,15 @@ func (r *RDSFetcher) getPendingMaintenances() (map[string]string, error) {
 func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 	metrics := make(map[string]RdsInstanceMetrics)
 
-	instanceMaintenances, err := r.getPendingMaintenances()
-	if err != nil {
-		return Metrics{}, fmt.Errorf("can't get RDS maintenances: %w", err)
+	var err error
+
+	var instanceMaintenances map[string]string
+
+	if r.configuration.CollectMaintenances {
+		instanceMaintenances, err = r.getPendingMaintenances()
+		if err != nil {
+			return Metrics{}, fmt.Errorf("can't get RDS maintenances: %w", err)
+		}
 	}
 
 	input := &aws_rds.DescribeDBInstancesInput{}
@@ -200,18 +216,37 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 	}
 
 	pendingModifiedValues := false
-	if !reflect.DeepEqual(dbInstance.PendingModifiedValues, &aws_rds_types.PendingModifiedValues{}) {
+
+	// PendingModifiedValues reports only instance changes
+	if dbInstance.PendingModifiedValues != nil && !reflect.DeepEqual(dbInstance.PendingModifiedValues, &aws_rds_types.PendingModifiedValues{}) {
 		pendingModifiedValues = true
 	}
 
-	pendingMaintenanceAction := NoPendingMaintenanceOperation
-	if maintenanceMode, isFound := instanceMaintenances[*dbIdentifier]; isFound {
-		pendingMaintenanceAction = maintenanceMode
+	// Report pending modified values if at lease one parameter group is not applied
+	for _, parameterGroup := range dbInstance.DBParameterGroups {
+		if *parameterGroup.ParameterApplyStatus != "in-sync" {
+			pendingModifiedValues = true
+		}
 	}
 
-	logFilesSize, err := r.getLogFilesSize(*dbIdentifier)
-	if err != nil {
-		return RdsInstanceMetrics{}, fmt.Errorf("can't get log files size for %d: %w", dbIdentifier, err)
+	pendingMaintenanceAction := NoPendingMaintenanceOperation
+	if !r.configuration.CollectMaintenances {
+		pendingMaintenanceAction = UnknownMaintenanceOperation
+	} else {
+		if maintenanceMode, isFound := instanceMaintenances[*dbIdentifier]; isFound {
+			pendingMaintenanceAction = maintenanceMode
+		}
+	}
+
+	var logFilesSize *int64
+
+	if r.configuration.CollectLogsSize {
+		var err error
+		logFilesSize, err = r.getLogFilesSize(*dbIdentifier)
+
+		if err != nil {
+			return RdsInstanceMetrics{}, fmt.Errorf("can't get log files size for %d: %w", dbIdentifier, err)
+		}
 	}
 
 	role, sourceDBInstanceIdentifier := getRoleInCluster(&dbInstance)
