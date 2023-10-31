@@ -43,7 +43,7 @@ helm-release:
 
 .PHONY: kubeconform
 kubeconform:
-	helm template configs/helm | $(kubeconform_command)
+	./scripts/kubeconform-test.sh configs/helm
 
 .PHONY: goreleaser-check
 goreleaser-check:
