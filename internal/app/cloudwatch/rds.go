@@ -40,6 +40,7 @@ type RdsMetrics struct {
 	ReplicaLag                *float64
 	ReplicationSlotDiskUsage  *float64
 	SwapUsage                 *float64
+	TransactionLogsDiskUsage  *float64
 	WriteIOPS                 *float64
 	WriteThroughput           *float64
 }
@@ -76,6 +77,8 @@ func (m *RdsMetrics) Update(field string, value float64) error {
 		m.ReadThroughput = &value
 	case "WriteThroughput":
 		m.WriteThroughput = &value
+	case "TransactionLogsDiskUsage":
+		m.TransactionLogsDiskUsage = &value
 	default:
 		return fmt.Errorf("can't process '%s' metrics: %w", field, errUnknownMetric)
 	}
@@ -84,8 +87,8 @@ func (m *RdsMetrics) Update(field string, value float64) error {
 }
 
 // getCloudWatchMetricsName returns names of Cloudwatch metrics to collect
-func getCloudWatchMetricsName() [15]string {
-	return [15]string{
+func getCloudWatchMetricsName() [16]string {
+	return [16]string{
 		"CPUUtilization",
 		"DBLoad",
 		"DBLoadCPU",
@@ -99,6 +102,7 @@ func getCloudWatchMetricsName() [15]string {
 		"ReplicaLag",
 		"ReplicationSlotDiskUsage",
 		"SwapUsage",
+		"TransactionLogsDiskUsage",
 		"WriteIOPS",
 		"WriteThroughput",
 	}
