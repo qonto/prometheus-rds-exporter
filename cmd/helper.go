@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
+	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
@@ -25,6 +26,19 @@ func getAWSConfiguration(logger *slog.Logger, roleArn string, sessionName string
 			o.RoleSessionName = sessionName
 		})
 		cfg.Credentials = aws.NewCredentialsCache(creds)
+	}
+
+	// Try to automatically find the current AWS region via AWS EC2 IMDS metadata
+	if cfg.Region == "" {
+		logger.Debug("search AWS region using IMDS")
+
+		client := imds.NewFromConfig(cfg)
+
+		response, err := client.GetRegion(context.TODO(), &imds.GetRegionInput{})
+		if err == nil {
+			cfg.Region = response.Region
+			logger.Info("found AWS region via IMDS", "region", cfg.Region)
+		}
 	}
 
 	return cfg, nil

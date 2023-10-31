@@ -1,0 +1,17 @@
+# Log format (text or json)
+# log-format: json
+
+# Path under which to expose metrics
+# metrics-path: /metrics
+
+# Address to listen on for web interface
+# listen-address: ":9043"
+
+# AWS profile
+# aws-profile: my_profile
+
+# AWS IAM ARN role to assume to fetch metrics
+# aws-assume-role-arn: arn:aws:iam::000000000000:role/prometheus-rds-exporter
+
+# AWS assume role session name
+# aws-assume-role-session: prometheus-rds-exporter

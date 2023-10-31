@@ -54,6 +54,7 @@ const (
 	InstanceStatusAvailable                int    = 1
 	InstanceStatusBackingUp                int    = 2
 	InstanceStatusStarting                 int    = 3
+	InstanceStatusModifying                int    = 4
 	InstanceStatusStopped                  int    = 0
 	InstanceStatusUnknown                  int    = -1
 	InstanceStatusStopping                 int    = -2
@@ -86,6 +87,7 @@ var instanceStatuses = map[string]int{
 	"backing-up": InstanceStatusBackingUp,
 	"creating":   InstanceStatusCreating,
 	"deleting":   InstanceStatusDeleting,
+	"modifying":  InstanceStatusModifying,
 	"starting":   InstanceStatusStarting,
 	"stopped":    InstanceStatusStopped,
 	"stopping":   InstanceStatusStopping,
@@ -214,8 +216,17 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 	}
 
 	pendingModifiedValues := false
-	if !reflect.DeepEqual(dbInstance.PendingModifiedValues, &aws_rds_types.PendingModifiedValues{}) {
+
+	// PendingModifiedValues reports only instance changes
+	if dbInstance.PendingModifiedValues != nil && !reflect.DeepEqual(dbInstance.PendingModifiedValues, &aws_rds_types.PendingModifiedValues{}) {
 		pendingModifiedValues = true
+	}
+
+	// Report pending modified values if at lease one parameter group is not applied
+	for _, parameterGroup := range dbInstance.DBParameterGroups {
+		if *parameterGroup.ParameterApplyStatus != "in-sync" {
+			pendingModifiedValues = true
+		}
 	}
 
 	pendingMaintenanceAction := NoPendingMaintenanceOperation
