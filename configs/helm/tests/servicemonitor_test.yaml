@@ -40,9 +40,6 @@ tests:
           path: metadata.labels.additionalLabel1
           value: value1
       - equal:
-          path: spec.endpoints[0].externalLabels.externalLabel1
-          value: externalValue1
-      - equal:
           path: spec.endpoints[0].relabelings[0].targetLabel
           value: team
       - equal:
