@@ -167,4 +167,4 @@ release:
     name: prometheus-rds-exporter
   name_template: "v{{.Version}}"
   footer: |
-    **Full Changelog**: https://github.com/qonto/poc-goreleaser/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/qonto/prometheus-rds-exporter/compare/{{ .PreviousTag }}...{{ .Tag }}

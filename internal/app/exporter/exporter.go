@@ -97,6 +97,7 @@ type rdsCollector struct {
 	usageDBInstances            *prometheus.Desc
 	usageManualSnapshots        *prometheus.Desc
 	exporterBuildInformation    *prometheus.Desc
+	transactionLogsDiskUsage    *prometheus.Desc
 }
 
 func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient) *rdsCollector {
@@ -233,6 +234,10 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 		),
 		dBLoadNonCPU: prometheus.NewDesc("rds_dbload_noncpu_average",
 			"Number of active sessions where the wait event type is not CPU",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		transactionLogsDiskUsage: prometheus.NewDesc("rds_transaction_logs_disk_usage_bytes",
+			"Disk space used by transaction logs (only on PostgreSQL)",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		quotaDBInstances: prometheus.NewDesc("rds_quota_max_dbinstances_average",
@@ -469,6 +474,10 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 
 		if instance.WriteThroughput != nil {
 			ch <- prometheus.MustNewConstMetric(c.writeThroughput, prometheus.GaugeValue, *instance.WriteThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.TransactionLogsDiskUsage != nil {
+			ch <- prometheus.MustNewConstMetric(c.transactionLogsDiskUsage, prometheus.GaugeValue, *instance.TransactionLogsDiskUsage, c.awsAccountID, c.awsRegion, dbidentifier)
 		}
 
 		if instance.DBLoad != nil {

@@ -26,6 +26,7 @@ var db1ExpecteRdsMetrics = cloudwatch.RdsMetrics{
 	ReplicaLag:                aws.Float64(42),
 	ReplicationSlotDiskUsage:  aws.Float64(100),
 	SwapUsage:                 aws.Float64(10),
+	TransactionLogsDiskUsage:  aws.Float64(24),
 	WriteIOPS:                 aws.Float64(11),
 	WriteThroughput:           aws.Float64(12),
 }
@@ -44,6 +45,7 @@ var db2ExpecteRdsMetrics = cloudwatch.RdsMetrics{
 	ReplicaLag:                aws.Float64(42),
 	ReplicationSlotDiskUsage:  aws.Float64(100),
 	SwapUsage:                 aws.Float64(10),
+	TransactionLogsDiskUsage:  aws.Float64(24),
 	WriteIOPS:                 aws.Float64(11),
 	WriteThroughput:           aws.Float64(12),
 }
@@ -117,6 +119,11 @@ func generateMockedMetricsForInstance(id int, m cloudwatch.RdsMetrics) []aws_clo
 			Values: []float64{*m.SwapUsage},
 		},
 		{
+			Id:     aws.String(fmt.Sprintf("transactionlogsdiskusage_%d", id)),
+			Label:  aws.String("TransactionLogsDiskUsage"),
+			Values: []float64{*m.TransactionLogsDiskUsage},
+		},
+		{
 			Id:     aws.String(fmt.Sprintf("writeiops_%d", id)),
 			Label:  aws.String("WriteIOPS"),
 			Values: []float64{*m.WriteIOPS},
@@ -173,6 +180,7 @@ func TestGetDBInstanceTypeInformation(t *testing.T) {
 		assert.Equal(t, value.ReplicaLag, result.Instances[id].ReplicaLag, "ReplicaLag mismatch")
 		assert.Equal(t, value.ReplicationSlotDiskUsage, result.Instances[id].ReplicationSlotDiskUsage, "ReplicationSlotDiskUsage mismatch")
 		assert.Equal(t, value.SwapUsage, result.Instances[id].SwapUsage, "SwapUsage mismatch")
+		assert.Equal(t, value.TransactionLogsDiskUsage, result.Instances[id].TransactionLogsDiskUsage, "TransactionLogsDiskUsage mismatch")
 		assert.Equal(t, value.WriteIOPS, result.Instances[id].WriteIOPS, "WriteIOPS mismatch")
 		assert.Equal(t, value.WriteThroughput, result.Instances[id].WriteThroughput, "WriteThroughput mismatch")
 	}
