@@ -16,6 +16,8 @@ tests:
       - equal:
           path: spec.replicas
           value: 1
+      - notExists:
+          path: spec.template.spec.priorityClassName
   - it: render deployment with image tag
     values:
       - ./values/with_image_tag.yaml
@@ -71,3 +73,10 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].env[1].valueFrom.secretKeyRef.key
           value: AWS_SECRET_ACCESS_KEY
+  - it: render with priorityClass
+    values:
+      - ./values/with_deployment_priorityclass.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.priorityClassName
+          value: high-priority
