@@ -4,8 +4,6 @@ serviceMonitor:
   scrapeTimeout: 60s
   additionalLabels:
     additionalLabel1: value1
-  externalLabels:
-    externalLabel1: externalValue1
   sampleLimit: 42
   relabelings:
     - sourceLabels:

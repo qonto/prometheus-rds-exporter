@@ -70,7 +70,6 @@ serviceMonitor:
   interval: 60s
   #scrapeTimeout: 30s
   additionalLabels: {} # The labels to add on ServiceMonitor CRD
-  externalLabels: {} # The labels to add to any time series or alerts when communicating with external systems (federation, remote storage, Alertmanager)
   relabelings: [] # RelabelConfigs to apply to samples before scraping
   metricRelabelings: [] # MetricRelabelConfigs to apply to samples before ingestion
   sampleLimit: 0 # SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
