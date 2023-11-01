@@ -7,7 +7,9 @@ import (
 	"github.com/qonto/prometheus-rds-exporter/internal/infra/build"
 )
 
-type homeHandler struct{}
+type homeHandler struct {
+	metricPath string
+}
 
 func (h homeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `<html>
@@ -16,7 +18,7 @@ func (h homeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		</head>
 		<body>
 			<h1>Prometheus RDS Exporter (%s)</h1>
-			<p><a href='/metrics'>Metrics</a></p>
+			<p><a href='%s'>Metrics</a></p>
 		</body>
-		</html>`, build.Version)
+		</html>`, build.Version, h.metricPath)
 }
