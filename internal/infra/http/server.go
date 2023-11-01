@@ -63,7 +63,7 @@ func (c *Component) Start() error {
 		BaseContext:       func(_ net.Listener) context.Context { return ctx },
 	}
 
-	http.Handle("/", helloWorldhandler{})
+	http.Handle("/", homeHandler{})
 	http.Handle(c.config.metricPath, promhttp.Handler())
 
 	signalChan := make(chan os.Signal, 1)

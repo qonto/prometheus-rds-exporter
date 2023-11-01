@@ -7,9 +7,9 @@ import (
 	"github.com/qonto/prometheus-rds-exporter/internal/infra/build"
 )
 
-type helloWorldhandler struct{}
+type homeHandler struct{}
 
-func (h helloWorldhandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h homeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, `<html>
 		<head>
 			<title>Prometheus RDS Exporter</title>
