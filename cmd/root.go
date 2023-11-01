@@ -110,7 +110,7 @@ func NewRootCommand() (*cobra.Command, error) {
 
 	cobra.OnInitialize(initConfig)
 
-	cmd.Flags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/.prometheus-rds-exporter.yaml)")
+	cmd.Flags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/prometheus-rds-exporter.yaml)")
 	cmd.Flags().BoolP("debug", "d", false, "Enable debug mode")
 	cmd.Flags().StringP("log-format", "l", "json", "Log format (text or json)")
 	cmd.Flags().StringP("metrics-path", "", "/metrics", "Path under which to expose metrics")
@@ -215,7 +215,7 @@ func initConfig() {
 		viper.AddConfigPath(".")
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".prometheus-rds-exporter")
+		viper.SetConfigName("prometheus-rds-exporter")
 	}
 
 	if err := viper.ReadInConfig(); err == nil {
