@@ -1,4 +1,5 @@
 prometheus-rds-exporter
+prometheus-rds-exporter.yaml
 metrics
 
 # If you prefer the allow list template instead of the deny list, see community template:
@@ -28,3 +29,4 @@ go.work
 
 # Build files
 dist
+.DS_Store
