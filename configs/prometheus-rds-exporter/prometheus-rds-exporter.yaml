@@ -3,45 +3,45 @@
 #
 
 # Enable debug mode
-#debug: false
+# debug: false
 
 # Path under which to expose metrics
-#metrics-path: /metrics
+# metrics-path: /metrics
 
 # Address to listen on for web interface
-#listen-address: ":9043"
+# listen-address: ":9043"
 
 # Log format (text or json)
-#log-format: json
+# log-format: json
 
 #
 # AWS credentials
 #
 
 # AWS IAM ARN role to assume to fetch metrics
-#aws-assume-role-arn: arn:aws:iam::000000000000:role/prometheus-rds-exporter
+# aws-assume-role-arn: arn:aws:iam::000000000000:role/prometheus-rds-exporter
 
 # AWS assume role session name
-#aws-assume-role-session: prometheus-rds-exporter
+# aws-assume-role-session: prometheus-rds-exporter
 
 #
 # Metrics
 #
 
 # Collect AWS instances metrics (AWS Cloudwatch API)
-#collect-instance-metrics: true
+# collect-instance-metrics: true
 
 # Collect AWS instance types information (AWS EC2 API)
-#collect-instance-types: true
+# collect-instance-types: true
 
 # Collect AWS instances logs size (AWS RDS API)
-#collect-logs-size: true
+# collect-logs-size: true
 
 # Collect AWS instances maintenances (AWS RDS API)
-#collect-maintenances: true
+# collect-maintenances: true
 
 # Collect AWS RDS quotas (AWS quotas API)
-#collect-quotas: true
+# collect-quotas: true
 
 # Collect AWS RDS usages (AWS Cloudwatch API)
-#collect-usages: true
+# collect-usages: true

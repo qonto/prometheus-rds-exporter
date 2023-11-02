@@ -1,13 +1,14 @@
+---
 name: build
 run-name: building and publishing new release
-on:
+on:  # yamllint disable-line rule:truthy
   push:
     # run only against tags
     tags:
       - "*"
 permissions:
-  contents: write # allows the action to create a Github release
-  id-token: write # This is required for requesting the AWS JWT
+  contents: write  # allows the action to create a Github release
+  id-token: write  # This is required for requesting the AWS JWT
 
 jobs:
   build-publish:
@@ -21,7 +22,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: us-east-1 # ECR Public can only be logged into from the us-east-1 region
+          aws-region: us-east-1  # ECR Public can only be logged into from the us-east-1 region
           role-to-assume: arn:aws:iam::202662887508:role/ecr-prometheus-rds-exporter
           role-session-name: githubActions
 
@@ -52,7 +53,7 @@ jobs:
       - name: Configure AWS credentials for helm chart
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: us-east-1 # ECR Public can only be logged into from the us-east-1 region
+          aws-region: us-east-1  # ECR Public can only be logged into from the us-east-1 region
           role-to-assume: arn:aws:iam::202662887508:role/ecr-prometheus-rds-exporter-chart
           role-session-name: githubActions
 
@@ -62,7 +63,7 @@ jobs:
           registry-type: public
           mask-password: 'true'
 
-      - name: Downgrade Helm # 1.13.0 has bug that block push charts on OCI
+      - name: Downgrade Helm  # 1.13.0 has bug that block push charts on OCI
         run: |
           curl -sSLo /tmp/helm.tar.gz "https://get.helm.sh/helm-v3.12.0-linux-amd64.tar.gz" && \
           tar --strip-components=1 -C /tmp -xzvf /tmp/helm.tar.gz linux-amd64/helm && \

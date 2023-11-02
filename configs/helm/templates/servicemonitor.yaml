@@ -1,5 +1,6 @@
 {{- if .Values.serviceMonitor.enabled -}}
-# CRD documentation available on https://github.com/prometheus-operator/prometheus-operator/blob/v0.68.0/Documentation/api.md#servicemonitor
+---
+#  CRD documentation available on https://github.com/prometheus-operator/prometheus-operator/blob/v0.68.0/Documentation/api.md#servicemonitor
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
