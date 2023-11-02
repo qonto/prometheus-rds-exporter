@@ -1,3 +1,4 @@
+---
 # Default values for prometheus-rds-exporter.
 
 replicaCount: 1
@@ -5,7 +6,7 @@ replicaCount: 1
 image:
   repository: public.ecr.aws/qonto/prometheus-rds-exporter
   pullPolicy: IfNotPresent
-  tag: "" # Defined by chart appVersion parameter
+  tag: ""  # Defined by chart appVersion parameter
 
 # Define environment variables
 env: {}
@@ -32,14 +33,13 @@ serviceAccount:
 podAnnotations: {}
 
 podSecurityContext: {}
-  # fsGroup: 2000
 
 priorityClassName: ""
 
 securityContext:
   capabilities:
     drop:
-    - ALL
+      - ALL
   readOnlyRootFilesystem: true
   runAsNonRoot: true
   runAsGroup: 1001
@@ -53,8 +53,6 @@ ingress:
   enabled: false
   className: ""
   annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
   hosts:
     - host: prometheus-rds-exporter.local
       paths:
@@ -68,11 +66,11 @@ ingress:
 serviceMonitor:
   enabled: true
   interval: 60s
-  #scrapeTimeout: 30s
-  additionalLabels: {} # The labels to add on ServiceMonitor CRD
-  relabelings: [] # RelabelConfigs to apply to samples before scraping
-  metricRelabelings: [] # MetricRelabelConfigs to apply to samples before ingestion
-  sampleLimit: 0 # SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
+  # scrapeTimeout: 30s
+  additionalLabels: {}  # The labels to add on ServiceMonitor CRD
+  relabelings: []  # RelabelConfigs to apply to samples before scraping
+  metricRelabelings: []  # MetricRelabelConfigs to apply to samples before ingestion
+  sampleLimit: 0  # SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
 resources:
   limits:
     # cpu: 100m
