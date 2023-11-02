@@ -39,6 +39,8 @@ We use:
 
 * [`markdownlint-cli2`](https://github.com/DavidAnson/markdownlint-cli2) for linting the Markdown documents.
 
+* [`yamllint`](https://github.com/adrienverge/yamllint) for linting the YAML documents.
+
 ## Pull Request Checklist
 
 * Branch from the `main` branch and, if needed, rebase to the current main branch before submitting your pull request. If it doesn't merge cleanly with main you may be asked to rebase your changes.

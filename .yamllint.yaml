@@ -1,0 +1,12 @@
+---
+extends: default
+
+rules:
+  line-length:
+    max: 160
+    level: warning
+
+ignore:
+  - dist/
+  - prometheus-rds-exporter.yaml
+  - configs/helm/templates/*.yaml  # Helm templates are invalid due to Go template language
