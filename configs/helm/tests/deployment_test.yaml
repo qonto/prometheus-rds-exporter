@@ -10,7 +10,7 @@ tests:
           of: Deployment
       - equal:
           path: metadata.name
-          value: RELEASE-NAME-prometheus-rds-exporter-chart
+          value: RELEASE-NAME-prometheus-rds-exporter
       - equal:
           path: spec.template.spec.containers[0].image
           value: public.ecr.aws/qonto/prometheus-rds-exporter:0.0.0

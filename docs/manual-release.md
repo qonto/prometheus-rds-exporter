@@ -45,5 +45,5 @@ This document explains how to manually release Prometheus RDS version.
 1. Perform dry-run install
 
     ```bash
-    helm install prometheus-rds-exporter oci://public.ecr.aws/qonto/test1-chart --dry-run
+    helm install prometheus-rds-exporter oci://public.ecr.aws/qonto/prometheus-rds-exporter-chart --dry-run
     ```

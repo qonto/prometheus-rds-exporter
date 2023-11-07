@@ -6,7 +6,7 @@ type: application
 version: 0.0.0
 appVersion: 0.0.0
 
-name: prometheus-rds-exporter-chart
+name: prometheus-rds-exporter
 description: Prometheus RDS exporter
 home: https://github.com/qonto/prometheus-rds-exporter
 sources:
