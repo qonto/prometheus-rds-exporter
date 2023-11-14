@@ -210,7 +210,7 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			"For read replica configurations, the amount of time a read replica DB instance lags behind the source DB instance. Applies to MariaDB, Microsoft SQL Server, MySQL, Oracle, and PostgreSQL read replicas",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
-		replicationSlotDiskUsage: prometheus.NewDesc("rds_replication_slot_disk_usage_average",
+		replicationSlotDiskUsage: prometheus.NewDesc("rds_replication_slot_disk_usage_bytes",
 			"Disk space used by replication slot files. Applies to PostgreSQL",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
