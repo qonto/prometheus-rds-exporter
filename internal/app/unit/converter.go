@@ -10,8 +10,8 @@ type Number interface {
 	int32 | int64 | float64
 }
 
-func GigaBytesToBytes[N Number](size N) int64 {
-	return int64(size) * unit * unit * unit
+func GigaBytesToBytes[N Number](size N) N {
+	return size * unit * unit * unit
 }
 
 func MegaBytesToBytes[N Number](size N) N {

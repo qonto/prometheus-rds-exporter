@@ -263,7 +263,7 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 	}
 
 	metrics := RdsInstanceMetrics{
-		AllocatedStorage:           converter.GigaBytesToBytes(dbInstance.AllocatedStorage),
+		AllocatedStorage:           converter.GigaBytesToBytes(int64(dbInstance.AllocatedStorage)),
 		BackupRetentionPeriod:      converter.DaystoSeconds(dbInstance.BackupRetentionPeriod),
 		DBInstanceClass:            *dbInstance.DBInstanceClass,
 		DbiResourceID:              *dbInstance.DbiResourceId,
@@ -271,7 +271,7 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 		Engine:                     *dbInstance.Engine,
 		EngineVersion:              *dbInstance.EngineVersion,
 		LogFilesSize:               logFilesSize,
-		MaxAllocatedStorage:        converter.GigaBytesToBytes(maxAllocatedStorage),
+		MaxAllocatedStorage:        converter.GigaBytesToBytes(int64(maxAllocatedStorage)),
 		MaxIops:                    iops,
 		MultiAZ:                    dbInstance.MultiAZ,
 		PendingMaintenanceAction:   pendingMaintenanceAction,
