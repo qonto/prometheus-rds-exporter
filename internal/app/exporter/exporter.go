@@ -262,7 +262,7 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			"Maximum number of manual DB instance snapshots",
 			[]string{"aws_account_id", "aws_region"}, nil,
 		),
-		usageAllocatedStorage: prometheus.NewDesc("rds_usage_allocated_storage_average",
+		usageAllocatedStorage: prometheus.NewDesc("rds_usage_allocated_storage_bytes",
 			"Total storage used by AWS RDS instances",
 			[]string{"aws_account_id", "aws_region"}, nil,
 		),

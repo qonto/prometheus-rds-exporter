@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_cloudwatch_types "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/cloudwatch"
+	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -44,7 +45,7 @@ func TestGetUsageMetrics(t *testing.T) {
 	result, err := client.GetUsageMetrics()
 
 	require.NoError(t, err, "GetUsageMetrics must succeed")
-	assert.Equal(t, expected.AllocatedStorage, result.AllocatedStorage, "Allocated storage mismatch")
+	assert.Equal(t, converter.GigaBytesToBytes(expected.AllocatedStorage), result.AllocatedStorage, "Allocated storage mismatch")
 	assert.Equal(t, expected.DBInstances, result.DBInstances, "DB instances count mismatch")
 	assert.Equal(t, expected.ManualSnapshots, result.ManualSnapshots, "Manual snapshots mismatch")
 	assert.Equal(t, expected.ReservedDBInstances, result.ReservedDBInstances, "Reserved DB instances mismatch")
