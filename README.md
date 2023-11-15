@@ -449,7 +449,9 @@ You can take example on Terraform code in `configs/terraform/`.
 
 ## Contribute
 
-See [CONTRIBUTING.md](CONTRIBUTING.md)
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+To report a security issue, please visit [SECURITY.md](SECURITY.md)
 
 ## Development
 
