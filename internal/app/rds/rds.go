@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_rds "github.com/aws/aws-sdk-go-v2/service/rds"
@@ -49,6 +50,7 @@ type RdsInstanceMetrics struct {
 	Role                             string
 	SourceDBInstanceIdentifier       string
 	CACertificateIdentifier          string
+	CertificateValidTill             time.Time
 }
 
 const (
@@ -274,6 +276,7 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 		StorageThroughput:          converter.MegaBytesToBytes(storageThroughput),
 		StorageType:                *dbInstance.StorageType,
 		CACertificateIdentifier:    *dbInstance.CACertificateIdentifier,
+		CertificateValidTill:       *dbInstance.CertificateDetails.ValidTill,
 	}
 
 	return metrics, nil
