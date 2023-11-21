@@ -75,6 +75,7 @@ func newRdsInstance() *aws_rds_types.DBInstance {
 		PerformanceInsightsEnabled: aws.Bool(true),
 		PubliclyAccessible:         true,
 		StorageType:                aws.String("gp3"),
+		CACertificateIdentifier:    aws.String("rds-ca-2019"),
 	}
 }
 
@@ -108,6 +109,7 @@ func TestGetMetrics(t *testing.T) {
 	assert.Equal(t, rdsInstance.PubliclyAccessible, m.PubliclyAccessible, "PubliclyAccessible mismatch")
 	assert.Equal(t, *rdsInstance.DbiResourceId, m.DbiResourceID, "DbiResourceId mismatch")
 	assert.Equal(t, *rdsInstance.DBInstanceClass, m.DBInstanceClass, "DBInstanceIdentifier mismatch")
+	assert.Equal(t, *rdsInstance.CACertificateIdentifier, m.CACertificateIdentifier, "CACertificateIdentifier mismatch")
 }
 
 func TestGP2StorageType(t *testing.T) {

@@ -48,6 +48,7 @@ type RdsInstanceMetrics struct {
 	IAMDatabaseAuthenticationEnabled bool
 	Role                             string
 	SourceDBInstanceIdentifier       string
+	CACertificateIdentifier          string
 }
 
 const (
@@ -272,6 +273,7 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 		Status:                     GetDBInstanceStatusCode(*dbInstance.DBInstanceStatus),
 		StorageThroughput:          converter.MegaBytesToBytes(storageThroughput),
 		StorageType:                *dbInstance.StorageType,
+		CACertificateIdentifier:    *dbInstance.CACertificateIdentifier,
 	}
 
 	return metrics, nil
