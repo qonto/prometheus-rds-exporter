@@ -2,7 +2,7 @@
 
 set -xe
 
-DASHBOARD_IDS="19646 19647 19679"
+DASHBOARD_IDS="19646 19647 19679 14061"
 DASHBOARD_PROVISIONNING=/var/tmp/dashboards
 
 download_dashboards() {
