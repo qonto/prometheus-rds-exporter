@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_rds "github.com/aws/aws-sdk-go-v2/service/rds"
@@ -55,6 +56,16 @@ func randomString(length int) string {
 	return fmt.Sprintf("%x", buf)
 }
 
+func newRdsCertificateDetails() *aws_rds_types.CertificateDetails {
+	return &aws_rds_types.CertificateDetails{
+		CAIdentifier: aws.String("rds-ca-2019"),
+		ValidTill: aws.Time(time.Date(
+			2024, time.August, 22,
+			17, 8, 50, 0, time.UTC,
+		)),
+	}
+}
+
 func newRdsInstance() *aws_rds_types.DBInstance {
 	DBInstanceIdentifier := randomString(10)
 
@@ -75,6 +86,8 @@ func newRdsInstance() *aws_rds_types.DBInstance {
 		PerformanceInsightsEnabled: aws.Bool(true),
 		PubliclyAccessible:         true,
 		StorageType:                aws.String("gp3"),
+		CACertificateIdentifier:    aws.String("rds-ca-2019"),
+		CertificateDetails:         newRdsCertificateDetails(),
 	}
 }
 
@@ -108,6 +121,8 @@ func TestGetMetrics(t *testing.T) {
 	assert.Equal(t, rdsInstance.PubliclyAccessible, m.PubliclyAccessible, "PubliclyAccessible mismatch")
 	assert.Equal(t, *rdsInstance.DbiResourceId, m.DbiResourceID, "DbiResourceId mismatch")
 	assert.Equal(t, *rdsInstance.DBInstanceClass, m.DBInstanceClass, "DBInstanceIdentifier mismatch")
+	assert.Equal(t, *rdsInstance.CACertificateIdentifier, m.CACertificateIdentifier, "CACertificateIdentifier mismatch")
+	assert.Equal(t, *rdsInstance.CertificateDetails.ValidTill, m.CertificateValidTill, "CertificateValidTill mismatch")
 }
 
 func TestGP2StorageType(t *testing.T) {

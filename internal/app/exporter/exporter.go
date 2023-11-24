@@ -98,6 +98,7 @@ type rdsCollector struct {
 	usageManualSnapshots        *prometheus.Desc
 	exporterBuildInformation    *prometheus.Desc
 	transactionLogsDiskUsage    *prometheus.Desc
+	certificateValidTill        *prometheus.Desc
 }
 
 func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient) *rdsCollector {
@@ -126,7 +127,7 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 		),
 		information: prometheus.NewDesc("rds_instance_info",
 			"RDS instance information",
-			[]string{"aws_account_id", "aws_region", "dbidentifier", "dbi_resource_id", "instance_class", "engine", "engine_version", "storage_type", "multi_az", "deletion_protection", "role", "source_dbidentifier", "pending_modified_values", "pending_maintenance", "performance_insights_enabled"}, nil,
+			[]string{"aws_account_id", "aws_region", "dbidentifier", "dbi_resource_id", "instance_class", "engine", "engine_version", "storage_type", "multi_az", "deletion_protection", "role", "source_dbidentifier", "pending_modified_values", "pending_maintenance", "performance_insights_enabled", "ca_certificate_identifier"}, nil,
 		),
 		maxAllocatedStorage: prometheus.NewDesc("rds_max_allocated_storage_bytes",
 			"Upper limit in gibibytes to which Amazon RDS can automatically scale the storage of the DB instance",
@@ -238,6 +239,10 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 		),
 		transactionLogsDiskUsage: prometheus.NewDesc("rds_transaction_logs_disk_usage_bytes",
 			"Disk space used by transaction logs (only on PostgreSQL)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		certificateValidTill: prometheus.NewDesc("rds_certificate_expiry_timestamp_seconds",
+			"Timestamp of the expiration of the Instance certificate",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		quotaDBInstances: prometheus.NewDesc("rds_quota_max_dbinstances_average",
@@ -415,13 +420,39 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 	// RDS metrics
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.rdsAPIcalls, c.awsAccountID, c.awsRegion, "rds")
 	for dbidentifier, instance := range c.metrics.rds.Instances {
-		ch <- prometheus.MustNewConstMetric(c.allocatedStorage, prometheus.GaugeValue, float64(instance.AllocatedStorage), c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.information, prometheus.GaugeValue, 1, c.awsAccountID, c.awsRegion, dbidentifier, instance.DbiResourceID, instance.DBInstanceClass, instance.Engine, instance.EngineVersion, instance.StorageType, strconv.FormatBool(instance.MultiAZ), strconv.FormatBool(instance.DeletionProtection), instance.Role, instance.SourceDBInstanceIdentifier, strconv.FormatBool(instance.PendingModifiedValues), instance.PendingMaintenanceAction, strconv.FormatBool(instance.PerformanceInsightsEnabled))
+		ch <- prometheus.MustNewConstMetric(
+			c.allocatedStorage,
+			prometheus.GaugeValue,
+			float64(instance.AllocatedStorage),
+			c.awsAccountID, c.awsRegion, dbidentifier,
+		)
+		ch <- prometheus.MustNewConstMetric(
+			c.information,
+			prometheus.GaugeValue,
+			1,
+			c.awsAccountID,
+			c.awsRegion,
+			dbidentifier,
+			instance.DbiResourceID,
+			instance.DBInstanceClass,
+			instance.Engine,
+			instance.EngineVersion,
+			instance.StorageType,
+			strconv.FormatBool(instance.MultiAZ),
+			strconv.FormatBool(instance.DeletionProtection),
+			instance.Role,
+			instance.SourceDBInstanceIdentifier,
+			strconv.FormatBool(instance.PendingModifiedValues),
+			instance.PendingMaintenanceAction,
+			strconv.FormatBool(instance.PerformanceInsightsEnabled),
+			instance.CACertificateIdentifier,
+		)
 		ch <- prometheus.MustNewConstMetric(c.maxAllocatedStorage, prometheus.GaugeValue, float64(instance.MaxAllocatedStorage), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.maxIops, prometheus.GaugeValue, float64(instance.MaxIops), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.status, prometheus.GaugeValue, float64(instance.Status), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.storageThroughput, prometheus.GaugeValue, float64(instance.StorageThroughput), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.backupRetentionPeriod, prometheus.GaugeValue, float64(instance.BackupRetentionPeriod), c.awsAccountID, c.awsRegion, dbidentifier)
+		ch <- prometheus.MustNewConstMetric(c.certificateValidTill, prometheus.GaugeValue, float64(instance.CertificateValidTill.Unix()), c.awsAccountID, c.awsRegion, dbidentifier)
 
 		if instance.LogFilesSize != nil {
 			ch <- prometheus.MustNewConstMetric(c.logFilesSize, prometheus.GaugeValue, float64(*instance.LogFilesSize), c.awsAccountID, c.awsRegion, dbidentifier)
