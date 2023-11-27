@@ -99,6 +99,7 @@ type rdsCollector struct {
 	exporterBuildInformation    *prometheus.Desc
 	transactionLogsDiskUsage    *prometheus.Desc
 	certificateValidTill        *prometheus.Desc
+	age                         *prometheus.Desc
 }
 
 func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient) *rdsCollector {
@@ -128,6 +129,10 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 		information: prometheus.NewDesc("rds_instance_info",
 			"RDS instance information",
 			[]string{"aws_account_id", "aws_region", "dbidentifier", "dbi_resource_id", "instance_class", "engine", "engine_version", "storage_type", "multi_az", "deletion_protection", "role", "source_dbidentifier", "pending_modified_values", "pending_maintenance", "performance_insights_enabled", "ca_certificate_identifier"}, nil,
+		),
+		age: prometheus.NewDesc("rds_instance_age_seconds",
+			"Time since instance creation",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		maxAllocatedStorage: prometheus.NewDesc("rds_max_allocated_storage_bytes",
 			"Upper limit in gibibytes to which Amazon RDS can automatically scale the storage of the DB instance",
@@ -453,6 +458,10 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(c.storageThroughput, prometheus.GaugeValue, float64(instance.StorageThroughput), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.backupRetentionPeriod, prometheus.GaugeValue, float64(instance.BackupRetentionPeriod), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.certificateValidTill, prometheus.GaugeValue, float64(instance.CertificateValidTill.Unix()), c.awsAccountID, c.awsRegion, dbidentifier)
+
+		if instance.Age != nil {
+			ch <- prometheus.MustNewConstMetric(c.age, prometheus.GaugeValue, *instance.Age, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
 
 		if instance.LogFilesSize != nil {
 			ch <- prometheus.MustNewConstMetric(c.logFilesSize, prometheus.GaugeValue, float64(*instance.LogFilesSize), c.awsAccountID, c.awsRegion, dbidentifier)

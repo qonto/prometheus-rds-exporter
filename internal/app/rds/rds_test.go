@@ -68,6 +68,7 @@ func newRdsCertificateDetails() *aws_rds_types.CertificateDetails {
 
 func newRdsInstance() *aws_rds_types.DBInstance {
 	DBInstanceIdentifier := randomString(10)
+	now := time.Now()
 
 	return &aws_rds_types.DBInstance{
 		AllocatedStorage:           5,
@@ -88,6 +89,7 @@ func newRdsInstance() *aws_rds_types.DBInstance {
 		StorageType:                aws.String("gp3"),
 		CACertificateIdentifier:    aws.String("rds-ca-2019"),
 		CertificateDetails:         newRdsCertificateDetails(),
+		InstanceCreateTime:         &now,
 	}
 }
 
@@ -352,4 +354,22 @@ func TestPendingModificationDueToUnappliedParameterGroup(t *testing.T) {
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
 	assert.Equal(t, true, metrics.Instances[*rdsInstance.DBInstanceIdentifier].PendingModifiedValues, "Should have pending modification")
+}
+
+func TestInstanceAge(t *testing.T) {
+	// Mock RDS instance
+	rdsInstance := newRdsInstance()
+	creationDate := time.Date(2023, 9, 25, 12, 25, 0, 0, time.UTC) // Date of our first release
+	rdsInstance.InstanceCreateTime = &creationDate
+	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
+
+	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	configuration := rds.Configuration{}
+	client := rds.NewFetcher(mock, configuration)
+	metrics, err := client.GetInstancesMetrics()
+
+	expectedAge := time.Since(*rdsInstance.InstanceCreateTime)
+
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+	assert.Equal(t, int(expectedAge.Seconds()), int(*metrics.Instances[*rdsInstance.DBInstanceIdentifier].Age), "Age should match expected age")
 }
