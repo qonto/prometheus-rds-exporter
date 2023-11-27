@@ -50,7 +50,7 @@ type RdsInstanceMetrics struct {
 	Role                             string
 	SourceDBInstanceIdentifier       string
 	CACertificateIdentifier          string
-	CertificateValidTill             time.Time
+	CertificateValidTill             *time.Time
 	Age                              *float64
 }
 
@@ -262,6 +262,12 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 		age = &diff
 	}
 
+	var certificateValidTill *time.Time
+
+	if dbInstance.CertificateDetails != nil && dbInstance.CertificateDetails.ValidTill != nil {
+		certificateValidTill = dbInstance.CertificateDetails.ValidTill
+	}
+
 	metrics := RdsInstanceMetrics{
 		AllocatedStorage:           converter.GigaBytesToBytes(dbInstance.AllocatedStorage),
 		BackupRetentionPeriod:      converter.DaystoSeconds(dbInstance.BackupRetentionPeriod),
@@ -283,8 +289,8 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 		Status:                     GetDBInstanceStatusCode(*dbInstance.DBInstanceStatus),
 		StorageThroughput:          converter.MegaBytesToBytes(storageThroughput),
 		StorageType:                *dbInstance.StorageType,
-		CACertificateIdentifier:    *dbInstance.CACertificateIdentifier,
-		CertificateValidTill:       *dbInstance.CertificateDetails.ValidTill,
+		CACertificateIdentifier:    aws.ToString(dbInstance.CACertificateIdentifier),
+		CertificateValidTill:       certificateValidTill,
 		Age:                        age,
 	}
 
