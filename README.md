@@ -65,10 +65,10 @@ It collect key metrics about:
 | rds_quota_total_storage_bytes | `aws_account_id`, `aws_region` | Maximum total storage for all DB instances |
 | rds_read_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of disk read I/O operations per second |
 | rds_read_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of bytes read from disk per second |
-| rds_transaction_logs_disk_usage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Disk space used by transaction logs (only on PostgreSQL) |
 | rds_replica_lag_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | For read replica configurations, the amount of time a read replica DB instance lags behind the source DB instance. Applies to MariaDB, Microsoft SQL Server, MySQL, Oracle, and PostgreSQL read replicas |
 | rds_replication_slot_disk_usage_average | `aws_account_id`, `aws_region`, `dbidentifier` | Disk space used by replication slot files. Applies to PostgreSQL |
 | rds_swap_usage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Amount of swap space used on the DB instance. This metric is not available for SQL Server |
+| rds_transaction_logs_disk_usage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Disk space used by transaction logs (only on PostgreSQL) |
 | rds_usage_allocated_storage_average | `aws_account_id`, `aws_region` | Total storage used by AWS RDS instances |
 | rds_usage_db_instances_average | `aws_account_id`, `aws_region` | AWS RDS instance count |
 | rds_usage_manual_snapshots_average | `aws_account_id`, `aws_region` | Manual snapshots count |
