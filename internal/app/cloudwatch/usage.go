@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_cloudwatch "github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	aws_cloudwatch_types "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
+	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 )
 
 type UsageMetrics struct {
@@ -22,7 +23,7 @@ type UsageMetrics struct {
 func (u *UsageMetrics) Update(field string, value float64) error {
 	switch field {
 	case "AllocatedStorage":
-		u.AllocatedStorage = value
+		u.AllocatedStorage = converter.GigaBytesToBytes(value)
 	case "DBInstances":
 		u.DBInstances = value
 	case "ManualSnapshots":
