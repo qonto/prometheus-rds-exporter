@@ -103,7 +103,7 @@ func (s *serviceQuotaFetcher) GetRDSQuotas() (Metrics, error) {
 
 	return Metrics{
 		DBinstances:               DBinstances,
-		TotalStorage:              float64(converter.GigaBytesToBytes(totalStorage)),
+		TotalStorage:              converter.GigaBytesToBytes(totalStorage),
 		ManualDBInstanceSnapshots: manualDBInstanceSnapshots,
 	}, nil
 }

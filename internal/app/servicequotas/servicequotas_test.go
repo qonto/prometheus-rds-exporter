@@ -49,6 +49,6 @@ func TestGetRDSQuotas(t *testing.T) {
 	result, err := servicequotas.NewFetcher(mockClient).GetRDSQuotas()
 	require.NoError(t, err, "GetRDSQuotas must succeed")
 	assert.Equal(t, DBinstancesQuota, result.DBinstances, "DbInstance quota is incorrect")
-	assert.Equal(t, float64(converter.GigaBytesToBytes(totalStorage)), result.TotalStorage, "Total storage quota is incorrect")
+	assert.Equal(t, converter.GigaBytesToBytes(totalStorage), result.TotalStorage, "Total storage quota is incorrect")
 	assert.Equal(t, manualDBInstanceSnapshots, result.ManualDBInstanceSnapshots, "Manual db instance snapshot quota is incorrect")
 }

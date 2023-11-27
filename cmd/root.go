@@ -4,6 +4,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
@@ -207,15 +208,23 @@ func initConfig() {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)
 	} else {
-		// Find home directory.
+		// Find home directory
 		home, err := os.UserHomeDir()
 		cobra.CheckErr(err)
 
-		// Search config in home directory or current directory with name ".rds-exporter" (without extension).
-		viper.AddConfigPath(".")
-		viper.AddConfigPath(home)
-		viper.SetConfigType("yaml")
-		viper.SetConfigName("prometheus-rds-exporter")
+		// Search config in home directory or current directory with name "prometheus-rds-exporter.yaml"
+
+		configurationFilename := "prometheus-rds-exporter.yaml"
+		currentPathFilename := configurationFilename
+		homeFilename := filepath.Join(home, configurationFilename)
+
+		if _, err := os.Stat(homeFilename); err == nil {
+			viper.SetConfigFile(homeFilename)
+		}
+
+		if _, err := os.Stat(currentPathFilename); err == nil {
+			viper.SetConfigFile(currentPathFilename)
+		}
 	}
 
 	if err := viper.ReadInConfig(); err == nil {

@@ -111,8 +111,8 @@ func TestGetMetrics(t *testing.T) {
 	assert.Equal(t, "primary", m.Role, "Should be primary node")
 	assert.Equal(t, emptyInt64, m.LogFilesSize, "Log file size mismatch")
 
-	assert.Equal(t, converter.GigaBytesToBytes(rdsInstance.AllocatedStorage), m.AllocatedStorage, "Allocated storage mismatch")
-	assert.Equal(t, converter.GigaBytesToBytes(*rdsInstance.MaxAllocatedStorage), m.MaxAllocatedStorage, "Max allocated storage (aka autoscaling) mismatch")
+	assert.Equal(t, converter.GigaBytesToBytes(int64(rdsInstance.AllocatedStorage)), m.AllocatedStorage, "Allocated storage mismatch")
+	assert.Equal(t, converter.GigaBytesToBytes(int64(*rdsInstance.MaxAllocatedStorage)), m.MaxAllocatedStorage, "Max allocated storage (aka autoscaling) mismatch")
 	assert.Equal(t, int64(*rdsInstance.Iops), m.MaxIops, "Max IOPS mismatch")
 	assert.Equal(t, converter.DaystoSeconds(rdsInstance.BackupRetentionPeriod), m.BackupRetentionPeriod, "Backup retention mismatch")
 	assert.Equal(t, rdsInstance.DeletionProtection, m.DeletionProtection, "Deletion protection mismatch")

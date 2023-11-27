@@ -214,9 +214,9 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 
 	iops, storageThroughput := getStorageMetrics(*dbInstance.StorageType, int64(dbInstance.AllocatedStorage), iops, throughput)
 
-	var maxAllocatedStorage int32 = 0
+	var maxAllocatedStorage int64 = 0
 	if dbInstance.MaxAllocatedStorage != nil {
-		maxAllocatedStorage = *dbInstance.MaxAllocatedStorage
+		maxAllocatedStorage = int64(*dbInstance.MaxAllocatedStorage)
 	}
 
 	pendingModifiedValues := false
@@ -269,7 +269,7 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 	}
 
 	metrics := RdsInstanceMetrics{
-		AllocatedStorage:           converter.GigaBytesToBytes(dbInstance.AllocatedStorage),
+		AllocatedStorage:           converter.GigaBytesToBytes(int64(dbInstance.AllocatedStorage)),
 		BackupRetentionPeriod:      converter.DaystoSeconds(dbInstance.BackupRetentionPeriod),
 		DBInstanceClass:            aws.ToString(dbInstance.DBInstanceClass),
 		DbiResourceID:              aws.ToString(dbInstance.DbiResourceId),
