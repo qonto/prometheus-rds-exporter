@@ -50,7 +50,7 @@ type RdsInstanceMetrics struct {
 	Role                             string
 	SourceDBInstanceIdentifier       string
 	CACertificateIdentifier          string
-	CertificateValidTill             time.Time
+	CertificateValidTill             *time.Time
 	Age                              *float64
 }
 
@@ -262,14 +262,20 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 		age = &diff
 	}
 
+	var certificateValidTill *time.Time
+
+	if dbInstance.CertificateDetails != nil && dbInstance.CertificateDetails.ValidTill != nil {
+		certificateValidTill = dbInstance.CertificateDetails.ValidTill
+	}
+
 	metrics := RdsInstanceMetrics{
 		AllocatedStorage:           converter.GigaBytesToBytes(int64(dbInstance.AllocatedStorage)),
 		BackupRetentionPeriod:      converter.DaystoSeconds(dbInstance.BackupRetentionPeriod),
-		DBInstanceClass:            *dbInstance.DBInstanceClass,
-		DbiResourceID:              *dbInstance.DbiResourceId,
+		DBInstanceClass:            aws.ToString(dbInstance.DBInstanceClass),
+		DbiResourceID:              aws.ToString(dbInstance.DbiResourceId),
 		DeletionProtection:         dbInstance.DeletionProtection,
-		Engine:                     *dbInstance.Engine,
-		EngineVersion:              *dbInstance.EngineVersion,
+		Engine:                     aws.ToString(dbInstance.Engine),
+		EngineVersion:              aws.ToString(dbInstance.EngineVersion),
 		LogFilesSize:               logFilesSize,
 		MaxAllocatedStorage:        converter.GigaBytesToBytes(maxAllocatedStorage),
 		MaxIops:                    iops,
@@ -282,9 +288,9 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 		SourceDBInstanceIdentifier: sourceDBInstanceIdentifier,
 		Status:                     GetDBInstanceStatusCode(*dbInstance.DBInstanceStatus),
 		StorageThroughput:          converter.MegaBytesToBytes(storageThroughput),
-		StorageType:                *dbInstance.StorageType,
-		CACertificateIdentifier:    *dbInstance.CACertificateIdentifier,
-		CertificateValidTill:       *dbInstance.CertificateDetails.ValidTill,
+		StorageType:                aws.ToString(dbInstance.StorageType),
+		CACertificateIdentifier:    aws.ToString(dbInstance.CACertificateIdentifier),
+		CertificateValidTill:       certificateValidTill,
 		Age:                        age,
 	}
 
