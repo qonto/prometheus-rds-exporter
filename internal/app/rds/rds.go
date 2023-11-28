@@ -212,7 +212,7 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 		throughput = int64(*dbInstance.StorageThroughput)
 	}
 
-	iops, storageThroughput := getStorageMetrics(*dbInstance.StorageType, int64(dbInstance.AllocatedStorage), iops, throughput)
+	iops, storageThroughput := getStorageMetrics(*dbInstance.StorageType, int64(*dbInstance.AllocatedStorage), iops, throughput)
 
 	var maxAllocatedStorage int64 = 0
 	if dbInstance.MaxAllocatedStorage != nil {
@@ -269,21 +269,21 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 	}
 
 	metrics := RdsInstanceMetrics{
-		AllocatedStorage:           converter.GigaBytesToBytes(int64(dbInstance.AllocatedStorage)),
-		BackupRetentionPeriod:      converter.DaystoSeconds(dbInstance.BackupRetentionPeriod),
-		DBInstanceClass:            aws.ToString(dbInstance.DBInstanceClass),
-		DbiResourceID:              aws.ToString(dbInstance.DbiResourceId),
-		DeletionProtection:         dbInstance.DeletionProtection,
-		Engine:                     aws.ToString(dbInstance.Engine),
-		EngineVersion:              aws.ToString(dbInstance.EngineVersion),
+		AllocatedStorage:           converter.GigaBytesToBytes(int64(*dbInstance.AllocatedStorage)),
+		BackupRetentionPeriod:      converter.DaystoSeconds(*dbInstance.BackupRetentionPeriod),
+		DBInstanceClass:            *dbInstance.DBInstanceClass,
+		DbiResourceID:              *dbInstance.DbiResourceId,
+		DeletionProtection:         aws.ToBool(dbInstance.DeletionProtection),
+		Engine:                     *dbInstance.Engine,
+		EngineVersion:              *dbInstance.EngineVersion,
 		LogFilesSize:               logFilesSize,
 		MaxAllocatedStorage:        converter.GigaBytesToBytes(maxAllocatedStorage),
 		MaxIops:                    iops,
-		MultiAZ:                    dbInstance.MultiAZ,
+		MultiAZ:                    aws.ToBool(dbInstance.MultiAZ),
 		PendingMaintenanceAction:   pendingMaintenanceAction,
 		PendingModifiedValues:      pendingModifiedValues,
 		PerformanceInsightsEnabled: aws.ToBool(dbInstance.PerformanceInsightsEnabled),
-		PubliclyAccessible:         dbInstance.PubliclyAccessible,
+		PubliclyAccessible:         aws.ToBool(dbInstance.PubliclyAccessible),
 		Role:                       role,
 		SourceDBInstanceIdentifier: sourceDBInstanceIdentifier,
 		Status:                     GetDBInstanceStatusCode(*dbInstance.DBInstanceStatus),
@@ -321,7 +321,7 @@ func (r *RDSFetcher) getLogFilesSize(dbidentifier string) (*int64, error) {
 		}
 
 		for _, file := range result.DescribeDBLogFiles {
-			*filesSize += file.Size
+			*filesSize += *file.Size
 		}
 	}
 

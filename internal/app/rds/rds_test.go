@@ -71,21 +71,21 @@ func newRdsInstance() *aws_rds_types.DBInstance {
 	now := time.Now()
 
 	return &aws_rds_types.DBInstance{
-		AllocatedStorage:           5,
-		BackupRetentionPeriod:      7,
+		AllocatedStorage:           aws.Int32(5),
+		BackupRetentionPeriod:      aws.Int32(7),
 		DBInstanceArn:              aws.String("RandomDBInstanceArn"),
 		DBInstanceClass:            aws.String("t3.large"),
 		DBInstanceIdentifier:       aws.String(DBInstanceIdentifier),
 		DBInstanceStatus:           aws.String("available"),
 		DbiResourceId:              aws.String("resource1"),
-		DeletionProtection:         true,
+		DeletionProtection:         aws.Bool(true),
 		Engine:                     aws.String("postgres"),
 		EngineVersion:              aws.String("14.9"),
 		Iops:                       aws.Int32(3000),
 		MaxAllocatedStorage:        aws.Int32(10),
-		MultiAZ:                    true,
+		MultiAZ:                    aws.Bool(true),
 		PerformanceInsightsEnabled: aws.Bool(true),
-		PubliclyAccessible:         true,
+		PubliclyAccessible:         aws.Bool(true),
 		StorageType:                aws.String("gp3"),
 		CACertificateIdentifier:    aws.String("rds-ca-2019"),
 		CertificateDetails:         newRdsCertificateDetails(),
@@ -111,16 +111,16 @@ func TestGetMetrics(t *testing.T) {
 	assert.Equal(t, "primary", m.Role, "Should be primary node")
 	assert.Equal(t, emptyInt64, m.LogFilesSize, "Log file size mismatch")
 
-	assert.Equal(t, converter.GigaBytesToBytes(int64(rdsInstance.AllocatedStorage)), m.AllocatedStorage, "Allocated storage mismatch")
+	assert.Equal(t, converter.GigaBytesToBytes(int64(*rdsInstance.AllocatedStorage)), m.AllocatedStorage, "Allocated storage mismatch")
 	assert.Equal(t, converter.GigaBytesToBytes(int64(*rdsInstance.MaxAllocatedStorage)), m.MaxAllocatedStorage, "Max allocated storage (aka autoscaling) mismatch")
 	assert.Equal(t, int64(*rdsInstance.Iops), m.MaxIops, "Max IOPS mismatch")
-	assert.Equal(t, converter.DaystoSeconds(rdsInstance.BackupRetentionPeriod), m.BackupRetentionPeriod, "Backup retention mismatch")
-	assert.Equal(t, rdsInstance.DeletionProtection, m.DeletionProtection, "Deletion protection mismatch")
-	assert.Equal(t, rdsInstance.MultiAZ, m.MultiAZ, "MultiAZ mismatch")
+	assert.Equal(t, converter.DaystoSeconds(*rdsInstance.BackupRetentionPeriod), m.BackupRetentionPeriod, "Backup retention mismatch")
+	assert.Equal(t, *rdsInstance.DeletionProtection, m.DeletionProtection, "Deletion protection mismatch")
+	assert.Equal(t, *rdsInstance.MultiAZ, m.MultiAZ, "MultiAZ mismatch")
 	assert.Equal(t, *rdsInstance.Engine, m.Engine, "Engine mismatch")
 	assert.Equal(t, *rdsInstance.EngineVersion, m.EngineVersion, "Engine version mismatch")
 	assert.Equal(t, *rdsInstance.PerformanceInsightsEnabled, m.PerformanceInsightsEnabled, "PerformanceInsights enabled mismatch")
-	assert.Equal(t, rdsInstance.PubliclyAccessible, m.PubliclyAccessible, "PubliclyAccessible mismatch")
+	assert.Equal(t, *rdsInstance.PubliclyAccessible, m.PubliclyAccessible, "PubliclyAccessible mismatch")
 	assert.Equal(t, *rdsInstance.DbiResourceId, m.DbiResourceID, "DbiResourceId mismatch")
 	assert.Equal(t, *rdsInstance.DBInstanceClass, m.DBInstanceClass, "DBInstanceIdentifier mismatch")
 	assert.Equal(t, *rdsInstance.CACertificateIdentifier, m.CACertificateIdentifier, "CACertificateIdentifier mismatch")
@@ -130,15 +130,15 @@ func TestGetMetrics(t *testing.T) {
 func TestGP2StorageType(t *testing.T) {
 	rdsInstanceWithSmallDisk := newRdsInstance()
 	rdsInstanceWithSmallDisk.StorageType = aws.String("gp2")
-	rdsInstanceWithSmallDisk.AllocatedStorage = 10
+	rdsInstanceWithSmallDisk.AllocatedStorage = aws.Int32(10)
 
 	rdsInstanceWithMediumDisk := newRdsInstance()
 	rdsInstanceWithMediumDisk.StorageType = aws.String("gp2")
-	rdsInstanceWithMediumDisk.AllocatedStorage = 400
+	rdsInstanceWithMediumDisk.AllocatedStorage = aws.Int32(400)
 
 	rdsInstanceWithLargeDisk := newRdsInstance()
 	rdsInstanceWithLargeDisk.StorageType = aws.String("gp2")
-	rdsInstanceWithLargeDisk.AllocatedStorage = 20000
+	rdsInstanceWithLargeDisk.AllocatedStorage = aws.Int32(20000)
 
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallDisk, *rdsInstanceWithMediumDisk, *rdsInstanceWithLargeDisk}}
 	mock := mockRDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
@@ -160,12 +160,12 @@ func TestGP2StorageType(t *testing.T) {
 func TestGP3StorageType(t *testing.T) {
 	rdsInstanceWithSmallDisk := newRdsInstance()
 	rdsInstanceWithSmallDisk.StorageType = aws.String("gp3")
-	rdsInstanceWithSmallDisk.AllocatedStorage = 10
+	rdsInstanceWithSmallDisk.AllocatedStorage = aws.Int32(10)
 	rdsInstanceWithSmallDisk.Iops = aws.Int32(3000)
 
 	rdsInstanceWithLargeDisk := newRdsInstance()
 	rdsInstanceWithLargeDisk.StorageType = aws.String("gp3")
-	rdsInstanceWithLargeDisk.AllocatedStorage = 500
+	rdsInstanceWithLargeDisk.AllocatedStorage = aws.Int32(500)
 	rdsInstanceWithLargeDisk.Iops = aws.Int32(12000)
 
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallDisk, *rdsInstanceWithLargeDisk}}
@@ -221,7 +221,7 @@ func TestLogSize(t *testing.T) {
 
 	rdsLogFiles := []aws_rds_types.DescribeDBLogFilesDetails{}
 	for i := int64(0); i < logFileCount; i++ {
-		rdsLogFiles = append(rdsLogFiles, aws_rds_types.DescribeDBLogFilesDetails{Size: logFileSize})
+		rdsLogFiles = append(rdsLogFiles, aws_rds_types.DescribeDBLogFilesDetails{Size: aws.Int64(logFileSize)})
 	}
 
 	mockDescribeDBLogFilesOutput := &aws_rds.DescribeDBLogFilesOutput{DescribeDBLogFiles: rdsLogFiles}
