@@ -124,7 +124,7 @@ func TestGetMetrics(t *testing.T) {
 	assert.Equal(t, *rdsInstance.DbiResourceId, m.DbiResourceID, "DbiResourceId mismatch")
 	assert.Equal(t, *rdsInstance.DBInstanceClass, m.DBInstanceClass, "DBInstanceIdentifier mismatch")
 	assert.Equal(t, *rdsInstance.CACertificateIdentifier, m.CACertificateIdentifier, "CACertificateIdentifier mismatch")
-	assert.Equal(t, *rdsInstance.CertificateDetails.ValidTill, m.CertificateValidTill, "CertificateValidTill mismatch")
+	assert.Equal(t, *rdsInstance.CertificateDetails.ValidTill, *m.CertificateValidTill, "CertificateValidTill mismatch")
 }
 
 func TestGP2StorageType(t *testing.T) {
