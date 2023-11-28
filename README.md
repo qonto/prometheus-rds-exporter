@@ -13,6 +13,9 @@ It collect key metrics about:
 - Logs size
 - RDS quota usage information
 
+> [!TIP]
+> Prometheus RDS exporter is part of the [Database Monitoring Framework](https://github.com/qonto/database-monitoring-framework) which provides alerts, along with their handy runbooks for AWS RDS.
+
 ## Key metrics
 
 📊 Advanced Metrics: Gain deep visibility with advanced metrics for AWS RDS. Monitor performance, query efficiency, and resource utilization like never before.
@@ -123,19 +126,19 @@ Grafana dashoards are available on Grafana labs:
 
 ![Instances overview](docs/screenshots/instances-overview.png)
 
-<a href="https://grafana.com/grafana/dashboards/19647/">RDS instances overview</a> (ID `19647`)
+<a href="https://grafana.com/grafana/dashboards/19647/">RDS instances (`19647`)</a>
 </td>
 <td>
 
 ![Instance details](docs/screenshots/instance-details.png)
 
-<a href="https://grafana.com/grafana/dashboards/19646/">RDS instance details</a> (ID: `19646`)
+<a href="https://grafana.com/grafana/dashboards/19646/">RDS instance details (`19646`)</a>
 </td>
 <td>
 
 ![RDS exporters](docs/screenshots/rds-exporter.png)
 
-<a href="https://grafana.com/grafana/dashboards/19679/">RDS exporters</a> (ID: `19679`)
+<a href="https://grafana.com/grafana/dashboards/19679/">RDS exporters (`19679`)</a>
 </td>
 </tr>
 </table>
