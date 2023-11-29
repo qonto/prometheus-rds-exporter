@@ -116,7 +116,7 @@ It collect key metrics about:
 
 </details>
 
-## Dashboard
+## Dashboards
 
 Grafana dashoards are available on Grafana labs:
 
