@@ -88,14 +88,6 @@ You have to commit the changes to `go.mod` and `go.sum` before submitting the pu
 
 ## Update dashboard
 
-1. Start local development environment
+Please open a Github issue with your suggestion if you want to change dashboards (feel free to attach your changes in as JSON dashboard).
 
-1. Update dashboard
-
-1. Export the dashboard
-
-    Click on `Share dashboard > Export`, then select `Export for sharing externally` and click on `View JSON`.
-
-1. Open an issue with the suggestion
-
-1. The project manager will review it and submit it to Grafana.com.
+For project's maintainers, look at [Grafana dashboard update](docs/grafana-dashboard-update.md)
