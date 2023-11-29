@@ -8,7 +8,7 @@ volumes:
 services:
 
   prometheus:
-    image: prom/prometheus:v2.45.0
+    image: prom/prometheus:v2.48.0
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - ./.prometheus_data:/prometheus
