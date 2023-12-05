@@ -52,7 +52,7 @@ It collect key metrics about:
 | rds_free_storage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Free storage on the instance |
 | rds_freeable_memory_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Amount of available random access memory. For MariaDB, MySQL, Oracle, and PostgreSQL DB instances, this metric reports the value of the MemAvailable field of /proc/meminfo |
 | rds_instance_age_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | Time since instance creation |
-| rds_instance_info | `aws_account_id`, `aws_region`, `dbi_resource_id`, `dbidentifier`, `deletion_protection`, `engine`, `engine_version`, `instance_class`, `multi_az`, `performance_insights_enabled`, `pending_maintenance`, `pending_modified_values`, `role`, `source_dbidentifier`, `storage_type` | RDS instance information |
+| rds_instance_info | `aws_account_id`, `aws_region`, `dbi_resource_id`, `dbidentifier`, `deletion_protection`, `engine`, `engine_version`, `instance_class`, `multi_az`, `performance_insights_enabled`, `pending_maintenance`, `pending_modified_values`, `role`, `source_dbidentifier`, `storage_type`, `ca_certificate_identifier` | RDS instance information |
 | rds_instance_log_files_size_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Total of log files on the instance |
 | rds_instance_max_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Maximum IOPS of underlying EC2 instance |
 | rds_instance_max_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Maximum throughput of underlying EC2 instance |
