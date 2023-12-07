@@ -67,13 +67,17 @@ func newRdsCertificateDetails() *aws_rds_types.CertificateDetails {
 }
 
 func newRdsInstance() *aws_rds_types.DBInstance {
+	awsRegion := "eu-west-3"
+	awsAccountID := "123456789012"
 	DBInstanceIdentifier := randomString(10)
+	arn := fmt.Sprintf("arn:aws:rds:%s:%s:db:%s", awsRegion, awsAccountID, DBInstanceIdentifier)
+
 	now := time.Now()
 
 	return &aws_rds_types.DBInstance{
 		AllocatedStorage:           aws.Int32(5),
 		BackupRetentionPeriod:      aws.Int32(7),
-		DBInstanceArn:              aws.String("RandomDBInstanceArn"),
+		DBInstanceArn:              aws.String(arn),
 		DBInstanceClass:            aws.String("t3.large"),
 		DBInstanceIdentifier:       aws.String(DBInstanceIdentifier),
 		DBInstanceStatus:           aws.String("available"),
@@ -110,6 +114,7 @@ func TestGetMetrics(t *testing.T) {
 	assert.Equal(t, rds.InstanceStatusAvailable, m.Status, "Instance is available")
 	assert.Equal(t, "primary", m.Role, "Should be primary node")
 	assert.Equal(t, emptyInt64, m.LogFilesSize, "Log file size mismatch")
+	assert.Equal(t, fmt.Sprintf("arn:aws:rds:eu-west-3:123456789012:db:%s", *rdsInstance.DBInstanceIdentifier), m.Arn, "ARN mismatch")
 
 	assert.Equal(t, converter.GigaBytesToBytes(int64(*rdsInstance.AllocatedStorage)), m.AllocatedStorage, "Allocated storage mismatch")
 	assert.Equal(t, converter.GigaBytesToBytes(int64(*rdsInstance.MaxAllocatedStorage)), m.MaxAllocatedStorage, "Max allocated storage (aka autoscaling) mismatch")
