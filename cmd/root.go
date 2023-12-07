@@ -37,6 +37,7 @@ type exporterConfig struct {
 	AWSAssumeRoleSession   string `mapstructure:"aws-assume-role-session"`
 	AWSAssumeRoleArn       string `mapstructure:"aws-assume-role-arn"`
 	CollectInstanceMetrics bool   `mapstructure:"collect-instance-metrics"`
+	CollectInstanceTags    bool   `mapstructure:"collect-instance-tags"`
 	CollectInstanceTypes   bool   `mapstructure:"collect-instance-types"`
 	CollectLogsSize        bool   `mapstructure:"collect-logs-size"`
 	CollectMaintenances    bool   `mapstructure:"collect-maintenances"`
@@ -71,6 +72,7 @@ func run(configuration exporterConfig) {
 	collectorConfiguration := exporter.Configuration{
 		CollectInstanceMetrics: configuration.CollectInstanceMetrics,
 		CollectInstanceTypes:   configuration.CollectInstanceTypes,
+		CollectInstanceTags:    configuration.CollectInstanceTags,
 		CollectLogsSize:        configuration.CollectLogsSize,
 		CollectMaintenances:    configuration.CollectMaintenances,
 		CollectQuotas:          configuration.CollectQuotas,
@@ -118,6 +120,7 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().StringP("listen-address", "", ":9043", "Address to listen on for web interface")
 	cmd.Flags().StringP("aws-assume-role-arn", "", "", "AWS IAM ARN role to assume to fetch metrics")
 	cmd.Flags().StringP("aws-assume-role-session", "", "prometheus-rds-exporter", "AWS assume role session name")
+	cmd.Flags().BoolP("collect-instance-tags", "", true, "Collect AWS RDS tags")
 	cmd.Flags().BoolP("collect-instance-types", "", true, "Collect AWS instance types")
 	cmd.Flags().BoolP("collect-instance-metrics", "", true, "Collect AWS instance metrics")
 	cmd.Flags().BoolP("collect-logs-size", "", true, "Collect AWS instances logs size")
@@ -158,6 +161,11 @@ func NewRootCommand() (*cobra.Command, error) {
 	err = viper.BindPFlag("collect-instance-metrics", cmd.Flags().Lookup("collect-instance-metrics"))
 	if err != nil {
 		return cmd, fmt.Errorf("failed to bind 'collect-instance-metrics' parameter: %w", err)
+	}
+
+	err = viper.BindPFlag("collect-instance-tags", cmd.Flags().Lookup("collect-instance-tags"))
+	if err != nil {
+		return cmd, fmt.Errorf("failed to bind 'collect-instance-tags' parameter: %w", err)
 	}
 
 	err = viper.BindPFlag("collect-instance-types", cmd.Flags().Lookup("collect-instance-types"))

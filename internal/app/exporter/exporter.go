@@ -22,6 +22,7 @@ const (
 
 type Configuration struct {
 	CollectInstanceMetrics bool
+	CollectInstanceTags    bool
 	CollectInstanceTypes   bool
 	CollectLogsSize        bool
 	CollectMaintenances    bool
@@ -70,6 +71,7 @@ type rdsCollector struct {
 	instanceMaximumThroughput   *prometheus.Desc
 	instanceMemory              *prometheus.Desc
 	instanceVCPU                *prometheus.Desc
+	instanceTags                *prometheus.Desc
 	logFilesSize                *prometheus.Desc
 	maxAllocatedStorage         *prometheus.Desc
 	maxIops                     *prometheus.Desc
@@ -407,6 +409,28 @@ func (c *rdsCollector) getQuotasMetrics(client servicequotas.ServiceQuotasClient
 	c.logger.Debug("quota metrics fetched", "metrics", metrics)
 }
 
+func (c *rdsCollector) getInstanceTagLabels(dbidentifier string, instance rds.RdsInstanceMetrics) (keys []string, values []string) {
+	labels := map[string]string{
+		"aws_account_id": c.awsAccountID,
+		"aws_region":     c.awsRegion,
+		"dbidentifier":   dbidentifier,
+	}
+
+	// Add instance tags to labels
+	// Prefix label containing instance's tags with "tag_" prefix to avoid conflict with other labels
+	for k, v := range instance.Tags {
+		labelName := fmt.Sprintf("tag_%s", k)
+		labels[labelName] = v
+	}
+
+	for k, v := range labels {
+		keys = append(keys, k)
+		values = append(values, v)
+	}
+
+	return keys, values
+}
+
 func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(c.exporterBuildInformation, prometheus.GaugeValue, 1, build.Version, build.CommitSHA, build.Date)
 	ch <- prometheus.MustNewConstMetric(c.errors, prometheus.CounterValue, c.counters.errors)
@@ -458,6 +482,13 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(c.status, prometheus.GaugeValue, float64(instance.Status), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.storageThroughput, prometheus.GaugeValue, float64(instance.StorageThroughput), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.backupRetentionPeriod, prometheus.GaugeValue, float64(instance.BackupRetentionPeriod), c.awsAccountID, c.awsRegion, dbidentifier)
+
+		if c.configuration.CollectInstanceTags {
+			names, values := c.getInstanceTagLabels(dbidentifier, instance)
+
+			c.instanceTags = prometheus.NewDesc("rds_instance_tags", "AWS tags attached to the instance", names, nil)
+			ch <- prometheus.MustNewConstMetric(c.instanceTags, prometheus.GaugeValue, 0, values...)
+		}
 
 		if instance.CertificateValidTill != nil {
 			ch <- prometheus.MustNewConstMetric(c.certificateValidTill, prometheus.GaugeValue, float64(instance.CertificateValidTill.Unix()), c.awsAccountID, c.awsRegion, dbidentifier)
