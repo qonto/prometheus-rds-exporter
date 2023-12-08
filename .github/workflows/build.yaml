@@ -28,10 +28,9 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr-public
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
         with:
           registry-type: public
-          mask-password: 'true'
 
       - run: git fetch --force --tags
 
@@ -58,10 +57,9 @@ jobs:
           role-session-name: githubActions
 
       - name: Login to Amazon ECR for helm chart
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v2
         with:
           registry-type: public
-          mask-password: 'true'
 
       - name: Downgrade Helm  # 1.13.0 has bug that block push charts on OCI
         run: |
