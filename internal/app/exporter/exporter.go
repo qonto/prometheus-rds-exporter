@@ -128,7 +128,7 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 		),
 		information: prometheus.NewDesc("rds_instance_info",
 			"RDS instance information",
-			[]string{"aws_account_id", "aws_region", "dbidentifier", "dbi_resource_id", "instance_class", "engine", "engine_version", "storage_type", "multi_az", "deletion_protection", "role", "source_dbidentifier", "pending_modified_values", "pending_maintenance", "performance_insights_enabled", "ca_certificate_identifier"}, nil,
+			[]string{"aws_account_id", "aws_region", "dbidentifier", "dbi_resource_id", "instance_class", "engine", "engine_version", "storage_type", "multi_az", "deletion_protection", "role", "source_dbidentifier", "pending_modified_values", "pending_maintenance", "performance_insights_enabled", "ca_certificate_identifier", "arn"}, nil,
 		),
 		age: prometheus.NewDesc("rds_instance_age_seconds",
 			"Time since instance creation",
@@ -451,6 +451,7 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 			instance.PendingMaintenanceAction,
 			strconv.FormatBool(instance.PerformanceInsightsEnabled),
 			instance.CACertificateIdentifier,
+			instance.Arn,
 		)
 		ch <- prometheus.MustNewConstMetric(c.maxAllocatedStorage, prometheus.GaugeValue, float64(instance.MaxAllocatedStorage), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.maxIops, prometheus.GaugeValue, float64(instance.MaxIops), c.awsAccountID, c.awsRegion, dbidentifier)

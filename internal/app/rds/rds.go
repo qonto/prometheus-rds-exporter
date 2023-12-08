@@ -28,6 +28,7 @@ type Statistics struct {
 }
 
 type RdsInstanceMetrics struct {
+	Arn                              string
 	Engine                           string
 	EngineVersion                    string
 	DBInstanceClass                  string
@@ -269,6 +270,7 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 	}
 
 	metrics := RdsInstanceMetrics{
+		Arn:                        *dbInstance.DBInstanceArn,
 		AllocatedStorage:           converter.GigaBytesToBytes(int64(*dbInstance.AllocatedStorage)),
 		BackupRetentionPeriod:      converter.DaystoSeconds(*dbInstance.BackupRetentionPeriod),
 		DBInstanceClass:            *dbInstance.DBInstanceClass,
