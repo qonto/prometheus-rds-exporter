@@ -16,7 +16,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
         with:
           go-version: '1.21'
@@ -54,7 +54,7 @@ jobs:
     env:
       HELM_UNITTEST_VERSION: v0.3.5
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install helm-unittest
         run: helm plugin install --version $HELM_UNITTEST_VERSION https://github.com/helm-unittest/helm-unittest.git
       - name: Run Helm test
@@ -66,7 +66,7 @@ jobs:
     env:
       KUBECONFORM_VERSION: 0.6.2
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install kubeconform
         run: |
           curl -sSLo /tmp/kubeconform.tar.gz "https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
@@ -78,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
