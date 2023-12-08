@@ -60,6 +60,7 @@ github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.10.3 h1:e3PCNeE
 github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.10.3/go.mod h1:gIeeNyaL8tIEqZrzAnTeyhHcE0yysCtcaP+N9kxLZ+E=
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.10.8 h1:EamsKe+ZjkOQjDdHd86/JCEucjFKQ9T0atWKO4s2Lgs=
 github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.10.8/go.mod h1:Q0vV3/csTpbkfKLI5Sb56cJQTCTtJ0ixdb7P+Wedqiw=
+<<<<<<< HEAD
 github.com/aws/aws-sdk-go-v2/service/rds v1.63.3 h1:nM1rI+McQF/VMyicft6iWsOzzt8J3e++AOmozs9BSLs=
 github.com/aws/aws-sdk-go-v2/service/rds v1.63.3/go.mod h1:wOD+/saE3LEwnwlaq5EHyj7yWYwz3COo0IOXAt7bAL4=
 github.com/aws/aws-sdk-go-v2/service/servicequotas v1.18.3 h1:BEdvuuHquu0W5HTxnQKwrbc/ztc7jXH8xWrDRKDwsbE=
@@ -70,6 +71,18 @@ github.com/aws/aws-sdk-go-v2/service/ssooidc v1.21.2 h1:8dU9zqA77C5egbU6yd4hFLai
 github.com/aws/aws-sdk-go-v2/service/ssooidc v1.21.2/go.mod h1:7Lt5mjQ8x5rVdKqg+sKKDeuwoszDJIIPmkd8BVsEdS0=
 github.com/aws/aws-sdk-go-v2/service/sts v1.26.2 h1:fFrLsy08wEbAisqW3KDl/cPHrF43GmV79zXB9EwJiZw=
 github.com/aws/aws-sdk-go-v2/service/sts v1.26.2/go.mod h1:7Ld9eTqocTvJqqJ5K/orbSDwmGcpRdlDiLjz2DO+SL8=
+=======
+github.com/aws/aws-sdk-go-v2/service/rds v1.64.2 h1:PTOyeFw0q+Kikm+9PlUaZdYFrPOAhVWDgI3b68s1zUs=
+github.com/aws/aws-sdk-go-v2/service/rds v1.64.2/go.mod h1:Ty2c2SC4jhY6hvGeeOe8T50m1PkioZD9lk6iiOsADkU=
+github.com/aws/aws-sdk-go-v2/service/servicequotas v1.18.3 h1:BEdvuuHquu0W5HTxnQKwrbc/ztc7jXH8xWrDRKDwsbE=
+github.com/aws/aws-sdk-go-v2/service/servicequotas v1.18.3/go.mod h1:mAtKs5EUzehP/G5cxn7HYzu5L0Q9hCLUFDaebiy2jY0=
+github.com/aws/aws-sdk-go-v2/service/sso v1.17.3 h1:CdsSOGlFF3Pn+koXOIpTtvX7st0IuGsZ8kJqcWMlX54=
+github.com/aws/aws-sdk-go-v2/service/sso v1.17.3/go.mod h1:oA6VjNsLll2eVuUoF2D+CMyORgNzPEW/3PyUdq6WQjI=
+github.com/aws/aws-sdk-go-v2/service/ssooidc v1.20.1 h1:cbRqFTVnJV+KRpwFl76GJdIZJKKCdTPnjUZ7uWh3pIU=
+github.com/aws/aws-sdk-go-v2/service/ssooidc v1.20.1/go.mod h1:hHL974p5auvXlZPIjJTblXJpbkfK4klBczlsEaMCGVY=
+github.com/aws/aws-sdk-go-v2/service/sts v1.25.4 h1:yEvZ4neOQ/KpUqyR+X0ycUTW/kVRNR4nDZ38wStHGAA=
+github.com/aws/aws-sdk-go-v2/service/sts v1.25.4/go.mod h1:feTnm2Tk/pJxdX+eooEsxvlvTWBvDm6CasRZ+JOs2IY=
+>>>>>>> 854a316 (chore(deps): bump github.com/aws/aws-sdk-go-v2/service/rds)
 github.com/aws/smithy-go v1.18.1 h1:pOdBTUfXNazOlxLrgeYalVnuTpKreACHtc62xLwIB3c=
 github.com/aws/smithy-go v1.18.1/go.mod h1:NukqUGpCZIILqqiV0NIjeFh24kd/FAa4beRb6nbIUPE=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=

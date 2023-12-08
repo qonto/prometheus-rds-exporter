@@ -9,7 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.14.9
 	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.30.3
 	github.com/aws/aws-sdk-go-v2/service/ec2 v1.137.1
-	github.com/aws/aws-sdk-go-v2/service/rds v1.63.3
+	github.com/aws/aws-sdk-go-v2/service/rds v1.64.2
 	github.com/aws/aws-sdk-go-v2/service/servicequotas v1.18.3
 	github.com/aws/aws-sdk-go-v2/service/sts v1.26.2
 	github.com/prometheus/client_golang v1.17.0
