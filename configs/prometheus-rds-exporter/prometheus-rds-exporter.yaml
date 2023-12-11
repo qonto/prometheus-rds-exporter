@@ -31,6 +31,9 @@
 # Collect AWS instances metrics (AWS Cloudwatch API)
 # collect-instance-metrics: true
 
+# Collect AWS instance tags (AWS RDS API)
+# collect-instance-tags: true
+
 # Collect AWS instance types information (AWS EC2 API)
 # collect-instance-types: true
 

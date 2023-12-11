@@ -58,6 +58,7 @@ It collect key metrics about:
 | rds_instance_max_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Maximum throughput of underlying EC2 instance |
 | rds_instance_memory_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Instance memory |
 | rds_instance_status | `aws_account_id`, `aws_region`, `dbidentifier` | Instance status (1: ok, 0: can't scrap metrics) |
+| rds_instance_tags | `aws_account_id`, `aws_region`, `dbidentifier`, `tag_<AWS_TAG>`... | AWS tags attached to the instance |
 | rds_instance_vcpu_average | `aws_account_id`, `aws_region`, `dbidentifier` | Total vCPU for this isntance class |
 | rds_max_allocated_storage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Upper limit in gibibytes to which Amazon RDS can automatically scale the storage of the DB instance |
 | rds_max_disk_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Max IOPS for the instance |
@@ -152,6 +153,7 @@ Configuration could be defined in [prometheus-rds-exporter.yaml](https://github.
 | aws-assume-role-arn | AWS IAM ARN role to assume to fetch metrics | |
 | aws-assume-role-session | AWS assume role session name | prometheus-rds-exporter |
 | collect-instance-metrics | Collect AWS instances metrics (AWS Cloudwatch API) | true |
+| collect-instance-tags | Collect AWS RDS tags | true |
 | collect-instance-types | Collect AWS instance types information (AWS EC2 API) | true |
 | collect-logs-size | Collect AWS instances logs size (AWS RDS API) | true |
 | collect-maintenances | Collect AWS instances maintenances (AWS RDS API) | true |

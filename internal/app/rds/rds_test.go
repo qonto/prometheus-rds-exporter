@@ -94,6 +94,7 @@ func newRdsInstance() *aws_rds_types.DBInstance {
 		CACertificateIdentifier:    aws.String("rds-ca-2019"),
 		CertificateDetails:         newRdsCertificateDetails(),
 		InstanceCreateTime:         &now,
+		TagList:                    []aws_rds_types.Tag{{Key: aws.String("Environment"), Value: aws.String("unittest")}, {Key: aws.String("Team"), Value: aws.String("sre")}},
 	}
 }
 
@@ -130,6 +131,8 @@ func TestGetMetrics(t *testing.T) {
 	assert.Equal(t, *rdsInstance.DBInstanceClass, m.DBInstanceClass, "DBInstanceIdentifier mismatch")
 	assert.Equal(t, *rdsInstance.CACertificateIdentifier, m.CACertificateIdentifier, "CACertificateIdentifier mismatch")
 	assert.Equal(t, *rdsInstance.CertificateDetails.ValidTill, *m.CertificateValidTill, "CertificateValidTill mismatch")
+	assert.Equal(t, "unittest", m.Tags["Environment"], "Environment tag mismatch")
+	assert.Equal(t, "sre", m.Tags["Team"], "Team tag mismatch")
 }
 
 func TestGP2StorageType(t *testing.T) {

@@ -53,6 +53,7 @@ type RdsInstanceMetrics struct {
 	CACertificateIdentifier          string
 	CertificateValidTill             *time.Time
 	Age                              *float64
+	Tags                             map[string]string
 }
 
 const (
@@ -269,6 +270,12 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 		certificateValidTill = dbInstance.CertificateDetails.ValidTill
 	}
 
+	tags := make(map[string]string)
+
+	for _, tag := range dbInstance.TagList {
+		tags[*tag.Key] = *tag.Value
+	}
+
 	metrics := RdsInstanceMetrics{
 		Arn:                        *dbInstance.DBInstanceArn,
 		AllocatedStorage:           converter.GigaBytesToBytes(int64(*dbInstance.AllocatedStorage)),
@@ -294,6 +301,7 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 		CACertificateIdentifier:    aws.ToString(dbInstance.CACertificateIdentifier),
 		CertificateValidTill:       certificateValidTill,
 		Age:                        age,
+		Tags:                       tags,
 	}
 
 	return metrics, nil
