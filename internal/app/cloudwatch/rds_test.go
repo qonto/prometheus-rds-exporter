@@ -8,6 +8,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_cloudwatch_types "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/cloudwatch"
+	cloudwatch_mock "github.com/qonto/prometheus-rds-exporter/internal/app/cloudwatch/mock"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -158,12 +160,12 @@ func TestGetDBInstanceTypeInformation(t *testing.T) {
 		i++
 	}
 
-	mock := mockCloudwatchClient{metrics: data}
-	client := cloudwatch.NewRDSFetcher(mock, slog.Logger{})
-	result, err := client.GetRDSInstanceMetrics(instancesName)
+	client := cloudwatch_mock.CloudwatchClient{Metrics: data}
+	fetcher := cloudwatch.NewRDSFetcher(client, slog.Logger{})
+	result, err := fetcher.GetRDSInstanceMetrics(instancesName)
 
 	require.NoError(t, err, "GetRDSInstanceMetrics must succeed")
-	assert.Equal(t, float64(1), client.GetStatistics().CloudWatchAPICall, "One call to Cloudwatch API")
+	assert.Equal(t, float64(1), fetcher.GetStatistics().CloudWatchAPICall, "One call to Cloudwatch API")
 
 	for id, value := range instances {
 		assert.Equal(t, value.DatabaseConnections, result.Instances[id].DatabaseConnections, "DatabaseConnections mismatch")
