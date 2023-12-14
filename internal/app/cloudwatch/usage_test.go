@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_cloudwatch_types "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/cloudwatch"
+	cloudwatch_mock "github.com/qonto/prometheus-rds-exporter/internal/app/cloudwatch/mock"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -20,8 +21,8 @@ func TestGetUsageMetrics(t *testing.T) {
 		ReservedDBInstances: 3,
 	}
 
-	mock := mockCloudwatchClient{
-		metrics: []aws_cloudwatch_types.MetricDataResult{
+	client := cloudwatch_mock.CloudwatchClient{
+		Metrics: []aws_cloudwatch_types.MetricDataResult{
 			{
 				Label:  aws.String("AllocatedStorage"),
 				Values: []float64{expected.AllocatedStorage},
@@ -41,8 +42,8 @@ func TestGetUsageMetrics(t *testing.T) {
 		},
 	}
 
-	client := cloudwatch.NewUsageFetcher(mock, slog.Logger{})
-	result, err := client.GetUsageMetrics()
+	fetcher := cloudwatch.NewUsageFetcher(client, slog.Logger{})
+	result, err := fetcher.GetUsageMetrics()
 
 	require.NoError(t, err, "GetUsageMetrics must succeed")
 	assert.Equal(t, converter.GigaBytesToBytes(expected.AllocatedStorage), result.AllocatedStorage, "Allocated storage mismatch")
@@ -50,5 +51,5 @@ func TestGetUsageMetrics(t *testing.T) {
 	assert.Equal(t, expected.ManualSnapshots, result.ManualSnapshots, "Manual snapshots mismatch")
 	assert.Equal(t, expected.ReservedDBInstances, result.ReservedDBInstances, "Reserved DB instances mismatch")
 
-	assert.Equal(t, float64(1), client.GetStatistics().CloudWatchAPICall, "One call to Cloudwatch API")
+	assert.Equal(t, float64(1), fetcher.GetStatistics().CloudWatchAPICall, "One call to Cloudwatch API")
 }
