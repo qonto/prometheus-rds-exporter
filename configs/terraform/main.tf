@@ -1,9 +1,9 @@
 terraform {
-  // Replace with your Terraform configuration (eg. S3 backend)
+  // TODO Replace with your Terraform configuration (eg. S3 backend)
 }
 
 provider "aws" {
-  // Replace with your AWS provider configuration
+  // TODO  Replace with your AWS provider configuration
 }
 
 resource "aws_iam_role" "default" {
@@ -12,7 +12,7 @@ resource "aws_iam_role" "default" {
 }
 
 data "aws_iam_policy_document" "prometheus-rds-exporter-relationship" {
-  // Replace with asumme role policy
+  // TODO Replace with asumme role policy
 }
 
 resource "aws_iam_role_policy" "prometheus-rds-exporter" {
@@ -23,16 +23,58 @@ resource "aws_iam_role_policy" "prometheus-rds-exporter" {
 
 data "aws_iam_policy_document" "prometheus-rds-exporter" {
   statement {
-    sid    = "AllowFetchingRDSMetrics"
+    sid    = "AllowInstanceAndLogDescriptions"
+    effect = "Allow"
+    actions = [
+      "rds:DescribeDBInstances",
+      "rds:DescribeDBLogFiles",
+    ]
+    resources = [
+      "arn:aws:rds:*:*:db:*",
+    ]
+  }
+
+  statement {
+    sid    = "AllowMaintenanceDescriptions"
+    effect = "Allow"
+    actions = [
+      "rds:DescribePendingMaintenanceActions",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "AllowGettingCloudWatchMetrics"
     effect = "Allow"
     actions = [
       "cloudwatch:GetMetricData",
-      "ec2:DescribeInstanceTypes",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "AllowRDSUsageDescriptions"
+    effect = "Allow"
+    actions = [
       "rds:DescribeAccountAttributes",
-      "rds:DescribeDBInstances",
-      "rds:DescribeDBLogFiles",
-      "rds:DescribePendingMaintenanceActions",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "AllowQuotaDescriptions"
+    effect = "Allow"
+    actions = [
       "servicequotas:GetServiceQuota",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid    = "AllowInstanceTypesDescriptions"
+    effect = "Allow"
+    actions = [
+      "ec2:DescribeInstanceTypes",
     ]
     resources = ["*"]
   }

@@ -173,29 +173,67 @@ Configuration parameters priorities:
 
 ### AWS authentication
 
-Prometheus RDS exporter needs read only AWS IAM permissions to fetch metrics from AWS RDS, CloudWatch, EC2 and ServiceQuota AWS APIs.
+Prometheus RDS exporter needs read-only AWS IAM permissions to fetch metrics from AWS RDS, CloudWatch, EC2 and ServiceQuota AWS APIs.
 
 Standard AWS authentication methods (AWS credentials, SSO and assume role), see <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html>.
 
 If you are running on [AWS EKS](https://aws.amazon.com/eks/), we strongly recommend to use [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html)
 
-Minimal required IAM permissions:
+<details>
+<summary>Minimal required IAM permissions</summary>
 
-```yaml
+```json
 {
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "AllowFetchingRDSMetrics",
+            "Sid": "AllowInstanceAndLogDescriptions",
             "Effect": "Allow",
             "Action": [
-                "cloudwatch:GetMetricData",
-                "ec2:DescribeInstanceTypes",
-                "rds:DescribeAccountAttributes",
                 "rds:DescribeDBInstances",
-                "rds:DescribeDBLogFiles",
-                "rds:DescribePendingMaintenanceActions",
+                "rds:DescribeDBLogFiles"
+            ],
+            "Resource": [
+                "arn:aws:rds:*:*:db:*"
+            ]
+        },
+        {
+            "Sid": "AllowMaintenanceDescriptions",
+            "Effect": "Allow",
+            "Action": [
+                "rds:DescribePendingMaintenanceActions"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowGettingCloudWatchMetrics",
+            "Effect": "Allow",
+            "Action": [
+                "cloudwatch:GetMetricData"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowRDSUsageDescriptions",
+            "Effect": "Allow",
+            "Action": [
+                "rds:DescribeAccountAttributes"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowQuotaDescriptions",
+            "Effect": "Allow",
+            "Action": [
                 "servicequotas:GetServiceQuota"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowInstanceTypeDescriptions",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:DescribeInstanceTypes"
             ],
             "Resource": "*"
         }
@@ -213,6 +251,10 @@ curl \
 https://raw.githubusercontent.com/qonto/prometheus-rds-exporter/main/configs/aws/policy.json \
 -o /tmp/prometheus-rds-exporter.policy.json
 ```
+
+Terraform uers can take example on Terraform code in `configs/terraform/`.
+
+</details>
 
 ## Installation
 
@@ -443,10 +485,6 @@ See [Development environment](#development-environment) to start the Prometheus 
     ```bash
     docker run -p 9043:9043 -e AWS_PROFILE=${AWS_PROFILE} -v $HOME/.aws:/app/.aws public.ecr.aws/qonto/prometheus-rds-exporter:latest
     ```
-
-### Terraform
-
-You can take example on Terraform code in `configs/terraform/`.
 
 ## Alternative
 
