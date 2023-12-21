@@ -14,6 +14,12 @@ services:
       - ./.prometheus_data:/prometheus
     ports:
       - 9090:9090
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml  # Default
+      - --storage.tsdb.path=/prometheus  # Default
+      - --web.console.libraries=/usr/share/prometheus/console_libraries  # Default
+      - --web.console.templates=/usr/share/prometheus/consoles  # Default
+      - --web.enable-lifecycle  # Enable HTTP reloads and shutdowns of Prometheus
 
   grafana:
     image: grafana/grafana:10.2.2
