@@ -4,11 +4,11 @@ Are you ready to take your AWS RDS monitoring to the next level? Say hello to pr
 
 Built by SRE Engineers, designed for production: Meticulously crafted by a team of Site Reliability Engineers with years of hands-on experience in managing RDS production systems. Trust in their expertise to supercharge your monitoring.
 
-It collect key metrics about:
+It collects key metrics about:
 
 - Hardware resource usage
-- Underlying EC2 instances hard limits
-- Pending AWS RDS maintenances
+- Underlying EC2 instance's hard limits
+- Pending AWS RDS maintenance operations
 - Pending modifications
 - Logs size
 - RDS quota usage information
@@ -22,7 +22,7 @@ It collect key metrics about:
 
 🧩 AWS Quotas Insights: Stay in control with real-time information about AWS quotas. Ensure you never hit limits unexpectedly.
 
-💡 Hard Limits visibility: Know the hard limits of EC2 instance used by RDS and manage your resources effectively.
+💡 Hard Limits visibility: Know the hard limits of the EC2 instance used by RDS and manage your resources effectively.
 
 🔔 Alerting at Your Fingertips: Easily set up Prometheus alerting rules to stay informed of critical events, ensuring you're always ahead of issues.
 
@@ -32,7 +32,7 @@ It collect key metrics about:
 
 🌐 Community-Driven: Join a vibrant community of users and contributors. Collaborate, share knowledge, and shape the future of AWS RDS monitoring together.
 
-🚀 When combined with [prometheus-community/postgres_exporter](https://github.com/prometheus-community/postgres_exporter), it provides a production ready monitoring framework for RDS PostgreSQL.
+🚀 When combined with [prometheus-community/postgres_exporter](https://github.com/prometheus-community/postgres_exporter), it provides a production-ready monitoring framework for RDS PostgreSQL.
 
 ## Metrics
 
@@ -119,7 +119,7 @@ It collect key metrics about:
 
 ## Dashboards
 
-Grafana dashoards are available on Grafana labs:
+Grafana dashboards are available on Grafana labs:
 
 <table>
 <tr>
@@ -173,29 +173,67 @@ Configuration parameters priorities:
 
 ### AWS authentication
 
-Prometheus RDS exporter needs read only AWS IAM permissions to fetch metrics from AWS RDS, CloudWatch, EC2 and ServiceQuota AWS APIs.
+Prometheus RDS exporter needs read-only AWS IAM permissions to fetch metrics from AWS RDS, CloudWatch, EC2 and ServiceQuota AWS APIs.
 
-Standard AWS authentication methods (AWS credentials, SSO and assume role), see <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html>.
+Standard AWS authentication methods (AWS credentials, SSO and assumed role) are supported, see <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-envvars.html>.
 
 If you are running on [AWS EKS](https://aws.amazon.com/eks/), we strongly recommend to use [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html)
 
-Minimal required IAM permissions:
+<details>
+<summary>Minimal required IAM permissions</summary>
 
-```yaml
+```json
 {
     "Version": "2012-10-17",
     "Statement": [
         {
-            "Sid": "AllowFetchingRDSMetrics",
+            "Sid": "AllowInstanceAndLogDescriptions",
             "Effect": "Allow",
             "Action": [
-                "cloudwatch:GetMetricData",
-                "ec2:DescribeInstanceTypes",
-                "rds:DescribeAccountAttributes",
                 "rds:DescribeDBInstances",
-                "rds:DescribeDBLogFiles",
-                "rds:DescribePendingMaintenanceActions",
+                "rds:DescribeDBLogFiles"
+            ],
+            "Resource": [
+                "arn:aws:rds:*:*:db:*"
+            ]
+        },
+        {
+            "Sid": "AllowMaintenanceDescriptions",
+            "Effect": "Allow",
+            "Action": [
+                "rds:DescribePendingMaintenanceActions"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowGettingCloudWatchMetrics",
+            "Effect": "Allow",
+            "Action": [
+                "cloudwatch:GetMetricData"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowRDSUsageDescriptions",
+            "Effect": "Allow",
+            "Action": [
+                "rds:DescribeAccountAttributes"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowQuotaDescriptions",
+            "Effect": "Allow",
+            "Action": [
                 "servicequotas:GetServiceQuota"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowInstanceTypeDescriptions",
+            "Effect": "Allow",
+            "Action": [
+                "ec2:DescribeInstanceTypes"
             ],
             "Resource": "*"
         }
@@ -214,13 +252,17 @@ https://raw.githubusercontent.com/qonto/prometheus-rds-exporter/main/configs/aws
 -o /tmp/prometheus-rds-exporter.policy.json
 ```
 
+Terraform users can take example on Terraform code in `configs/terraform/`.
+
+</details>
+
 ## Installation
 
-See [Development environment](#development-environment) to start the Prometheus RDS exporter, Prometheus, Grafana with dashboards in a minute.
+See the [Development environment](#development-environment) to start the Prometheus RDS exporter, Prometheus, and Grafana with dashboards in a minute.
 
 ### AWS EKS
 
-**Recommanded method** to deploy on AWS EKS using [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) and Helm.
+**Recommended method** to deploy on AWS EKS using [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) and Helm.
 
 1. Create an IAM policy
 
@@ -234,9 +276,9 @@ See [Development environment](#development-environment) to start the Prometheus 
     aws iam create-policy --policy-name ${IAM_POLICY_NAME} --policy-document file:///tmp/prometheus-rds-exporter.policy.json
     ```
 
-1. Attach IAM role to your EKS cluster
+1. Create and attach an IAM role to your EKS cluster
 
-    eksctl will create an IAM role and a Kubernetes Service account
+    [eksctl](https://eksctl.io) will create an IAM role and a Kubernetes Service account
 
     ```bash
     EKS_CLUSTER_NAME=default # Replace with your EKS cluster name
@@ -271,7 +313,7 @@ See [Development environment](#development-environment) to start the Prometheus 
     --set serviceAccount.annotations."eks\.amazonaws\.com\/role-arn"="${SERVICE_ACCOUNT_ANNOTATION}"
     ```
 
-1. Option. Customize prometheus exporter settings
+1. Option. Customize Prometheus exporter settings
 
     Download Helm chart default values
 
@@ -352,7 +394,7 @@ See [Development environment](#development-environment) to start the Prometheus 
         aws iam attach-role-policy --role-name ${IAM_ROLE_NAME} --policy-arn ${IAM_POLICY_ARN}
         ```
 
-    1. Create IAM instance profile
+    1. Create an IAM instance profile
 
         ```bash
         EC2_INSTANCE_PROFILE_NAME="prometheus-rds-exporter"
@@ -364,7 +406,7 @@ See [Development environment](#development-environment) to start the Prometheus 
         aws iam add-role-to-instance-profile  --instance-profile-name ${EC2_INSTANCE_PROFILE_NAME} --role-name ${IAM_ROLE_NAME}
         ```
 
-    1. Attach IAM instance profile to the EC2 instance
+    1. Attach the IAM instance profile to the EC2 instance
 
         ```bash
         EC2_INSTANCE_ID="i-1234567890abcdef0" # Replace with your AWS instance ID
@@ -387,7 +429,7 @@ See [Development environment](#development-environment) to start the Prometheus 
 
 1. Install package
 
-    Prometheus RDS exporter will be automatically started as service.
+    Prometheus RDS exporter will be automatically started as a service.
 
     ```bash
     dpkg -i ${PACKAGE_NAME}
@@ -444,10 +486,6 @@ See [Development environment](#development-environment) to start the Prometheus 
     docker run -p 9043:9043 -e AWS_PROFILE=${AWS_PROFILE} -v $HOME/.aws:/app/.aws public.ecr.aws/qonto/prometheus-rds-exporter:latest
     ```
 
-### Terraform
-
-You can take example on Terraform code in `configs/terraform/`.
-
 ## Alternative
 
 [percona/rds_exporter](https://github.com/percona/rds_exporter) and [mtanda/rds_enhanced_monitoring_exporter](https://github.com/mtanda/rds_enhanced_monitoring_exporter) are great alternatives.
@@ -485,7 +523,7 @@ It will start and configure Grafana, Prometheus, and the RDS exporter:
 
 ### Running the tests
 
-Execute golang tests:
+Execute Go tests:
 
 ```bash
 make test
