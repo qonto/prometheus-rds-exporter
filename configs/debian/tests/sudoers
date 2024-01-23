@@ -1,0 +1,2 @@
+# Allow unittest user to install/remove package
+unittest    ALL = (ALL:ALL) NOPASSWD: /usr/bin/dpkg -i /mnt/prometheus-rds-exporter.deb, /usr/bin/apt-get remove -y prometheus-rds-exporter, /usr/bin/apt-get purge -y prometheus-rds-exporter
