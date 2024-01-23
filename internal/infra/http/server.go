@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/qonto/prometheus-rds-exporter/internal/infra/build"
 )
 
 const (
@@ -63,7 +64,12 @@ func (c *Component) Start() error {
 		BaseContext:       func(_ net.Listener) context.Context { return ctx },
 	}
 
-	http.Handle("/", homeHandler{metricPath: c.config.metricPath})
+	homepage, err := NewHomePage(build.Version, c.config.metricPath)
+	if err != nil {
+		return fmt.Errorf("hompage initialization failed: %w", err)
+	}
+
+	http.Handle("/", homepage)
 	http.Handle(c.config.metricPath, promhttp.Handler())
 
 	signalChan := make(chan os.Signal, 1)
@@ -84,7 +90,7 @@ func (c *Component) Start() error {
 
 	<-signalChan // Wait until program received a stop signal
 
-	err := c.Stop()
+	err = c.Stop()
 	if err != nil {
 		return fmt.Errorf("can't stop websserver: %w", err)
 	}
