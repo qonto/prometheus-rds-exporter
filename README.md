@@ -163,6 +163,8 @@ Configuration could be defined in [prometheus-rds-exporter.yaml](https://github.
 | listen-address | Address to listen on for web interface | :9043 |
 | log-format | Log format (`text` or `json`) | json |
 | metrics-path | Path under which to expose metrics | /metrics |
+| tls-cert-path | Path to TLS certificate | |
+| tls-key-path | Path to private key for TLS |
 
 Configuration parameters priorities:
 

@@ -5,14 +5,20 @@
 # Enable debug mode
 # debug: false
 
+# Log format (text or json)
+# log-format: json
+
 # Path under which to expose metrics
 # metrics-path: /metrics
 
 # Address to listen on for web interface
 # listen-address: ":9043"
 
-# Log format (text or json)
-# log-format: json
+# Path to TLS certificate
+# tls-cert-path: ""
+
+# Path to private key for TLS
+# tls-key-path: ""
 
 #
 # AWS credentials

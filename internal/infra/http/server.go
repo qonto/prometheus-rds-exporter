@@ -27,36 +27,33 @@ const (
 )
 
 type Component struct {
-	config config
+	config *Config
 	logger *slog.Logger
 	server *http.Server
 }
 
-type config struct {
-	metricPath    string
-	listenAddress string
+type Config struct {
+	MetricPath    string
+	ListenAddress string
+	TLSKeyPath    string
+	TLSCertPath   string
 }
 
-func New(logger slog.Logger, listenAddress string, metricPath string) (component Component) {
+func New(logger slog.Logger, config Config) (component Component) {
 	component = Component{
 		logger: &logger,
-		config: config{
-			metricPath:    metricPath,
-			listenAddress: listenAddress,
-		},
+		config: &config,
 	}
 
 	return
 }
 
 func (c *Component) Start() error {
-	c.logger.Info("starting the HTTP server component")
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	c.server = &http.Server{
-		Addr:              c.config.listenAddress,
+		Addr:              c.config.ListenAddress,
 		ReadTimeout:       ReadTimeout * time.Second,
 		WriteTimeout:      WriteTimeout * time.Second,
 		IdleTimeout:       IdleTimeout * time.Second,
@@ -64,13 +61,13 @@ func (c *Component) Start() error {
 		BaseContext:       func(_ net.Listener) context.Context { return ctx },
 	}
 
-	homepage, err := NewHomePage(build.Version, c.config.metricPath)
+	homepage, err := NewHomePage(build.Version, c.config.MetricPath)
 	if err != nil {
 		return fmt.Errorf("hompage initialization failed: %w", err)
 	}
 
 	http.Handle("/", homepage)
-	http.Handle(c.config.metricPath, promhttp.Handler())
+	http.Handle(c.config.MetricPath, promhttp.Handler())
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(
@@ -81,7 +78,16 @@ func (c *Component) Start() error {
 	)
 
 	go func() {
-		err := c.server.ListenAndServe()
+		var err error
+
+		if c.config.TLSCertPath != "" && c.config.TLSKeyPath != "" {
+			c.logger.Info("starting the HTTPS server component")
+			err = c.server.ListenAndServeTLS(c.config.TLSCertPath, c.config.TLSKeyPath)
+		} else {
+			c.logger.Info("starting the HTTP server component")
+			err = c.server.ListenAndServe()
+		}
+
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			c.logger.Error("can't start web server", "reason", err)
 			os.Exit(httpErrorExitCode)
@@ -99,7 +105,7 @@ func (c *Component) Start() error {
 }
 
 func (c *Component) Stop() error {
-	c.logger.Info("stopping the HTTP server component")
+	c.logger.Info("stopping the web server component")
 
 	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout*time.Second)
 	defer cancel()
@@ -109,7 +115,7 @@ func (c *Component) Stop() error {
 		return fmt.Errorf("can't stop webserver: %w", err)
 	}
 
-	c.logger.Info("HTTP server stopped")
+	c.logger.Info("web server stopped")
 
 	return nil
 }
