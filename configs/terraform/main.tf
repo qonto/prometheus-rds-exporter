@@ -22,6 +22,8 @@ resource "aws_iam_role_policy" "prometheus-rds-exporter" {
 }
 
 data "aws_iam_policy_document" "prometheus-rds-exporter" {
+  #checkov:skip=CKV_AWS_356:checkcov return false positive results (e.g. rds:DescribePendingMaintenanceActions could not have resource limit)
+
   statement {
     sid    = "AllowInstanceAndLogDescriptions"
     effect = "Allow"

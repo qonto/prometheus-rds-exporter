@@ -8,6 +8,8 @@ RUN go mod download
 
 COPY . .
 
+HEALTHCHECK NONE
+
 RUN make build
 
 
@@ -29,5 +31,7 @@ USER $USER
 COPY --from=builder /build/prometheus-rds-exporter $HOME/prometheus-rds-exporter
 
 EXPOSE 9043
+
+HEALTHCHECK CMD curl --fail http://localhost:3000 || exit 1
 
 ENTRYPOINT [ "/app/prometheus-rds-exporter" ]

@@ -534,4 +534,5 @@ Execute Helm chart tests:
 ```bash
 make helm-test # Helm unit test
 make kubeconform # Kubernetes manifest validation
+make checkcov # Check misconfigurations
 ```

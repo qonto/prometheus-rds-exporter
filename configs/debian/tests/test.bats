@@ -7,17 +7,17 @@ load '/usr/lib/bats/bats-file/load'
 PACKAGE=/mnt/prometheus-rds-exporter.deb
 
 setup() {
-  run bash -c "DEBIAN_FRONTEND=noninteractive dpkg -i ${PACKAGE}"
+  run bash -c "DEBIAN_FRONTEND=noninteractive sudo dpkg -i ${PACKAGE}"
   assert_success
 }
 
 remove_package() {
-  run bash -c 'apt-get remove -y prometheus-rds-exporter'
+  run bash -c 'sudo apt-get remove -y prometheus-rds-exporter'
   assert_success
 }
 
 purge_package() {
-  run bash -c 'apt-get purge -y prometheus-rds-exporter'
+  run bash -c 'sudo apt-get purge -y prometheus-rds-exporter'
   assert_success
 }
 

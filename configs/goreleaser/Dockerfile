@@ -14,4 +14,7 @@ USER $USER
 EXPOSE 9043
 
 COPY prometheus-rds-exporter /app/
+
+HEALTHCHECK CMD curl --fail http://localhost:3000 || exit 1
+
 ENTRYPOINT ["/app/prometheus-rds-exporter"]

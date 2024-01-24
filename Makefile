@@ -64,5 +64,8 @@ debian-test-ci:
 	docker build configs/debian/tests -t test
 	docker run -v ./dist/prometheus-rds-exporter_0.0.1~next_amd64.deb:/mnt/prometheus-rds-exporter.deb test
 
+checkcov:
+	checkov --directory .
+
 .PHONY: all-tests
 all-tests: test kubeconform helm-test goreleaser-check
