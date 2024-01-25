@@ -9,6 +9,9 @@ services:
 
   prometheus:
     image: prom/prometheus:v2.48.0
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - ./.prometheus_data:/prometheus
@@ -23,6 +26,9 @@ services:
 
   grafana:
     image: grafana/grafana:10.2.2
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=hackme
@@ -31,6 +37,8 @@ services:
       - ./configuration/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources/
       - ./configuration/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards/
       - ./configuration/grafana/entrypoint.sh:/usr/share/grafana/entrypoint.sh
+    tmpfs:
+      - /var/tmp
     ports:
       - 3000:3000
     entrypoint: ["/usr/share/grafana/entrypoint.sh"]
