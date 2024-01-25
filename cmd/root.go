@@ -32,6 +32,8 @@ var cfgFile string
 type exporterConfig struct {
 	Debug                  bool   `mapstructure:"debug"`
 	LogFormat              string `mapstructure:"log-format"`
+	TLSCertPath            string `mapstructure:"tls-cert-path"`
+	TLSKeyPath             string `mapstructure:"tls-key-path"`
 	MetricPath             string `mapstructure:"metrics-path"`
 	ListenAddress          string `mapstructure:"listen-address"`
 	AWSAssumeRoleSession   string `mapstructure:"aws-assume-role-session"`
@@ -83,7 +85,14 @@ func run(configuration exporterConfig) {
 
 	prometheus.MustRegister(collector)
 
-	server := http.New(*logger, configuration.ListenAddress, configuration.MetricPath)
+	serverConfiguration := http.Config{
+		ListenAddress: configuration.ListenAddress,
+		MetricPath:    configuration.MetricPath,
+		TLSCertPath:   configuration.TLSCertPath,
+		TLSKeyPath:    configuration.TLSKeyPath,
+	}
+
+	server := http.New(*logger, serverConfiguration)
 
 	err = server.Start()
 	if err != nil {
@@ -117,6 +126,8 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().BoolP("debug", "d", false, "Enable debug mode")
 	cmd.Flags().StringP("log-format", "l", "json", "Log format (text or json)")
 	cmd.Flags().StringP("metrics-path", "", "/metrics", "Path under which to expose metrics")
+	cmd.Flags().StringP("tls-cert-path", "", "", "Path to TLS certificate")
+	cmd.Flags().StringP("tls-key-path", "", "", "Path to private key for TLS")
 	cmd.Flags().StringP("listen-address", "", ":9043", "Address to listen on for web interface")
 	cmd.Flags().StringP("aws-assume-role-arn", "", "", "AWS IAM ARN role to assume to fetch metrics")
 	cmd.Flags().StringP("aws-assume-role-session", "", "prometheus-rds-exporter", "AWS assume role session name")
@@ -141,6 +152,16 @@ func NewRootCommand() (*cobra.Command, error) {
 	err = viper.BindPFlag("metrics-path", cmd.Flags().Lookup("metrics-path"))
 	if err != nil {
 		return cmd, fmt.Errorf("failed to bind 'metrics-path' parameter: %w", err)
+	}
+
+	err = viper.BindPFlag("tls-cert-path", cmd.Flags().Lookup("tls-cert-path"))
+	if err != nil {
+		return cmd, fmt.Errorf("failed to bind 'tls-cert-path' parameter: %w", err)
+	}
+
+	err = viper.BindPFlag("tls-key-path", cmd.Flags().Lookup("tls-key-path"))
+	if err != nil {
+		return cmd, fmt.Errorf("failed to bind 'tls-key-path' parameter: %w", err)
 	}
 
 	err = viper.BindPFlag("listen-address", cmd.Flags().Lookup("listen-address"))
