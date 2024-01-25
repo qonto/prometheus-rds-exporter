@@ -53,5 +53,5 @@ func NewHomePage(version string, metricPath string) (*homeHandler, error) {
 
 func (h homeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "text/html; charset=UTF-8")
-	_, _ = w.Write(h.content)
+	_, _ = w.Write(h.content) // nosemgrep: go.lang.security.audit.xss.no-direct-write-to-responsewriter.no-direct-write-to-responsewriter // h.content is rendered by html/template in constructor
 }
