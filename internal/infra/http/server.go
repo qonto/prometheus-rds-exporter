@@ -15,6 +15,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/qonto/prometheus-rds-exporter/internal/infra/build"
+	"github.com/qonto/prometheus-rds-exporter/internal/infra/tracing"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 const (
@@ -33,10 +35,11 @@ type Component struct {
 }
 
 type Config struct {
-	MetricPath    string
-	ListenAddress string
-	TLSKeyPath    string
-	TLSCertPath   string
+	MetricPath        string
+	ListenAddress     string
+	TLSKeyPath        string
+	TLSCertPath       string
+	OTELTracesEnabled bool
 }
 
 func New(logger slog.Logger, config Config) (component Component) {
@@ -66,7 +69,23 @@ func (c *Component) Start() error {
 		return fmt.Errorf("hompage initialization failed: %w", err)
 	}
 
-	http.Handle("/", homepage)
+	if c.config.OTELTracesEnabled {
+		c.logger.Debug("Enable OTEL traces")
+
+		tracer, err := tracing.SetupOTelSDK(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to initialize tracing: %w", err)
+		}
+
+		defer func() {
+			err := tracer.Shutdown(ctx)
+			if err != nil {
+				c.logger.Error("failed to shutdown tracing. Some spans may be missing")
+			}
+		}()
+	}
+
+	http.Handle("/", otelhttp.NewHandler(homepage, "homepage"))
 	http.Handle(c.config.MetricPath, promhttp.Handler())
 
 	signalChan := make(chan os.Signal, 1)

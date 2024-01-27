@@ -2,6 +2,7 @@
 package exporter
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -13,12 +14,18 @@ import (
 	"github.com/qonto/prometheus-rds-exporter/internal/app/rds"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/servicequotas"
 	"github.com/qonto/prometheus-rds-exporter/internal/infra/build"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
 	exporterUpStatusCode   float64 = 1
 	exporterDownStatusCode float64 = 0
 )
+
+var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/exporter")
 
 type Configuration struct {
 	CollectInstanceMetrics bool
@@ -48,6 +55,7 @@ type metrics struct {
 }
 
 type rdsCollector struct {
+	ctx           context.Context
 	wg            sync.WaitGroup
 	logger        slog.Logger
 	counters      counters
@@ -346,7 +354,7 @@ func (c *rdsCollector) fetchMetrics() error {
 	// Fetch RDS instances metrics
 	c.logger.Info("get RDS metrics")
 
-	rdsFetcher := rds.NewFetcher(c.rdsClient, rds.Configuration{
+	rdsFetcher := rds.NewFetcher(c.ctx, c.rdsClient, rds.Configuration{
 		CollectLogsSize:     c.configuration.CollectLogsSize,
 		CollectMaintenances: c.configuration.CollectMaintenances,
 	})
@@ -385,6 +393,9 @@ func (c *rdsCollector) getCloudwatchMetrics(client cloudwatch.CloudWatchClient, 
 	defer c.wg.Done()
 	c.logger.Debug("fetch cloudwatch metrics")
 
+	_, span := tracer.Start(c.ctx, "collect-cloudwatch-metrics")
+	defer span.End()
+
 	fetcher := cloudwatch.NewRDSFetcher(client, c.logger)
 
 	metrics, err := fetcher.GetRDSInstanceMetrics(instanceIdentifiers)
@@ -402,7 +413,7 @@ func (c *rdsCollector) getUsagesMetrics(client cloudwatch.CloudWatchClient) {
 	defer c.wg.Done()
 	c.logger.Debug("fetch usage metrics")
 
-	fetcher := cloudwatch.NewUsageFetcher(client, c.logger)
+	fetcher := cloudwatch.NewUsageFetcher(c.ctx, client, c.logger)
 
 	metrics, err := fetcher.GetUsageMetrics()
 	if err != nil {
@@ -420,7 +431,7 @@ func (c *rdsCollector) getEC2Metrics(client ec2.EC2Client, instanceTypes []strin
 	defer c.wg.Done()
 	c.logger.Debug("fetch EC2 metrics")
 
-	fetcher := ec2.NewFetcher(client)
+	fetcher := ec2.NewFetcher(c.ctx, client)
 
 	metrics, err := fetcher.GetDBInstanceTypeInformation(instanceTypes)
 	if err != nil {
@@ -436,18 +447,26 @@ func (c *rdsCollector) getEC2Metrics(client ec2.EC2Client, instanceTypes []strin
 
 func (c *rdsCollector) getQuotasMetrics(client servicequotas.ServiceQuotasClient) {
 	defer c.wg.Done()
+
+	ctx, span := tracer.Start(c.ctx, "collect-quota-metrics")
+	defer span.End()
+
 	c.logger.Debug("fetch quotas")
 
-	fetcher := servicequotas.NewFetcher(client)
+	fetcher := servicequotas.NewFetcher(ctx, client)
 
 	metrics, err := fetcher.GetRDSQuotas()
 	if err != nil {
 		c.counters.Errors++
 		c.logger.Error(fmt.Sprintf("can't fetch service quota metrics: %s", err))
+		span.SetStatus(codes.Error, "can't fetch service quota metrics")
+		span.RecordError(err)
 	}
 
 	c.counters.ServiceQuotasAPICalls += fetcher.GetStatistics().UsageAPICall
 	c.metrics.ServiceQuota = metrics
+
+	span.SetStatus(codes.Ok, "quota fetched")
 }
 
 func (c *rdsCollector) getInstanceTagLabels(dbidentifier string, instance rds.RdsInstanceMetrics) (keys []string, values []string) {
@@ -476,6 +495,11 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(c.exporterBuildInformation, prometheus.GaugeValue, 1, build.Version, build.CommitSHA, build.Date)
 	ch <- prometheus.MustNewConstMetric(c.errors, prometheus.CounterValue, c.counters.Errors)
 
+	var span trace.Span
+
+	c.ctx, span = tracer.Start(context.TODO(), "collect-metrics")
+	defer span.End()
+
 	// Get all metrics
 	err := c.fetchMetrics()
 	if err != nil {
@@ -483,8 +507,14 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		// Mark exporter as down
 		ch <- prometheus.MustNewConstMetric(c.up, prometheus.CounterValue, exporterDownStatusCode)
 
+		span.SetStatus(codes.Error, "failed to get metrics")
+		span.RecordError(err)
+
 		return
 	}
+
+	span.End()
+
 	ch <- prometheus.MustNewConstMetric(c.up, prometheus.CounterValue, exporterUpStatusCode)
 
 	// RDS metrics
