@@ -8,12 +8,16 @@ import (
 
 	aws_servicequotas "github.com/aws/aws-sdk-go-v2/service/servicequotas"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"golang.org/x/exp/slog"
 )
 
 var (
 	errNoQuota    = errors.New("no AWS quota with this code")
-	errQuotaError = errors.New("aws return error for this quota")
+	errQuotaError = errors.New("AWS return error for this quota")
+	tracer        = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/servicequotas")
 )
 
 const (
@@ -40,13 +44,15 @@ type ServiceQuotasClient interface {
 	GetServiceQuota(ctx context.Context, input *aws_servicequotas.GetServiceQuotaInput, optFns ...func(*aws_servicequotas.Options)) (*aws_servicequotas.GetServiceQuotaOutput, error)
 }
 
-func NewFetcher(client ServiceQuotasClient) *serviceQuotaFetcher {
+func NewFetcher(ctx context.Context, client ServiceQuotasClient) *serviceQuotaFetcher {
 	return &serviceQuotaFetcher{
+		ctx:    ctx,
 		client: client,
 	}
 }
 
 type serviceQuotaFetcher struct {
+	ctx        context.Context
 	logger     *slog.Logger
 	client     ServiceQuotasClient
 	statistics Statistics
@@ -58,6 +64,11 @@ func (s *serviceQuotaFetcher) GetStatistics() Statistics {
 
 // GetQuota retrieves and returns the AWS quota value for the specified serviceCode and quotaCode
 func (s *serviceQuotaFetcher) getQuota(serviceCode string, quotaCode string) (float64, error) {
+	_, span := tracer.Start(s.ctx, "get-quota")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("com.qonto.prometheus_rds_exporter.aws.quota.service_code", serviceCode), attribute.String("com.qonto.prometheus_rds_exporter.aws.quota.code", quotaCode))
+
 	params := &aws_servicequotas.GetServiceQuotaInput{
 		ServiceCode: &serviceCode,
 		QuotaCode:   &quotaCode,
@@ -65,21 +76,31 @@ func (s *serviceQuotaFetcher) getQuota(serviceCode string, quotaCode string) (fl
 
 	s.statistics.UsageAPICall++
 
-	result, err := s.client.GetServiceQuota(context.TODO(), params)
+	result, err := s.client.GetServiceQuota(s.ctx, params)
 	if err != nil {
+		span.SetStatus(codes.Error, "failed to get quota")
+		span.RecordError(err)
+
 		return 0, fmt.Errorf("can't get %s/%s service quota: %w", serviceCode, quotaCode, err)
 	}
 
 	// AWS response payload could contains errors (eg. missing permission)
 	if result.Quota.ErrorReason != nil {
 		s.logger.Error("AWS quota error: ", "errorCode", result.Quota.ErrorReason.ErrorCode, "message", *result.Quota.ErrorReason.ErrorMessage)
+		span.SetStatus(codes.Error, "failed to fetch quota")
+		span.RecordError(errQuotaError)
 
 		return 0, errQuotaError
 	}
 
 	if result.Quota == nil {
+		span.SetStatus(codes.Error, "no quota")
+		span.RecordError(errQuotaError)
+
 		return 0, fmt.Errorf("no quota for %s/%s: %w", serviceCode, quotaCode, errNoQuota)
 	}
+
+	span.SetStatus(codes.Ok, "quota fetched")
 
 	return *result.Quota.Value, nil
 }
