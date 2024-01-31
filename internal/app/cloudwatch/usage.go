@@ -11,7 +11,11 @@ import (
 	aws_cloudwatch "github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	aws_cloudwatch_types "github.com/aws/aws-sdk-go-v2/service/cloudwatch/types"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 )
+
+var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/cloudwatch")
 
 type UsageMetrics struct {
 	AllocatedStorage    float64
@@ -112,14 +116,16 @@ func generateCloudWatchQueriesForUsage() *aws_cloudwatch.GetMetricDataInput {
 	}
 }
 
-func NewUsageFetcher(client CloudWatchClient, logger slog.Logger) *usageFetcher {
+func NewUsageFetcher(ctx context.Context, client CloudWatchClient, logger slog.Logger) *usageFetcher {
 	return &usageFetcher{
+		ctx:    ctx,
 		client: client,
 		logger: &logger,
 	}
 }
 
 type usageFetcher struct {
+	ctx        context.Context
 	client     CloudWatchClient
 	statistics Statistics
 	logger     *slog.Logger
@@ -131,6 +137,9 @@ func (u *usageFetcher) GetStatistics() Statistics {
 
 // GetUsageMetrics returns RDS service usages metrics
 func (u *usageFetcher) GetUsageMetrics() (UsageMetrics, error) {
+	_, span := tracer.Start(u.ctx, "collect-usage")
+	defer span.End()
+
 	metrics := UsageMetrics{}
 
 	query := generateCloudWatchQueriesForUsage()
@@ -152,10 +161,15 @@ func (u *usageFetcher) GetUsageMetrics() (UsageMetrics, error) {
 		if len(m.Values) > 0 {
 			err = metrics.Update(*m.Label, m.Values[0])
 			if err != nil {
+				span.SetStatus(codes.Error, "can't update internal values")
+				span.RecordError(err)
+
 				return metrics, fmt.Errorf("can't update internal values: %w", err)
 			}
 		}
 	}
+
+	span.SetStatus(codes.Ok, "metrics fetched")
 
 	return metrics, nil
 }
