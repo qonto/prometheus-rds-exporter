@@ -160,6 +160,7 @@ Configuration could be defined in [prometheus-rds-exporter.yaml](https://github.
 | collect-quotas | Collect AWS RDS quotas (AWS quotas API) | true |
 | collect-usages | Collect AWS RDS usages (AWS Cloudwatch API) | true |
 | debug | Enable debug mode | |
+| enable-otel-traces | Enable OpenTelemetry traces. See [configuration](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/) | false |
 | listen-address | Address to listen on for web interface | :9043 |
 | log-format | Log format (`text` or `json`) | json |
 | metrics-path | Path under which to expose metrics | /metrics |
@@ -538,3 +539,23 @@ make helm-test # Helm unit test
 make kubeconform # Kubernetes manifest validation
 make checkcov # Check misconfigurations
 ```
+
+### Tracing
+
+Prometheus RDS Exporter includes an OpenTelemetry trace exporter to facilitate troubleshooting.
+
+Traces can be forwarded to any OpenTelemetry server using gRPC protocol.
+
+1. Export the `OTEL_EXPORTER_OTLP_ENDPOINT` variable.
+
+    ```bash
+    export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+    ```
+
+    See [OTEL SDK configuration](https://opentelemetry.io/docs/specs/otel/configuration/sdk-environment-variables/#general-sdk-configuration) and [OpenTelemetry environments variables](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/) for all options.
+
+1. Start exporter with OpenTelemetry enabled
+
+    ```bash
+    prometheus-rds-exporter --enable-otel-traces
+    ```
