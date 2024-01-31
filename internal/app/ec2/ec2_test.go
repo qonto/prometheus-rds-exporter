@@ -1,6 +1,7 @@
 package ec2_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/qonto/prometheus-rds-exporter/internal/app/ec2"
@@ -11,10 +12,11 @@ import (
 )
 
 func TestGetDBInstanceTypeInformation(t *testing.T) {
+	context := context.TODO()
 	client := mock.EC2Client{}
 
 	instanceTypes := []string{"db.t3.large", "db.t3.small"}
-	fetcher := ec2.NewFetcher(client)
+	fetcher := ec2.NewFetcher(context, client)
 	result, err := fetcher.GetDBInstanceTypeInformation(instanceTypes)
 
 	require.NoError(t, err, "GetDBInstanceTypeInformation must succeed")
