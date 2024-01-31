@@ -12,6 +12,9 @@ import (
 	aws_rds "github.com/aws/aws-sdk-go-v2/service/rds"
 	aws_rds_types "github.com/aws/aws-sdk-go-v2/service/rds/types"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
+	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
 
 type Configuration struct {
@@ -91,6 +94,8 @@ const (
 	replicaRole                            string  = "replica"
 )
 
+var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/rds")
+
 var instanceStatuses = map[string]int{
 	"available":  InstanceStatusAvailable,
 	"backing-up": InstanceStatusBackingUp,
@@ -109,14 +114,16 @@ type RDSClient interface {
 	DescribeDBLogFiles(context.Context, *aws_rds.DescribeDBLogFilesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBLogFilesOutput, error)
 }
 
-func NewFetcher(client RDSClient, configuration Configuration) RDSFetcher {
+func NewFetcher(ctx context.Context, client RDSClient, configuration Configuration) RDSFetcher {
 	return RDSFetcher{
+		ctx:           ctx,
 		client:        client,
 		configuration: configuration,
 	}
 }
 
 type RDSFetcher struct {
+	ctx           context.Context
 	client        RDSClient
 	statistics    Statistics
 	configuration Configuration
@@ -126,13 +133,19 @@ func (r *RDSFetcher) GetStatistics() Statistics {
 	return r.statistics
 }
 
-func (r *RDSFetcher) getPendingMaintenances() (map[string]string, error) {
+func (r *RDSFetcher) getPendingMaintenances(ctx context.Context) (map[string]string, error) {
+	_, span := tracer.Start(ctx, "collect-pending-maintenances")
+	defer span.End()
+
 	instances := make(map[string]string)
 
 	inputMaintenance := &aws_rds.DescribePendingMaintenanceActionsInput{}
 
 	maintenances, err := r.client.DescribePendingMaintenanceActions(context.TODO(), inputMaintenance)
 	if err != nil {
+		span.SetStatus(codes.Error, "failed to get maintenances")
+		span.RecordError(err)
+
 		return nil, fmt.Errorf("can't describe pending maintenance actions: %w", err)
 	}
 
@@ -161,10 +174,15 @@ func (r *RDSFetcher) getPendingMaintenances() (map[string]string, error) {
 		instances[dbIdentifier] = maintenanceMode
 	}
 
+	span.SetStatus(codes.Ok, "maintenances fetched")
+
 	return instances, nil
 }
 
 func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
+	ctx, span := tracer.Start(r.ctx, "collect-instance-metrics")
+	defer span.End()
+
 	metrics := make(map[string]RdsInstanceMetrics)
 
 	var err error
@@ -172,8 +190,11 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 	var instanceMaintenances map[string]string
 
 	if r.configuration.CollectMaintenances {
-		instanceMaintenances, err = r.getPendingMaintenances()
+		instanceMaintenances, err = r.getPendingMaintenances(ctx)
 		if err != nil {
+			span.SetStatus(codes.Error, "can't get RDS maintenances")
+			span.RecordError(err)
+
 			return Metrics{}, fmt.Errorf("can't get RDS maintenances: %w", err)
 		}
 	}
@@ -182,30 +203,43 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 
 	paginator := aws_rds.NewDescribeDBInstancesPaginator(r.client, input)
 	for paginator.HasMorePages() {
+		instanceCtx, instanceSpan := tracer.Start(ctx, "collect-rds-instances")
+		defer instanceSpan.End()
+
 		r.statistics.RdsAPICall++
 
 		output, err := paginator.NextPage(context.TODO())
 		if err != nil {
-			return Metrics{}, fmt.Errorf("can't get instances: %w", err)
+			span.SetStatus(codes.Error, "can't get RDS instances")
+			span.RecordError(err)
+
+			return Metrics{}, fmt.Errorf("can't get RDS instances: %w", err)
 		}
 
 		for _, dbInstance := range output.DBInstances {
 			dbIdentifier := dbInstance.DBInstanceIdentifier
 
-			instanceMetrics, err := r.computeInstanceMetrics(dbInstance, instanceMaintenances)
+			instanceMetrics, err := r.computeInstanceMetrics(instanceCtx, dbInstance, instanceMaintenances)
 			if err != nil {
+				span.SetStatus(codes.Error, "can't compute instance metrics")
+				span.RecordError(err)
+
 				return Metrics{}, fmt.Errorf("can't compute instance metrics for %s: %w", *dbIdentifier, err)
 			}
 
 			metrics[*dbIdentifier] = instanceMetrics
 		}
+
+		instanceSpan.SetStatus(codes.Ok, "instance metrics fetch")
 	}
+
+	span.SetStatus(codes.Ok, "metrics fetched")
 
 	return Metrics{Instances: metrics}, nil
 }
 
 // computeInstanceMetrics returns metrics about the specified instance
-func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance, instanceMaintenances map[string]string) (RdsInstanceMetrics, error) {
+func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_rds_types.DBInstance, instanceMaintenances map[string]string) (RdsInstanceMetrics, error) {
 	dbIdentifier := dbInstance.DBInstanceIdentifier
 
 	var iops int64
@@ -253,7 +287,7 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 	if r.configuration.CollectLogsSize {
 		var err error
 
-		logFilesSize, err = r.getLogFilesSize(*dbIdentifier)
+		logFilesSize, err = r.getLogFilesSize(ctx, *dbIdentifier)
 		if err != nil {
 			return RdsInstanceMetrics{}, fmt.Errorf("can't get log files size for %d: %w", dbIdentifier, err)
 		}
@@ -312,7 +346,12 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 }
 
 // getLogFilesSize returns the size of all logs on the specified instance
-func (r *RDSFetcher) getLogFilesSize(dbidentifier string) (*int64, error) {
+func (r *RDSFetcher) getLogFilesSize(ctx context.Context, dbidentifier string) (*int64, error) {
+	_, span := tracer.Start(ctx, "collect-instance-log")
+	defer span.End()
+
+	span.SetAttributes(semconv.DBInstanceID(dbidentifier))
+
 	var filesSize *int64
 
 	input := &aws_rds.DescribeDBLogFilesInput{DBInstanceIdentifier: &dbidentifier}
@@ -325,6 +364,9 @@ func (r *RDSFetcher) getLogFilesSize(dbidentifier string) (*int64, error) {
 		if errors.As(err, &notFoundError) { // Replica in "creating" status may return notFoundError exception
 			return filesSize, nil
 		}
+
+		span.SetStatus(codes.Error, "can't describe db logs files")
+		span.RecordError(err)
 
 		return filesSize, fmt.Errorf("can't describe db logs files for %s: %w", dbidentifier, err)
 	}

@@ -1,6 +1,7 @@
 package rds_test
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"testing"
@@ -21,9 +22,10 @@ func TestGetMetrics(t *testing.T) {
 	rdsInstance := mock.NewRdsInstance()
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
+	ctx := context.TODO()
 	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
 	configuration := rds.Configuration{CollectLogsSize: true}
-	fetcher := rds.NewFetcher(client, configuration)
+	fetcher := rds.NewFetcher(ctx, client, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -67,10 +69,11 @@ func TestGP2StorageType(t *testing.T) {
 	rdsInstanceWithLargeDisk.StorageType = aws.String("gp2")
 	rdsInstanceWithLargeDisk.AllocatedStorage = aws.Int32(20000)
 
+	ctx := context.TODO()
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallDisk, *rdsInstanceWithMediumDisk, *rdsInstanceWithLargeDisk}}
 	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
 	configuration := rds.Configuration{}
-	fetcher := rds.NewFetcher(client, configuration)
+	fetcher := rds.NewFetcher(ctx, client, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -95,10 +98,11 @@ func TestGP3StorageType(t *testing.T) {
 	rdsInstanceWithLargeDisk.AllocatedStorage = aws.Int32(500)
 	rdsInstanceWithLargeDisk.Iops = aws.Int32(12000)
 
+	ctx := context.TODO()
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallDisk, *rdsInstanceWithLargeDisk}}
 	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
 	configuration := rds.Configuration{}
-	fetcher := rds.NewFetcher(client, configuration)
+	fetcher := rds.NewFetcher(ctx, client, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -123,10 +127,11 @@ func TestIO1StorageType(t *testing.T) {
 	rdsInstanceWithHighIOPS.StorageType = aws.String("io1")
 	rdsInstanceWithHighIOPS.Iops = aws.Int32(64000)
 
+	ctx := context.TODO()
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallIOPS, *rdsInstanceWithMediumIOPS, *rdsInstanceWithLargeIOPS, *rdsInstanceWithHighIOPS}}
 	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
 	configuration := rds.Configuration{}
-	fetcher := rds.NewFetcher(client, configuration)
+	fetcher := rds.NewFetcher(ctx, client, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -188,7 +193,8 @@ func TestLogSize(t *testing.T) {
 		DescribeDBLogFilesOutput:  mockDescribeDBLogFilesOutput,
 	}
 	configuration := rds.Configuration{CollectLogsSize: true}
-	fetcher := rds.NewFetcher(client, configuration)
+	ctx := context.TODO()
+	fetcher := rds.NewFetcher(ctx, client, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -205,7 +211,8 @@ func TestLogSizeInCreation(t *testing.T) {
 		DescribeDBLogFilesOutputError: &aws_rds_types.DBInstanceNotFoundFault{},
 	}
 	configuration := rds.Configuration{CollectLogsSize: true}
-	fetcher := rds.NewFetcher(client, configuration)
+	ctx := context.TODO()
+	fetcher := rds.NewFetcher(ctx, client, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
 	var emptyInt64 *int64
@@ -224,7 +231,8 @@ func TestReplicaNode(t *testing.T) {
 
 	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
 	configuration := rds.Configuration{CollectLogsSize: true}
-	fetcher := rds.NewFetcher(client, configuration)
+	ctx := context.TODO()
+	fetcher := rds.NewFetcher(ctx, client, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -275,7 +283,8 @@ func TestPendingModification(t *testing.T) {
 
 	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
 	configuration := rds.Configuration{}
-	fetcher := rds.NewFetcher(client, configuration)
+	ctx := context.TODO()
+	fetcher := rds.NewFetcher(ctx, client, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -289,9 +298,10 @@ func TestPendingModificationDueToInstanceModification(t *testing.T) {
 	rdsInstance.PendingModifiedValues = &pendingModifications
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
+	ctx := context.TODO()
 	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
 	configuration := rds.Configuration{}
-	fetcher := rds.NewFetcher(client, configuration)
+	fetcher := rds.NewFetcher(ctx, client, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -304,9 +314,10 @@ func TestPendingModificationDueToUnappliedParameterGroup(t *testing.T) {
 	rdsInstance.DBParameterGroups = []aws_rds_types.DBParameterGroupStatus{{DBParameterGroupName: aws.String("my_parameter_group"), ParameterApplyStatus: aws.String("pending-reboot")}}
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
+	ctx := context.TODO()
 	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
 	configuration := rds.Configuration{}
-	fetcher := rds.NewFetcher(client, configuration)
+	fetcher := rds.NewFetcher(ctx, client, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -320,9 +331,10 @@ func TestInstanceAge(t *testing.T) {
 	rdsInstance.InstanceCreateTime = &creationDate
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
+	ctx := context.TODO()
 	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
 	configuration := rds.Configuration{}
-	fetcher := rds.NewFetcher(client, configuration)
+	fetcher := rds.NewFetcher(ctx, client, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
 	expectedAge := time.Since(*rdsInstance.InstanceCreateTime)
