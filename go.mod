@@ -8,8 +8,8 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.16.16
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.14.11
 	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.32.2
-	github.com/aws/aws-sdk-go-v2/service/ec2 v1.145.0
-	github.com/aws/aws-sdk-go-v2/service/rds v1.68.0
+	github.com/aws/aws-sdk-go-v2/service/ec2 v1.146.0
+	github.com/aws/aws-sdk-go-v2/service/rds v1.69.0
 	github.com/aws/aws-sdk-go-v2/service/servicequotas v1.19.7
 	github.com/aws/aws-sdk-go-v2/service/sts v1.26.7
 	github.com/prometheus/client_golang v1.18.0
