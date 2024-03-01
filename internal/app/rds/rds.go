@@ -132,6 +132,7 @@ func (r *RDSFetcher) getPendingMaintenances() (map[string]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't describe pending maintenance actions: %w", err)
 	}
+
 	r.statistics.RdsAPICall++
 
 	if maintenances == nil {
@@ -248,8 +249,8 @@ func (r *RDSFetcher) computeInstanceMetrics(dbInstance aws_rds_types.DBInstance,
 
 	if r.configuration.CollectLogsSize {
 		var err error
-		logFilesSize, err = r.getLogFilesSize(*dbIdentifier)
 
+		logFilesSize, err = r.getLogFilesSize(*dbIdentifier)
 		if err != nil {
 			return RdsInstanceMetrics{}, fmt.Errorf("can't get log files size for %d: %w", dbIdentifier, err)
 		}
