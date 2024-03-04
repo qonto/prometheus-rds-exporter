@@ -25,7 +25,7 @@ For quickly compiling and testing your changes do:
 ```bash
 # For building.
 make build
-./rds_exporter
+./prometheus-rds-exporter
 
 # For testing.
 make test         # Make sure all the tests pass before you commit and push :)

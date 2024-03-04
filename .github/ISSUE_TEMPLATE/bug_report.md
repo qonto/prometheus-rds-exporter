@@ -7,24 +7,24 @@ assignees: ''
 
 ---
 
-**Describe the bug**
+### Describe the bug
 
 A clear and concise description of what the bug is.
 
-**Desktop (please complete the following information):**
+### Desktop (please complete the following information)
 
- - OS: [e.g. Linux]
- - Prometheus RDS exporter's version [e.g. 1.1]
- - RDS engine: [e.g. PostgreSQL]
+- OS: [e.g. Linux]
+- Prometheus RDS exporter's version [e.g. 1.1]
+- RDS engine: [e.g. PostgreSQL]
 
-**To Reproduce**
+### To Reproduce
 
 Steps to reproduce the behavior
 
-**Expected behavior**
+### Expected behavior
 
 A clear and concise description of what you expected to happen.
 
-**Additional context**
+### Additional context
 
 Add any other context about the problem here.
