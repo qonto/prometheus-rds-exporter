@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "dependencies": [
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/grafana/grafonnet.git",
+          "subdir": "gen/grafonnet-latest"
+        }
+      },
+      "version": "fe65a22df6d3a897729fff47cff599805a2c5710",
+      "sum": "mDHkB1avJU5IqvwCsXPmPt8pSiGjupLVqx3zCgFKzbw="
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/grafana/grafonnet.git",
+          "subdir": "gen/grafonnet-v10.2.0"
+        }
+      },
+      "version": "fe65a22df6d3a897729fff47cff599805a2c5710",
+      "sum": "9xwtVj7WmdsFWoQ5CTcvDBKEgIPnAF9DsD6dnKl3M/U="
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/jsonnet-libs/docsonnet.git",
+          "subdir": "doc-util"
+        }
+      },
+      "version": "6ac6c69685b8c29c54515448eaca583da2d88150",
+      "sum": "BrAL/k23jq+xy9oA7TWIhUx07dsA/QLm3g7ktCwe//U="
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/jsonnet-libs/xtd.git",
+          "subdir": ""
+        }
+      },
+      "version": "80bdea46b69cfbd5a6b57789ad856d3cb525e956",
+      "sum": "eUSd6nmI07Zl4pYuDnhasQ7Ua37HfHcBVItfvroVUGU="
+    }
+  ],
+  "legacyImports": false
+}
