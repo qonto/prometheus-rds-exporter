@@ -1,0 +1,1433 @@
+{
+   "description": "RDS instances inventory",
+   "editable": false,
+   "graphTooltip": 1,
+   "links": [
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "server"
+         ],
+         "title": "Server",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "database"
+         ],
+         "title": "Database",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "table"
+         ],
+         "title": "Table",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "misc"
+         ],
+         "title": "More",
+         "type": "dashboards"
+      }
+   ],
+   "panels": [
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 0,
+            "y": 0
+         },
+         "id": 1,
+         "title": "Overview",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of AWS RDS instances in selected AWS account(s) and region(s)",
+         "fieldConfig": {
+            "defaults": {
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 0,
+            "y": 1
+         },
+         "id": 2,
+         "options": {
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n"
+            }
+         ],
+         "title": "Instances",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Total number of RDS instances with a pending maintenance",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "0",
+               "thresholds": {
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 1
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 3,
+            "y": 1
+         },
+         "id": 3,
+         "options": {
+            "colorMode": "background",
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",pending_maintenance!=\"no\"} > 0)\n"
+            }
+         ],
+         "title": "Pending maintenances",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Total number of RDS instances with a pending modification",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "0",
+               "thresholds": {
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 1
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 6,
+            "y": 1
+         },
+         "id": 4,
+         "options": {
+            "colorMode": "background",
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",pending_modified_values!=\"false\"})\n"
+            }
+         ],
+         "title": "Pending modifications",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Total number of RDS instances with deprecated certificate",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "0",
+               "thresholds": {
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 1
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 9,
+            "y": 1
+         },
+         "id": 5,
+         "options": {
+            "colorMode": "background",
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\", ca_certificate_identifier!=\"rds-ca-rsa2048-g1\"})\n"
+            }
+         ],
+         "title": "Deprecated certificates",
+         "type": "stat"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 12,
+            "y": 4
+         },
+         "id": 6,
+         "title": "Pending operations",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "RDS instances with pending maintenance",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "displayMode": "color-text"
+               },
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "dbidentifier"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/a7049b32-6be3-42e5-aa9a-2879a14f46dd/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-dbidentifier=${__data.fields.dbidentifier}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Value"
+                  },
+                  "properties": [
+                     {
+                        "id": "unit",
+                        "value": "bytes"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "multi_az"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 },
+                                 "true": {
+                                    "color": "green",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "deletion_protection"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 },
+                                 "true": {
+                                    "color": "green",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "pending_modified_values"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "green",
+                                    "index": 0
+                                 },
+                                 "true": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "performance_insights_enabled"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 },
+                                 "true": {
+                                    "color": "green",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "pending_maintenance"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "auto-applied": {
+                                    "color": "orange",
+                                    "index": 0
+                                 },
+                                 "forced": {
+                                    "color": "red",
+                                    "index": 1
+                                 },
+                                 "no": {
+                                    "color": "green",
+                                    "index": 0
+                                 },
+                                 "pending": {
+                                    "color": "yellow",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 0,
+            "y": 5
+         },
+         "id": 7,
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",pending_maintenance!=\"no\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Instances with pending maintenance",
+         "transformations": [
+            {
+               "id": "organize",
+               "options": {
+                  "excludeByName": {
+                     "Time": true,
+                     "Value": true,
+                     "__name__": true,
+                     "arn": true,
+                     "ca_certificate_identifier": true,
+                     "container": true,
+                     "context": true,
+                     "dbi_resource_id": true,
+                     "deletion_protection": true,
+                     "endpoint": true,
+                     "engine": true,
+                     "engine_version": true,
+                     "environment": true,
+                     "instance": true,
+                     "instance_class": true,
+                     "job": true,
+                     "kubernetes_cluster": true,
+                     "multi_az": true,
+                     "namespace": true,
+                     "pending_modified_values": true,
+                     "performance_insights_enabled": true,
+                     "pod": true,
+                     "prometheus": true,
+                     "role": true,
+                     "service": true,
+                     "source_dbidentifier": true,
+                     "storage_type": true
+                  },
+                  "indexByName": {
+                     "aws_account_id": 1,
+                     "aws_region": 2,
+                     "dbidentifier": 3,
+                     "pending_maintenance": 4
+                  }
+               }
+            }
+         ],
+         "type": "table"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "RDS instances with pending modification",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "displayMode": "color-text"
+               },
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "dbidentifier"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/a7049b32-6be3-42e5-aa9a-2879a14f46dd/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-dbidentifier=${__data.fields.dbidentifier}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Value"
+                  },
+                  "properties": [
+                     {
+                        "id": "unit",
+                        "value": "bytes"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "multi_az"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 },
+                                 "true": {
+                                    "color": "green",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "deletion_protection"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 },
+                                 "true": {
+                                    "color": "green",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "pending_modified_values"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "green",
+                                    "index": 0
+                                 },
+                                 "true": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "performance_insights_enabled"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 },
+                                 "true": {
+                                    "color": "green",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "pending_maintenance"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "auto-applied": {
+                                    "color": "orange",
+                                    "index": 0
+                                 },
+                                 "forced": {
+                                    "color": "red",
+                                    "index": 1
+                                 },
+                                 "no": {
+                                    "color": "green",
+                                    "index": 0
+                                 },
+                                 "pending": {
+                                    "color": "yellow",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 12,
+            "y": 5
+         },
+         "id": 8,
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",pending_modified_values!=\"false\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Instances with pending modification",
+         "transformations": [
+            {
+               "id": "organize",
+               "options": {
+                  "excludeByName": {
+                     "Time": true,
+                     "Value": true,
+                     "__name__": true,
+                     "arn": true,
+                     "ca_certificate_identifier": true,
+                     "container": true,
+                     "context": true,
+                     "dbi_resource_id": true,
+                     "deletion_protection": true,
+                     "endpoint": true,
+                     "engine": true,
+                     "engine_version": true,
+                     "environment": true,
+                     "instance": true,
+                     "instance_class": true,
+                     "job": true,
+                     "kubernetes_cluster": true,
+                     "multi_az": true,
+                     "namespace": true,
+                     "pending_maintenance": true,
+                     "performance_insights_enabled": true,
+                     "pod": true,
+                     "prometheus": true,
+                     "role": true,
+                     "service": true,
+                     "source_dbidentifier": true,
+                     "storage_type": true
+                  },
+                  "indexByName": {
+                     "aws_account_id": 1,
+                     "aws_region": 2,
+                     "dbidentifier": 3,
+                     "pending_modified_values": 4
+                  }
+               }
+            }
+         ],
+         "type": "table"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 24,
+            "y": 10
+         },
+         "id": 9,
+         "title": "Inventory",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "List of RDS instances in selected AWS account(s) and region(s)",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "displayMode": "color-text"
+               },
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "dbidentifier"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/a7049b32-6be3-42e5-aa9a-2879a14f46dd/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-dbidentifier=${__data.fields.dbidentifier}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Value"
+                  },
+                  "properties": [
+                     {
+                        "id": "unit",
+                        "value": "bytes"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "multi_az"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 },
+                                 "true": {
+                                    "color": "green",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "deletion_protection"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 },
+                                 "true": {
+                                    "color": "green",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "pending_modified_values"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "green",
+                                    "index": 0
+                                 },
+                                 "true": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "performance_insights_enabled"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 },
+                                 "true": {
+                                    "color": "green",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "pending_maintenance"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "auto-applied": {
+                                    "color": "orange",
+                                    "index": 0
+                                 },
+                                 "forced": {
+                                    "color": "red",
+                                    "index": 1
+                                 },
+                                 "no": {
+                                    "color": "green",
+                                    "index": 0
+                                 },
+                                 "pending": {
+                                    "color": "yellow",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 11
+         },
+         "id": 10,
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} * on (dbidentifier) group_left max(rds_allocated_storage_bytes{}) by (dbidentifier)\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "RDS instances",
+         "transformations": [
+            {
+               "id": "organize",
+               "options": {
+                  "excludeByName": {
+                     "Time": true,
+                     "Value": false,
+                     "__name__": true,
+                     "container": true,
+                     "context": true,
+                     "endpoint": true,
+                     "environment": true,
+                     "instance": true,
+                     "job": true,
+                     "kubernetes_cluster": true,
+                     "namespace": true,
+                     "pod": true,
+                     "prometheus": true,
+                     "service": true
+                  },
+                  "indexByName": {
+                     "Time": 2,
+                     "Value": 17,
+                     "aws_account_id": 0,
+                     "aws_region": 1,
+                     "ca_certificate_identifier": 15,
+                     "dbi_resource_id": 18,
+                     "dbidentifier": 3,
+                     "deletion_protection": 11,
+                     "engine": 4,
+                     "engine_version": 6,
+                     "instance": 7,
+                     "instance_class": 8,
+                     "job": 9,
+                     "multi_az": 10,
+                     "pending_maintenance": 12,
+                     "pending_modified_values": 13,
+                     "performance_insights_enabled": 14,
+                     "role": 5,
+                     "storage_type": 16
+                  }
+               }
+            }
+         ],
+         "type": "table"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 24,
+            "y": 18
+         },
+         "id": 11,
+         "title": "AWS Quota",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Ratio of used RDS instances regarding AWS quota",
+         "fieldConfig": {
+            "defaults": {
+               "color": {
+                  "mode": "thresholds"
+               },
+               "custom": {
+                  "fillOpacity": 10,
+                  "lineStyle": {
+                     "dash": [
+                        true
+                     ],
+                     "fill": "solid"
+                  },
+                  "thresholdsStyle": {
+                     "mode": "line"
+                  }
+               },
+               "decimals": 0,
+               "max": 100,
+               "min": 0,
+               "thresholds": {
+                  "mode": "percentage",
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "red",
+                        "value": 100
+                     }
+                  ]
+               },
+               "unit": "percent"
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 19
+         },
+         "id": 12,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(\n    count(rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"}) by (aws_account_id, aws_region, dbidentifier)\n) by (aws_account_id, aws_region)\n* 100\n/\nsum(\n    max(rds_quota_max_dbinstances_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"}) by (aws_account_id, aws_region)\n) by (aws_account_id, aws_region)\n",
+               "legendFormat": "{{ aws_account_id }}:{{ aws_region }}"
+            }
+         ],
+         "title": "RDS instance quota usage (ratio)",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Ratio of used RDS storage regarding AWS quota",
+         "fieldConfig": {
+            "defaults": {
+               "color": {
+                  "mode": "thresholds"
+               },
+               "custom": {
+                  "fillOpacity": 10,
+                  "lineStyle": {
+                     "dash": [
+                        true
+                     ],
+                     "fill": "solid"
+                  },
+                  "thresholdsStyle": {
+                     "mode": "line"
+                  }
+               },
+               "decimals": 0,
+               "max": 100,
+               "min": 0,
+               "thresholds": {
+                  "mode": "percentage",
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "red",
+                        "value": 100
+                     }
+                  ]
+               },
+               "unit": "percent"
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 19
+         },
+         "id": 13,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(\n    max(rds_allocated_storage_bytes{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"}) by (aws_account_id, aws_region, dbidentifier)\n) by (aws_account_id, aws_region)\n* 100\n/\nsum(\n    max(rds_quota_total_storage_bytes{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"}) by (aws_account_id, aws_region)\n) by (aws_account_id, aws_region)\n",
+               "legendFormat": "{{ aws_account_id }}:{{ aws_region }}"
+            }
+         ],
+         "title": "RDS storage quota usage (ratio)",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "The number of instances regarding your RDS instances quota. You can request a quota increase to AWS",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10
+               },
+               "decimals": 0,
+               "min": 0
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byRegexp",
+                     "options": "Max.*"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "red",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byRegexp",
+                     "options": "Total.*"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "green",
+                           "mode": "fixed"
+                        }
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 27
+         },
+         "id": 14,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(\n    max(rds_quota_max_dbinstances_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"}) by (aws_account_id, aws_region)\n) by (aws_account_id, aws_region)\n",
+               "legendFormat": "Max {{ aws_account_id }}:{{ aws_region }}"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(\n    count(rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"}) by (aws_account_id, aws_region, dbidentifier)\n) by (aws_account_id, aws_region)\n",
+               "legendFormat": "Total {{ aws_account_id }}:{{ aws_region }}"
+            }
+         ],
+         "title": "RDS instance quota",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "The total storage used regarding your RDS total storage quota. You can request a quota increase to AWS",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10
+               },
+               "decimals": 0,
+               "min": 0,
+               "unit": "bytes"
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byRegexp",
+                     "options": "Max.*"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "red",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byRegexp",
+                     "options": "Total.*"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "green",
+                           "mode": "fixed"
+                        }
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 27
+         },
+         "id": 15,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(\n    max(rds_quota_total_storage_bytes{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"}) by (aws_account_id, aws_region)\n) by (aws_account_id, aws_region)\n",
+               "legendFormat": "Max {{ aws_account_id }}:{{ aws_region }}"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(\n    max(rds_allocated_storage_bytes{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"}) by (aws_account_id, aws_region, dbidentifier)\n) by (aws_account_id, aws_region)\n",
+               "legendFormat": "Total {{ aws_account_id }}:{{ aws_region }}"
+            }
+         ],
+         "title": "RDS storage quota",
+         "type": "timeseries"
+      }
+   ],
+   "schemaVersion": 36,
+   "tags": [
+      "dmf",
+      "server"
+   ],
+   "templating": {
+      "list": [
+         {
+            "description": "Prometheus data source",
+            "label": "Data source",
+            "name": "datasource",
+            "query": "prometheus",
+            "type": "datasource"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "description": "AWS Account ID",
+            "includeAll": true,
+            "label": "Account",
+            "multi": true,
+            "name": "aws_account_id",
+            "query": "label_values(rds_instance_info, aws_account_id)",
+            "refresh": 2,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "description": "AWS region",
+            "includeAll": true,
+            "label": "Region",
+            "multi": true,
+            "name": "aws_region",
+            "query": "label_values(rds_instance_info{aws_account_id=~\"$aws_account_id\"}, aws_region)",
+            "refresh": 2,
+            "type": "query"
+         }
+      ]
+   },
+   "time": {
+      "from": "now-6h",
+      "to": "now"
+   },
+   "timezone": "utc",
+   "title": "RDS instances",
+   "uid": "f65d785e-d8c2-49b5-8314-388f30483f57"
+}

@@ -1,0 +1,2900 @@
+{
+   "description": "AWS RDS instance details",
+   "editable": false,
+   "graphTooltip": 1,
+   "links": [
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "server"
+         ],
+         "title": "Server",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "database"
+         ],
+         "title": "Database",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "table"
+         ],
+         "title": "Table",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "misc"
+         ],
+         "title": "More",
+         "type": "dashboards"
+      }
+   ],
+   "panels": [
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 0,
+            "y": 0
+         },
+         "id": 1,
+         "title": "Information",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "RDS Engine",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 2,
+            "x": 0,
+            "y": 1
+         },
+         "id": 2,
+         "options": {
+            "graphMode": "none",
+            "reduceOptions": {
+               "fields": "engine"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Engine",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "RDS Engine version",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 2,
+            "x": 2,
+            "y": 1
+         },
+         "id": 3,
+         "options": {
+            "graphMode": "none",
+            "reduceOptions": {
+               "fields": "engine_version"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Engine Version",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Time since RDS instance creation",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               },
+               "unit": "s"
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 3,
+            "x": 4,
+            "y": 1
+         },
+         "id": 4,
+         "options": {
+            "graphMode": "none"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_instance_age_seconds{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "instant": true
+            }
+         ],
+         "title": "Age",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "RDS instance class (db.<family>.<instance size>)",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 3,
+            "x": 7,
+            "y": 1
+         },
+         "id": 5,
+         "options": {
+            "graphMode": "none",
+            "reduceOptions": {
+               "fields": "instance_class"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Instance class",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Total number of vCPU",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 2,
+            "x": 10,
+            "y": 1
+         },
+         "id": 6,
+         "options": {
+            "graphMode": "none"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(\n    max(rds_instance_vcpu_average{}) by (instance_class)\n    * on (instance_class)\n    group_left(aws_account_id,aws_region,dbidentifier)\n    max(rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (aws_account_id, aws_region, dbidentifier, instance_class)\n)\n",
+               "legendFormat": "Number of vCPU"
+            }
+         ],
+         "title": "vCPU",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Total memory",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               },
+               "unit": "bytes"
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 3,
+            "x": 12,
+            "y": 1
+         },
+         "id": 7,
+         "options": {
+            "graphMode": "none"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(\n    max(rds_instance_memory_bytes{}) by (instance_class)\n    * on (instance_class)\n    group_left(dbidentifier) max(rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (dbidentifier, instance_class)\n)\n",
+               "legendFormat": "Max"
+            }
+         ],
+         "title": "Memory",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Total disk storage",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 2,
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               },
+               "unit": "bytes"
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 3,
+            "x": 15,
+            "y": 1
+         },
+         "id": 8,
+         "options": {
+            "graphMode": "none"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_allocated_storage_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Allocated"
+            }
+         ],
+         "title": "Allocated storage",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Storage class type)",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 3,
+            "x": 18,
+            "y": 1
+         },
+         "id": 9,
+         "options": {
+            "graphMode": "none",
+            "reduceOptions": {
+               "fields": "storage_type"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Storage type",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Multi Availability Zone deployment",
+         "fieldConfig": {
+            "defaults": {
+               "mappings": [
+                  {
+                     "options": {
+                        "0": {
+                           "color": "orange",
+                           "index": 0,
+                           "text": "Disabled"
+                        },
+                        "1": {
+                           "color": "green",
+                           "index": 1,
+                           "text": "Enabled"
+                        }
+                     },
+                     "type": "value"
+                  }
+               ],
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 3,
+            "x": 21,
+            "y": 1
+         },
+         "id": 10,
+         "options": {
+            "graphMode": "none"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Multi AZ",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Instance role (primary or replica)",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 2,
+            "x": 0,
+            "y": 3
+         },
+         "id": 11,
+         "options": {
+            "graphMode": "none",
+            "reduceOptions": {
+               "fields": "role"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Role",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of RDS instances replicating this instance",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 2,
+            "x": 2,
+            "y": 3
+         },
+         "id": 12,
+         "options": {
+            "graphMode": "none"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",source_dbidentifier=\"$dbidentifier\"})\n"
+            }
+         ],
+         "title": "Replicas",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Primary instance name for a replica)",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 8,
+            "x": 4,
+            "y": 3
+         },
+         "id": 13,
+         "options": {
+            "graphMode": "none",
+            "reduceOptions": {
+               "fields": "source_dbidentifier"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Source database",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "AWS RDS instance internal reference",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 6,
+            "x": 12,
+            "y": 3
+         },
+         "id": 14,
+         "options": {
+            "graphMode": "none",
+            "reduceOptions": {
+               "fields": "dbi_resource_id"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "DBI resource ID",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Certificate Authority bundle used by this RDS instance for TLS connections",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 3,
+            "x": 18,
+            "y": 3
+         },
+         "id": 15,
+         "options": {
+            "graphMode": "none",
+            "reduceOptions": {
+               "fields": "ca_certificate_identifier"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "CA certificate identifier",
+         "type": "stat"
+      },
+      {
+         "collapsed": true,
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "AWS RDS snapshot retention. This is not related to AWS Backup service",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "mappings": [
+                  {
+                     "options": {
+                        "0": {
+                           "color": "yellow",
+                           "index": 0,
+                           "text": "Disabled"
+                        }
+                     },
+                     "type": "value"
+                  }
+               ],
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "yellow",
+                        "value": 0
+                     },
+                     {
+                        "color": "green",
+                        "value": 1
+                     }
+                  ]
+               },
+               "unit": "s"
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 3,
+            "x": 21,
+            "y": 3
+         },
+         "id": 16,
+         "options": {
+            "graphMode": "none"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_backup_retention_period_seconds{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "{{dbidentifier}}"
+            }
+         ],
+         "title": "Snapshot retention",
+         "type": "stat"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 24,
+            "y": 5
+         },
+         "id": 17,
+         "title": "Main",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Current CPU usage",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "max": 100,
+               "min": 0,
+               "thresholds": {
+                  "mode": "percentage",
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 80
+                     },
+                     {
+                        "color": "red",
+                        "value": 90
+                     }
+                  ]
+               },
+               "unit": "percent"
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 0,
+            "y": 6
+         },
+         "id": 18,
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_cpu_usage_percent_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (dbidentifier)\n",
+               "legendFormat": "{{dbidentifier}}"
+            }
+         ],
+         "title": "CPU",
+         "type": "gauge"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Curent memory usage",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "max": 100,
+               "min": 0,
+               "thresholds": {
+                  "mode": "percentage",
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 80
+                     },
+                     {
+                        "color": "red",
+                        "value": 90
+                     }
+                  ]
+               },
+               "unit": "percent"
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 3,
+            "y": 6
+         },
+         "id": 19,
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "100\n- sum(rds_freeable_memory_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (dbidentifier)\n  * 100\n  / sum(rds_instance_memory_bytes{}\n  * on (instance_class) group_left(dbidentifier) rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n)\nby (dbidentifier)\n",
+               "legendFormat": "{{dbidentifier}}"
+            }
+         ],
+         "title": "Memory",
+         "type": "gauge"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Current disk IOPS usage",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "max": 100,
+               "min": 0,
+               "thresholds": {
+                  "mode": "percentage",
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 80
+                     },
+                     {
+                        "color": "red",
+                        "value": 90
+                     }
+                  ]
+               },
+               "unit": "percent"
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 6,
+            "y": 6
+         },
+         "id": 20,
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(\n  (\n    rds_read_iops_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n    + rds_write_iops_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n  )\n  * 100\n  / rds_max_disk_iops_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n)\n",
+               "legendFormat": "Usage"
+            }
+         ],
+         "title": "Disk IOPS",
+         "type": "gauge"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Current disk storage usage",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "max": 100,
+               "min": 0,
+               "thresholds": {
+                  "mode": "percentage",
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 80
+                     },
+                     {
+                        "color": "red",
+                        "value": 90
+                     }
+                  ]
+               },
+               "unit": "percent"
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 9,
+            "y": 6
+         },
+         "id": 21,
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "100 - max(\n  rds_free_storage_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n  * 100\n  / rds_allocated_storage_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n)\n",
+               "legendFormat": "{{dbidentifier}}"
+            }
+         ],
+         "title": "Storage",
+         "type": "gauge"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Replication lag for replica RDS instance",
+         "fieldConfig": {
+            "defaults": {
+               "min": 0,
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 10
+                     },
+                     {
+                        "color": "red",
+                        "value": 30
+                     }
+                  ]
+               },
+               "unit": "s"
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 12,
+            "y": 6
+         },
+         "id": 22,
+         "options": {
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_replica_lag_seconds{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n"
+            }
+         ],
+         "title": "Replication lag",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Current RDS instance status",
+         "fieldConfig": {
+            "defaults": {
+               "mappings": [
+                  {
+                     "options": {
+                        "-1": {
+                           "color": "purple",
+                           "index": 0,
+                           "text": "Unknown"
+                        },
+                        "0": {
+                           "color": "red",
+                           "index": 1,
+                           "text": "Stopped"
+                        },
+                        "1": {
+                           "color": "green",
+                           "index": 2,
+                           "text": "Available"
+                        },
+                        "2": {
+                           "color": "yellow",
+                           "index": 3,
+                           "text": "Backing-up"
+                        }
+                     },
+                     "type": "value"
+                  }
+               ]
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 15,
+            "y": 6
+         },
+         "id": 23,
+         "options": {
+            "graphMode": "none"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_instance_status{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Status"
+            }
+         ],
+         "title": "Instance status",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Yes when RDS instance need a modification (e.g. Apply new parameter group settings). Modification could be scheduled during maintenance windows or triggered manually.",
+         "fieldConfig": {
+            "defaults": {
+               "mappings": [
+                  {
+                     "options": {
+                        "false": {
+                           "color": "green",
+                           "index": 1,
+                           "text": "No"
+                        },
+                        "true": {
+                           "color": "yellow",
+                           "index": 0,
+                           "text": "Yes"
+                        }
+                     },
+                     "type": "value"
+                  }
+               ]
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 18,
+            "y": 6
+         },
+         "id": 24,
+         "options": {
+            "graphMode": "none",
+            "reduceOptions": {
+               "fields": "pending_modified_values"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Pending modification",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "AWS may required hardward or software maintenance. Maintenance could be scheduled during maintenance windows or triggered manually.",
+         "fieldConfig": {
+            "defaults": {
+               "mappings": [
+                  {
+                     "options": {
+                        "auto-applied": {
+                           "color": "orange",
+                           "index": 0,
+                           "text": "Auto-applied"
+                        },
+                        "forced": {
+                           "color": "red",
+                           "index": 1,
+                           "text": "Forced"
+                        },
+                        "no": {
+                           "color": "green",
+                           "index": 0,
+                           "text": "No"
+                        },
+                        "pending": {
+                           "color": "yellow",
+                           "index": 0,
+                           "text": "Pending"
+                        }
+                     },
+                     "type": "value"
+                  }
+               ]
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 21,
+            "y": 6
+         },
+         "id": 25,
+         "options": {
+            "graphMode": "none",
+            "reduceOptions": {
+               "fields": "pending_maintenance"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Pending maintenance",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of active queries waiting for CPU and non CPU wait. For optimal performances, you should not have more CPU wait that number of CPU",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10,
+                  "stacking": {
+                     "mode": "normal"
+                  }
+               },
+               "decimals": 1,
+               "min": 0
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Number of vCPU"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "red",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                     },
+                     {
+                        "id": "custom.hideFrom",
+                        "value": {
+                           "legend": true
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "off"
+                        }
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "CPU wait"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "green",
+                           "mode": "fixed"
+                        }
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Non CPU wait"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "orange",
+                           "mode": "fixed"
+                        }
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 14
+         },
+         "id": 26,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_dbload_cpu_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "CPU wait"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_dbload_noncpu_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Non CPU wait"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(\n    max(rds_instance_vcpu_average{}) by (instance_class)\n    * on (instance_class)\n    group_left(aws_account_id,aws_region,dbidentifier)\n    max(rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (aws_account_id, aws_region, dbidentifier, instance_class)\n)\n",
+               "legendFormat": "Number of vCPU"
+            }
+         ],
+         "title": "Active queries vs vCPU",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Ratio of CPU usage",
+         "fieldConfig": {
+            "defaults": {
+               "color": {
+                  "mode": "thresholds"
+               },
+               "custom": {
+                  "fillOpacity": 10,
+                  "lineStyle": {
+                     "dash": [
+                        true
+                     ],
+                     "fill": "solid"
+                  },
+                  "thresholdsStyle": {
+                     "mode": "line"
+                  }
+               },
+               "decimals": 0,
+               "max": 100,
+               "min": 0,
+               "thresholds": {
+                  "mode": "percentage",
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "red",
+                        "value": 100
+                     }
+                  ]
+               },
+               "unit": "percent"
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 14
+         },
+         "id": 27,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "list",
+               "placement": "bottom"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_cpu_usage_percent_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (dbidentifier)\n",
+               "legendFormat": "{{dbidentifier}}"
+            }
+         ],
+         "title": "CPU usage",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "The number of client network connections to the database instance",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10
+               },
+               "decimals": 0,
+               "min": 0
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 22
+         },
+         "id": 28,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "list",
+               "placement": "bottom"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_database_connections_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (dbidentifier)\n",
+               "legendFormat": "{{dbidentifier}}"
+            }
+         ],
+         "title": "Database connections",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Total of read and write disk IOPS regarding instance IOPS limits. For optimal performances, you should not reach IOPS limits",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10
+               },
+               "decimals": 0,
+               "min": 0
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Max"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "red",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                     },
+                     {
+                        "id": "unit",
+                        "value": "locale"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Read"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "green",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     },
+                     {
+                        "id": "unit",
+                        "value": "locale"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Write"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "yellow",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     },
+                     {
+                        "id": "unit",
+                        "value": "locale"
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 22
+         },
+         "id": 29,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_max_disk_iops_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Max"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_read_iops_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Read"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_write_iops_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Write"
+            }
+         ],
+         "title": "Disk IOPS usage",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "The amount of available Random Access Memory",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10
+               },
+               "decimals": 0,
+               "min": 0,
+               "unit": "bytes"
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Max"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "red",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                     },
+                     {
+                        "id": "custom.lineWidth",
+                        "value": "2"
+                     },
+                     {
+                        "id": "unit",
+                        "value": "bytes"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Freeable"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "green",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     },
+                     {
+                        "id": "unit",
+                        "value": "bytes"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Used"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "yellow",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     },
+                     {
+                        "id": "unit",
+                        "value": "bytes"
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 30
+         },
+         "id": 30,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(\n    max(rds_instance_memory_bytes{}) by (instance_class)\n    * on (instance_class)\n    group_left(dbidentifier) max(rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (dbidentifier, instance_class)\n)\n",
+               "legendFormat": "Max"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_freeable_memory_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Freeable"
+            }
+         ],
+         "title": "Memory usage",
+         "transformations": [
+            {
+               "id": "calculateField",
+               "options": {
+                  "alias": "Used",
+                  "binary": {
+                     "left": "Max",
+                     "operator": "-",
+                     "reducer": "sum",
+                     "right": "Freeable"
+                  },
+                  "mode": "binary",
+                  "reduce": {
+                     "reducer": "sum"
+                  }
+               }
+            }
+         ],
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "The average number of bytes read/write from disk per second. For optimal performances, you should not reach disk throughput",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10
+               },
+               "decimals": 0,
+               "min": 0,
+               "unit": "bytes"
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Max"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "red",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                     },
+                     {
+                        "id": "custom.lineWidth",
+                        "value": "2"
+                     },
+                     {
+                        "id": "unit",
+                        "value": "bytes"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Read"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "green",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     },
+                     {
+                        "id": "unit",
+                        "value": "bytes"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Write"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "yellow",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     },
+                     {
+                        "id": "unit",
+                        "value": "bytes"
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 30
+         },
+         "id": 31,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_read_throughput_bytes{dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Read"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_write_throughput_bytes{dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Write"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_max_storage_throughput_bytes{dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Max"
+            }
+         ],
+         "title": "Disk throughput",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Amount of swap space used on the DB instance. There's nothing wrong with a used SWAP, but for optimial perfomance you should avoid frequent changes",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10
+               },
+               "decimals": 0,
+               "min": 0,
+               "unit": "bytes"
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 38
+         },
+         "id": 32,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "list",
+               "placement": "bottom"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_swap_usage_bytes{dbidentifier=\"$dbidentifier\"}) by (dbidentifier)\n",
+               "legendFormat": "{{dbidentifier}}"
+            }
+         ],
+         "title": "Swap usage",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Storage size per type. WAL only applied to PostgreSQL",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10
+               },
+               "decimals": 0,
+               "min": 0,
+               "unit": "bytes"
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Allocated"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "red",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                     },
+                     {
+                        "id": "custom.lineWidth",
+                        "value": "1"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Logs"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "#808080",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "WAL"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "purple",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Replication slots"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "blue",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Other"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "orange",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Used"
+                  },
+                  "properties": [
+                     {
+                        "id": "custom.hideFrom",
+                        "value": {
+                           "legend": true,
+                           "tooltip": true,
+                           "viz": true
+                        }
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Free"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "green",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 38
+         },
+         "id": 33,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "diff"
+               ],
+               "displayMode": "table",
+               "placement": "right",
+               "sortBy": "Mean",
+               "sortDesc": true
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_allocated_storage_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Allocated"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_replication_slot_disk_usage_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Replication slots"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_transaction_logs_disk_usage_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "WAL"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_instance_log_files_size_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Logs"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_free_storage_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Free"
+            }
+         ],
+         "title": "Storage usage",
+         "transformations": [
+            {
+               "id": "calculateField",
+               "options": {
+                  "alias": "Used",
+                  "mode": "reduceRow",
+                  "reduce": {
+                     "include": [
+                        "Free",
+                        "Logs",
+                        "Replication slots",
+                        "WAL"
+                     ],
+                     "reducer": "sum"
+                  }
+               }
+            },
+            {
+               "id": "calculateField",
+               "options": {
+                  "alias": "Other",
+                  "binary": {
+                     "left": "Allocated",
+                     "operator": "-",
+                     "reducer": "sum",
+                     "right": "Used"
+                  },
+                  "mode": "binary",
+                  "reduce": {
+                     "include": [
+                        "Used"
+                     ],
+                     "reducer": "sum"
+                  }
+               }
+            }
+         ],
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "RDS instance status. Some AWS operations could not be performed when instance is not in 'available' status",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 0
+               },
+               "decimals": 0,
+               "mappings": [
+                  {
+                     "options": {
+                        "-1": {
+                           "color": "yellow",
+                           "index": -1,
+                           "text": "Unknown"
+                        },
+                        "-2": {
+                           "color": "orange",
+                           "index": -2,
+                           "text": "Stopping"
+                        },
+                        "0": {
+                           "color": "orange",
+                           "index": -1,
+                           "text": "Stopped"
+                        },
+                        "1": {
+                           "color": "green",
+                           "index": -1,
+                           "text": "Available"
+                        },
+                        "2": {
+                           "color": "yellow",
+                           "index": -1,
+                           "text": "Backing-up"
+                        },
+                        "3": {
+                           "color": "orange",
+                           "index": -1,
+                           "text": "Starting"
+                        }
+                     },
+                     "type": "value"
+                  }
+               ],
+               "max": null,
+               "min": null
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 46
+         },
+         "id": 34,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "hidden",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_instance_status{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Status"
+            }
+         ],
+         "title": "Status",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Ratio of free disk space",
+         "fieldConfig": {
+            "defaults": {
+               "color": {
+                  "mode": "thresholds"
+               },
+               "custom": {
+                  "fillOpacity": 10,
+                  "lineStyle": {
+                     "dash": [
+                        true
+                     ],
+                     "fill": "solid"
+                  },
+                  "thresholdsStyle": {
+                     "mode": "line"
+                  }
+               },
+               "decimals": 0,
+               "max": 100,
+               "min": 0,
+               "thresholds": {
+                  "mode": "percentage",
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "red",
+                        "value": 100
+                     }
+                  ]
+               },
+               "unit": "percent"
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 46
+         },
+         "id": 35,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "list",
+               "placement": "bottom"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "100 - max(\n  rds_free_storage_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n  * 100\n  / rds_allocated_storage_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}\n)\n",
+               "legendFormat": "{{dbidentifier}}"
+            }
+         ],
+         "title": "Used storage",
+         "type": "timeseries"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 24,
+            "y": 54
+         },
+         "id": 36,
+         "title": "PostgreSQL",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "The number of transactions currently used. Hard limit to 2 billion transactions (See Transaction ID Wraparound)",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10,
+                  "thresholdsStyle": {
+                     "mode": "line+area"
+                  }
+               },
+               "decimals": 0,
+               "max": 2000000000,
+               "min": 0,
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "transparent",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 1600000000
+                     },
+                     {
+                        "color": "red",
+                        "value": 2000000000
+                     }
+                  ]
+               },
+               "unit": "locale"
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 55
+         },
+         "id": 37,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "list",
+               "placement": "bottom"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_maximum_used_transaction_ids_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (dbidentifier)\n",
+               "legendFormat": "{{dbidentifier}}"
+            }
+         ],
+         "title": "Used Transactions",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Lag of PostgreSQL replica instances",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10
+               },
+               "decimals": 0,
+               "min": 0,
+               "unit": "s"
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 55
+         },
+         "id": 38,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_replica_lag_seconds{}) by (dbidentifier)\n* on (dbidentifier)\ngroup_left(source_dbidentifier)\nmax(rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",source_dbidentifier=\"$dbidentifier\"}) by (dbidentifier)\n",
+               "legendFormat": "{{dbidentifier}}"
+            }
+         ],
+         "title": "Replication lag",
+         "type": "timeseries"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 24,
+            "y": 63
+         },
+         "id": 39,
+         "title": "Scaling capacity",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Regardless of the allocated disk IOPS, the EC2 instance behind RDS also has disk IOPS limits. You can't use more IOPS than EC2's instance limit",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10
+               },
+               "decimals": 0,
+               "min": 0,
+               "unit": "locale"
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Max"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "orange",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                     },
+                     {
+                        "id": "displayName",
+                        "value": "Allocated"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byRegexp",
+                     "options": "Instance type limit.*"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "red",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 64
+         },
+         "id": 40,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_read_iops_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n+ max(rds_write_iops_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Usage"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_max_disk_iops_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Max"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(\n    max(rds_instance_max_iops_average{}) by (instance_class)\n    * on (instance_class)\n    group_left(aws_account_id,aws_region,dbidentifier)\n    max(rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (aws_account_id, aws_region, dbidentifier, instance_class)\n) by (instance_class)\n",
+               "legendFormat": "Instance type limit ({{instance_class}})"
+            }
+         ],
+         "title": "Disk IOPS",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "If RDS storage autoscaling is enabled, display the current usage",
+         "fieldConfig": {
+            "defaults": {
+               "color": {
+                  "mode": "thresholds"
+               },
+               "custom": {
+                  "fillOpacity": 10,
+                  "lineStyle": {
+                     "dash": [
+                        true
+                     ],
+                     "fill": "solid"
+                  },
+                  "thresholdsStyle": {
+                     "mode": "line"
+                  }
+               },
+               "decimals": 0,
+               "max": 100,
+               "min": 0,
+               "noValue": "Disabled",
+               "thresholds": {
+                  "mode": "percentage",
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "red",
+                        "value": 100
+                     }
+                  ]
+               },
+               "unit": "percent"
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 64
+         },
+         "id": 41,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "list",
+               "placement": "bottom"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_allocated_storage_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"} * 100 / rds_max_allocated_storage_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Usage"
+            }
+         ],
+         "title": "RDS storage autoscaling usage",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Regardless of the allocated disk throughput, the EC2 instance behind RDS also has disk throughput limits. You can't use more throughput than EC2's instance limit",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10
+               },
+               "decimals": 0,
+               "min": 0,
+               "unit": "bytes"
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Max"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "orange",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                     },
+                     {
+                        "id": "displayName",
+                        "value": "Allocated"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byRegexp",
+                     "options": "Instance type limit.*"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "red",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 72
+         },
+         "id": 42,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_read_throughput_bytes{dbidentifier=\"$dbidentifier\"})\n+ max(rds_write_throughput_bytes{dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Usage"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_max_storage_throughput_bytes{dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Max"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(\nmax(rds_instance_max_throughput_bytes{}) by (instance_class)\n* on (instance_class)\ngroup_left(aws_account_id,aws_region,dbidentifier)\nmax(rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (aws_account_id, aws_region, dbidentifier, instance_class)\n) by (instance_class)\n",
+               "legendFormat": "Instance type limit ({{instance_class}})"
+            }
+         ],
+         "title": "Disk throughput",
+         "type": "timeseries"
+      }
+   ],
+   "schemaVersion": 36,
+   "tags": [
+      "dmf",
+      "server"
+   ],
+   "templating": {
+      "list": [
+         {
+            "description": "Prometheus data source",
+            "label": "Data source",
+            "name": "datasource",
+            "query": "prometheus",
+            "type": "datasource"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "description": "AWS Account ID",
+            "label": "Account",
+            "name": "aws_account_id",
+            "query": "label_values(rds_instance_info, aws_account_id)",
+            "refresh": 2,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "description": "AWS region",
+            "label": "Region",
+            "name": "aws_region",
+            "query": "label_values(rds_instance_info{aws_account_id=\"$aws_account_id\"}, aws_region)",
+            "refresh": 2,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "description": "AWS RDS instance",
+            "label": "Instance",
+            "name": "dbidentifier",
+            "query": "label_values(rds_instance_info{aws_account_id=~\"$aws_account_id\", aws_region=~\"$aws_region\"}, dbidentifier)",
+            "refresh": 2,
+            "type": "query"
+         }
+      ]
+   },
+   "time": {
+      "from": "now-6h",
+      "to": "now"
+   },
+   "timezone": "utc",
+   "title": "RDS instance",
+   "uid": "a7049b32-6be3-42e5-aa9a-2879a14f46dd"
+}

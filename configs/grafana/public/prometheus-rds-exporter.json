@@ -1,0 +1,535 @@
+{
+   "description": "Prometheus RDS exporter internal metrics",
+   "editable": false,
+   "graphTooltip": 1,
+   "links": [
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "server"
+         ],
+         "title": "Server",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "database"
+         ],
+         "title": "Database",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "table"
+         ],
+         "title": "Table",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "misc"
+         ],
+         "title": "More",
+         "type": "dashboards"
+      }
+   ],
+   "panels": [
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 0,
+            "y": 0
+         },
+         "id": 1,
+         "title": "Exporters",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of Prometheus RDS exporter",
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 0,
+            "y": 1
+         },
+         "id": 2,
+         "options": {
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(rds_exporter_build_info{instance=~\"$instance\"})\n"
+            }
+         ],
+         "title": "Exporters",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Status of RDS exporters",
+         "fieldConfig": {
+            "defaults": {
+               "mappings": [
+                  {
+                     "options": {
+                        "0": {
+                           "color": "red",
+                           "index": 0,
+                           "text": "Down"
+                        },
+                        "1": {
+                           "color": "green",
+                           "index": 1,
+                           "text": "Up"
+                        }
+                     },
+                     "type": "value"
+                  }
+               ]
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 3,
+            "y": 1
+         },
+         "id": 3,
+         "options": {
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "avg(up{} * on (instance) rds_exporter_build_info{instance=~\"$instance\"})\n"
+            }
+         ],
+         "title": "Exporter status",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of errors reported by RDS exporters",
+         "fieldConfig": {
+            "defaults": {
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 1
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 6,
+            "y": 1
+         },
+         "id": 4,
+         "options": {
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(rds_exporter_errors_total{instance=~\"$instance\"})\n"
+            }
+         ],
+         "title": "Errors",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of AWS accounts monitored by RDS exporters",
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 9,
+            "y": 1
+         },
+         "id": 5,
+         "options": {
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(\n    sum by (aws_account_id) (rds_instance_info{instance=~\"$instance\"})\n)\n",
+               "legendFormat": "Total"
+            }
+         ],
+         "title": "AWS accounts",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of AWS RDS instances monitored by RDS exporters",
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 12,
+            "y": 1
+         },
+         "id": 6,
+         "options": {
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(rds_instance_info{instance=~\"$instance\"})\n",
+               "legendFormat": "Total"
+            }
+         ],
+         "title": "RDS instances",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "List of RDS exporters",
+         "gridPos": {
+            "h": 5,
+            "w": 24,
+            "x": 0,
+            "y": 6
+         },
+         "id": 7,
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_exporter_build_info{instance=~\"$instance\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "RDS exporters",
+         "transformations": [
+            {
+               "id": "organize",
+               "options": {
+                  "excludeByName": {
+                     "Time": true,
+                     "Value": true,
+                     "__name__": true,
+                     "container": true,
+                     "context": true,
+                     "endpoint": true,
+                     "environment": true,
+                     "kubernetes_cluster": true,
+                     "namespace": true,
+                     "pod": true,
+                     "prometheus": true,
+                     "service": true
+                  },
+                  "indexByName": {
+                     "Time": 2,
+                     "Value": 16,
+                     "__name__": 3,
+                     "build_date": 4,
+                     "commit_sha": 5,
+                     "container": 6,
+                     "context": 7,
+                     "endpoint": 8,
+                     "environment": 9,
+                     "instance": 0,
+                     "job": 10,
+                     "kubernetes_cluster": 11,
+                     "namespace": 12,
+                     "pod": 13,
+                     "prometheus": 14,
+                     "service": 15,
+                     "version": 1
+                  }
+               }
+            }
+         ],
+         "type": "table"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 24,
+            "y": 11
+         },
+         "id": 8,
+         "title": "Errors",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of RDS exporter errors per minute",
+         "fieldConfig": {
+            "defaults": {
+               "color": {
+                  "mode": "thresholds"
+               },
+               "custom": {
+                  "fillOpacity": 10
+               },
+               "decimals": 0,
+               "min": 0,
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 1
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 12
+         },
+         "id": 9,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(rate(rds_exporter_errors_total{instance=~\"$instance\"}[1m]) * 60) by (instance)\n",
+               "legendFormat": "{{instance}}"
+            }
+         ],
+         "title": "Errors per minute",
+         "type": "timeseries"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 24,
+            "y": 19
+         },
+         "id": 10,
+         "title": "API calls",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of HTTP calls to AWS APIs",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10,
+                  "stacking": {
+                     "mode": "normal"
+                  }
+               },
+               "decimals": 1,
+               "min": 0
+            }
+         },
+         "gridPos": {
+            "h": 6,
+            "w": 19,
+            "x": 0,
+            "y": 20
+         },
+         "id": 11,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(rate(rds_api_call_total{instance=~\"$instance\"}[5m]) * 60) by (api)\n",
+               "legendFormat": "{{api}}"
+            }
+         ],
+         "title": "AWS API calls per minute",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Total calls to AWS APIs to monitor RDS instances",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 6,
+            "w": 5,
+            "x": 19,
+            "y": 20
+         },
+         "id": 12,
+         "options": {
+            "graphMode": "none"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(rds_api_call_total{instance=~\"$instance\"}) by (api)\n",
+               "legendFormat": "{{api}}"
+            }
+         ],
+         "title": "AWS API calls",
+         "type": "stat"
+      }
+   ],
+   "schemaVersion": 36,
+   "tags": [
+      "dmf",
+      "misc"
+   ],
+   "templating": {
+      "list": [
+         {
+            "description": "Prometheus data source",
+            "label": "Data source",
+            "name": "datasource",
+            "query": "prometheus",
+            "type": "datasource"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "description": "Prometheus RDS exporter",
+            "includeAll": true,
+            "label": "Instance",
+            "name": "instance",
+            "query": "label_values(rds_exporter_build_info{}, instance)",
+            "refresh": 2,
+            "type": "query"
+         }
+      ]
+   },
+   "time": {
+      "from": "now-6h",
+      "to": "now"
+   },
+   "timezone": "utc",
+   "title": "Prometheus RDS exporter",
+   "uid": "efa71e45-3356-4206-b61f-1e2a3e4e2185"
+}
