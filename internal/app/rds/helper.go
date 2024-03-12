@@ -99,6 +99,9 @@ func getStorageMetrics(storageType string, allocatedStorage int64, rawIops int64
 		*/
 		theoreticalThroughput := int64(float64(iops) * io2StorageThroughputPerIOPS)
 		storageThroughput = ThresholdValue(io2StorageMinThroughput, theoreticalThroughput, io2StorageMaxThroughput)
+	default:
+		iops = rawIops
+		storageThroughput = rawStorageThroughput
 	}
 
 	return iops, storageThroughput
