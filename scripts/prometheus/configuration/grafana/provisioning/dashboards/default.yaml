@@ -2,11 +2,19 @@
 apiVersion: 1
 
 providers:
-  - name: 'default'
+  - name: 'public'
     folder: ''
     folderUid: ''
     type: file
     allowUiUpdates: true  # Allow change from UI
     disableDeletion: true  # Do not delete dashboard
     options:
-      path: /var/tmp/dashboards
+      path: /var/tmp/public-grafana-dashboards
+  - name: 'grafonnet'
+    folder: ''
+    folderUid: ''
+    type: file
+    allowUiUpdates: true  # Allow change from UI
+    disableDeletion: true  # Do not delete dashboard
+    options:
+      path: /var/tmp/prometheus-rds-exporter-dashboards
