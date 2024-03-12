@@ -87,6 +87,18 @@ func getStorageMetrics(storageType string, allocatedStorage int64, rawIops int64
 		default:
 			storageThroughput = converter.KiloByteToMegaBytes(iops * io1DefaultIOPSThroughputValue)
 		}
+	case "io2":
+		iops = rawIops
+
+		/*
+			Throughput scales proportionally up to 0.256 MiB/s per provisioned IOPS.
+			Maximum throughput of 4,000 MiB/s can be achieved at 256,000 IOPS with a 16-KiB I/O size and 16,000 IOPS or higher with a 256-KiB I/O size.
+			For DB instances not based on the AWS Nitro System, maximum throughput of 2,000 MiB/s can be achieved at 128,000 IOPS with a 16-KiB I/O size.
+			https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/CHAP_Storage.html#USER_PIOPS.io2
+			https://docs.aws.amazon.com/ebs/latest/userguide/provisioned-iops.html#io2-block-express
+		*/
+		theoreticalThroughput := int64(float64(iops) * io2StorageThroughputPerIOPS)
+		storageThroughput = ThresholdValue(io2StorageMinThroughput, theoreticalThroughput, io2StorageMaxThroughput)
 	}
 
 	return iops, storageThroughput
