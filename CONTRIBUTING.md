@@ -80,6 +80,8 @@ You have to commit the changes to `go.mod` and `go.sum` before submitting the pu
 
 1. Install [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2)
 
+1. Install [go-jsonnet](https://github.com/google/go-jsonnet) to build Grafana dashboards
+
 1. Enable pre-commit for the repository
 
     ```bash
