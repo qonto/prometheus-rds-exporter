@@ -7,9 +7,9 @@ import (
 	"fmt"
 
 	aws_servicequotas "github.com/aws/aws-sdk-go-v2/service/servicequotas"
+	"github.com/qonto/prometheus-rds-exporter/internal/app/trace"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"golang.org/x/exp/slog"
 )
@@ -67,7 +67,7 @@ func (s *serviceQuotaFetcher) getQuota(serviceCode string, quotaCode string) (fl
 	_, span := tracer.Start(s.ctx, "get-quota")
 	defer span.End()
 
-	span.SetAttributes(attribute.String("com.qonto.prometheus_rds_exporter.aws.quota.service_code", serviceCode), attribute.String("com.qonto.prometheus_rds_exporter.aws.quota.code", quotaCode))
+	span.SetAttributes(trace.AWSQuotaServiceCode(serviceCode), trace.AWSQuotaCode(quotaCode))
 
 	params := &aws_servicequotas.GetServiceQuotaInput{
 		ServiceCode: &serviceCode,

@@ -7,9 +7,9 @@ import (
 
 	aws_ec2 "github.com/aws/aws-sdk-go-v2/service/ec2"
 	aws_ec2_types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
+	"github.com/qonto/prometheus-rds-exporter/internal/app/trace"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 )
 
@@ -67,7 +67,7 @@ func (e *EC2Fetcher) GetDBInstanceTypeInformation(instanceTypes []string) (Metri
 		_, instanceTypeSpan := tracer.Start(ctx, "collect-ec2-instance-types-metrics")
 		defer instanceTypeSpan.End()
 
-		instanceTypeSpan.SetAttributes(attribute.Int("com.qonto.prometheus_rds_exporter.instance-types-count", len(instances)))
+		instanceTypeSpan.SetAttributes(trace.AWSInstanceTypesCount(int64(len(instances))))
 
 		// Remove "db." prefix from instance types
 		instanceTypesToFetch := make([]aws_ec2_types.InstanceType, len(instances))
