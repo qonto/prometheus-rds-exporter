@@ -12,11 +12,11 @@ func TestClearPrometheusLabel(t *testing.T) {
 		label string
 		want  string
 	}{
-		{"tag_services.k8s.aws/controller-version", "tag_services_k8s_aws_controller_version"},
-		{"Unreplaced_LabeL:1", "Unreplaced_LabeL:1"},
-		{"1stInvalidCharacter", "_stInvalidCharacter"},
-		{"_IsValidAValidLabel", "_IsValidAValidLabel"},
-		{":IsValidAValidLabel", ":IsValidAValidLabel"},
+		{"aws:cloudformation:logical_id", "aws_cloudformation_logical_id"},
+		{"services.k8s.aws/controller-version", "services_k8s_aws_controller_version"},
+		{"1InvalidFirstCharacter", "InvalidFirstCharacter"},
+		{":InvalidFirstCharacter", "InvalidFirstCharacter"},
+		{"_InvalidFirstCharacter", "InvalidFirstCharacter"},
 	}
 
 	for _, tc := range testCases {
