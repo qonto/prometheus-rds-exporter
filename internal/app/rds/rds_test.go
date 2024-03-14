@@ -136,6 +136,36 @@ func TestIO1StorageType(t *testing.T) {
 	assert.Equal(t, converter.MegaBytesToBytes(int64(1000)), metrics.Instances[*rdsInstanceWithHighIOPS.DBInstanceIdentifier].StorageThroughput, "Max is 1 GiB/s")
 }
 
+func TestIO2StorageType(t *testing.T) {
+	rdsInstanceWithSmallIOPS := mock.NewRdsInstance()
+	rdsInstanceWithSmallIOPS.StorageType = aws.String("io2")
+	rdsInstanceWithSmallIOPS.Iops = aws.Int32(1000)
+
+	rdsInstanceWithMediumIOPS := mock.NewRdsInstance()
+	rdsInstanceWithMediumIOPS.StorageType = aws.String("io2")
+	rdsInstanceWithMediumIOPS.Iops = aws.Int32(4000)
+
+	rdsInstanceWithLargeIOPS := mock.NewRdsInstance()
+	rdsInstanceWithLargeIOPS.StorageType = aws.String("io2")
+	rdsInstanceWithLargeIOPS.Iops = aws.Int32(48000)
+
+	rdsInstanceWithHighIOPS := mock.NewRdsInstance()
+	rdsInstanceWithHighIOPS.StorageType = aws.String("io2")
+	rdsInstanceWithHighIOPS.Iops = aws.Int32(64000)
+
+	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallIOPS, *rdsInstanceWithMediumIOPS, *rdsInstanceWithLargeIOPS, *rdsInstanceWithHighIOPS}}
+	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	configuration := rds.Configuration{}
+	fetcher := rds.NewFetcher(client, configuration)
+	metrics, err := fetcher.GetInstancesMetrics()
+
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+	assert.Equal(t, converter.MegaBytesToBytes(int64(256)), metrics.Instances[*rdsInstanceWithSmallIOPS.DBInstanceIdentifier].StorageThroughput, "Minimum is 256 MiB/s")
+	assert.Equal(t, converter.MegaBytesToBytes(int64(1024)), metrics.Instances[*rdsInstanceWithMediumIOPS.DBInstanceIdentifier].StorageThroughput, "500 MiB/s for more than 2K IOPS")
+	assert.Equal(t, converter.MegaBytesToBytes(int64(4000)), metrics.Instances[*rdsInstanceWithLargeIOPS.DBInstanceIdentifier].StorageThroughput, "16 * IOPS")
+	assert.Equal(t, converter.MegaBytesToBytes(int64(4000)), metrics.Instances[*rdsInstanceWithHighIOPS.DBInstanceIdentifier].StorageThroughput, "Max is 4 GiB/s")
+}
+
 func TestLogSize(t *testing.T) {
 	// Mock RDS instance
 	rdsInstance := mock.NewRdsInstance()
