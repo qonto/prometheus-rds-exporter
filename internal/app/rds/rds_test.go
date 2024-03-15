@@ -161,7 +161,8 @@ func TestIO2StorageType(t *testing.T) {
 	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallIOPS, *rdsInstanceWithMediumIOPS, *rdsInstanceWithLargeIOPS, *rdsInstanceWithHighIOPS}}
 	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
 	configuration := rds.Configuration{}
-	fetcher := rds.NewFetcher(client, configuration)
+	ctx := context.TODO()
+	fetcher := rds.NewFetcher(ctx, client, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
