@@ -1,6 +1,7 @@
 package cloudwatch_test
 
 import (
+	"context"
 	"log/slog"
 	"testing"
 
@@ -42,7 +43,8 @@ func TestGetUsageMetrics(t *testing.T) {
 		},
 	}
 
-	fetcher := cloudwatch.NewUsageFetcher(client, slog.Logger{})
+	ctx := context.TODO()
+	fetcher := cloudwatch.NewUsageFetcher(ctx, client, slog.Logger{})
 	result, err := fetcher.GetUsageMetrics()
 
 	require.NoError(t, err, "GetUsageMetrics must succeed")

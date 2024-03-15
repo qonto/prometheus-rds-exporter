@@ -45,6 +45,7 @@ type exporterConfig struct {
 	CollectMaintenances    bool   `mapstructure:"collect-maintenances"`
 	CollectQuotas          bool   `mapstructure:"collect-quotas"`
 	CollectUsages          bool   `mapstructure:"collect-usages"`
+	OTELTracesEnabled      bool   `mapstructure:"enable-otel-traces"`
 }
 
 func run(configuration exporterConfig) {
@@ -86,10 +87,11 @@ func run(configuration exporterConfig) {
 	prometheus.MustRegister(collector)
 
 	serverConfiguration := http.Config{
-		ListenAddress: configuration.ListenAddress,
-		MetricPath:    configuration.MetricPath,
-		TLSCertPath:   configuration.TLSCertPath,
-		TLSKeyPath:    configuration.TLSKeyPath,
+		ListenAddress:     configuration.ListenAddress,
+		MetricPath:        configuration.MetricPath,
+		TLSCertPath:       configuration.TLSCertPath,
+		TLSKeyPath:        configuration.TLSKeyPath,
+		OTELTracesEnabled: configuration.OTELTracesEnabled,
 	}
 
 	server := http.New(*logger, serverConfiguration)
@@ -124,6 +126,7 @@ func NewRootCommand() (*cobra.Command, error) {
 
 	cmd.Flags().StringVarP(&cfgFile, "config", "c", "", "config file (default is $HOME/prometheus-rds-exporter.yaml)")
 	cmd.Flags().BoolP("debug", "d", false, "Enable debug mode")
+	cmd.Flags().BoolP("enable-otel-traces", "", false, "Enable OpenTelemetry traces")
 	cmd.Flags().StringP("log-format", "l", "json", "Log format (text or json)")
 	cmd.Flags().StringP("metrics-path", "", "/metrics", "Path under which to expose metrics")
 	cmd.Flags().StringP("tls-cert-path", "", "", "Path to TLS certificate")
@@ -147,6 +150,11 @@ func NewRootCommand() (*cobra.Command, error) {
 	err = viper.BindPFlag("log-format", cmd.Flags().Lookup("log-format"))
 	if err != nil {
 		return cmd, fmt.Errorf("failed to bind 'log-format' parameter: %w", err)
+	}
+
+	err = viper.BindPFlag("enable-otel-traces", cmd.Flags().Lookup("enable-otel-traces"))
+	if err != nil {
+		return cmd, fmt.Errorf("failed to bind 'enable-otel-traces' parameter: %w", err)
 	}
 
 	err = viper.BindPFlag("metrics-path", cmd.Flags().Lookup("metrics-path"))

@@ -20,6 +20,10 @@
 # Path to private key for TLS
 # tls-key-path: ""
 
+# Enable OpenTelemetry traces
+# See https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter for configuration parameters
+# enable-otel-traces: true
+
 #
 # AWS credentials
 #
