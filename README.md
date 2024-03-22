@@ -119,27 +119,28 @@ It collects key metrics about:
 
 ## Dashboards
 
-Grafana dashboards are available on Grafana labs:
+The following Grafana dashboards are available in `configs/grafana/public/` and Grafana labs:
 
 <table>
 <tr>
 <td>
 
 ![Instances overview](docs/screenshots/instances-overview.png)
-
-<a href="https://grafana.com/grafana/dashboards/19647/">RDS instances (`19647`)</a>
+RDS instances</br>
+<a href="configs/grafana/public/rds-instances.json">JSON</a> or <a href="https://grafana.com/grafana/dashboards/19647/">19647</a>
 </td>
 <td>
 
 ![Instance details](docs/screenshots/instance-details.png)
 
-<a href="https://grafana.com/grafana/dashboards/19646/">RDS instance details (`19646`)</a>
+RDS instance details</br>
+<a href="configs/grafana/public/rds-instance.json">JSON</a> or <a href="https://grafana.com/grafana/dashboards/19646/">19646</a>
 </td>
 <td>
 
 ![RDS exporters](docs/screenshots/rds-exporter.png)
-
-<a href="https://grafana.com/grafana/dashboards/19679/">RDS exporters (`19679`)</a>
+Prometheus RDS exporter</br>
+<a href="configs/grafana/public/prometheus-rds-exporter.json">JSON</a> or <a href="https://grafana.com/grafana/dashboards/19679/">19679</a>
 </td>
 </tr>
 </table>
@@ -507,7 +508,7 @@ To report a security issue, please visit [SECURITY.md](SECURITY.md)
 
 You can start a simple development environment using the Docker compose configuration in `/scripts/prometheus`.
 
-It will start and configure Grafana, Prometheus, and the RDS exporter:
+It will start Grafana (with the dashboards), Prometheus, and the RDS exporter:
 
 1. Connect on AWS using the AWS CLI
 

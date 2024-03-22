@@ -26,3 +26,15 @@ repos:
     rev: v1.32.0
     hooks:
       - id: yamllint  # requires https://github.com/adrienverge/yamllint
+  - repo: https://github.com/google/go-jsonnet
+    rev: v0.20.0
+    hooks:
+      - id: jsonnet-format
+  - repo: local
+    hooks:
+      - id: grafana-dashboards
+        name: "grafana dashboards"
+        entry: scripts/hooks/check_grafana_dashboards_changes.sh
+        language: "script"
+        pass_filenames: false
+        files: configs/grafana

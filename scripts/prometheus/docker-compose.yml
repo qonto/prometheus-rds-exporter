@@ -33,8 +33,9 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=hackme
     volumes:
-      - ./.grafana_data:/var/lib/grafana
-      - ./configuration/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources/
+      - ./.grafana_data:/var/lib/grafana  # Grafana persistent storage
+      - ./../../configs/grafana/public:/var/tmp/prometheus-rds-exporter-dashboards  # Grafana dashboards folder is used for dashboard provisioning
+      - ./configuration/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources/ # Datasource provisioning
       - ./configuration/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards/
       - ./configuration/grafana/entrypoint.sh:/usr/share/grafana/entrypoint.sh
     tmpfs:

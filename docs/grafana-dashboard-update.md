@@ -1,10 +1,10 @@
 # Grafana dashboard update
 
-This document explains how to update Grafana dashboards on Grafana.com.
+This document explains how to update Grafana dashboards.
 
 Requirements:
 
-- Member of Qonto's organization on Grafana.com
+- Member of Qonto's organization on Grafana.com (to publish dashboard)
 
 Steps:
 
@@ -16,28 +16,35 @@ Steps:
     ```bash
     cd scripts/prometheus/
     docker compose rm grafana --stop --force # Stop container
-    rm -rf scripts/prometheus/.grafana_data # Remove local storage
+    rm -rf .grafana_data # Remove local storage
     ```
 
 1. Start local development environment
 
-1. Update the dashboard with your changes
-
-1. Export the dashboard
-
-    Click on `Share dashboard > Export`, then select `Export for sharing externally` and click on `Save to file`.
-
-1. Remove inputs and fix the source name
-
-    We must edit the exported dashboard because we're using a dynamic data source (usually Grafana dashboards have a hard-coded data source).
-
     ```bash
-    FILENAME=RDS-instances-1701236044179.json # Replace with your exported dashboard
-
-    cat ${FILENAME} | jq 'del( .__inputs )' | sed -e "s/DS_PROMETHEUS/datasource/" > export.json
+    docker compose up
     ```
 
-1. Upload dashboard on Grafana.com
+1. Update the dashboards
+
+    First time with Grafonnet? Look at [Grafonnet documentation](https://grafana.github.io/grafonnet/index.html).
+
+    Edit Grafonnet resources (eg. Panel, dashoards) located in `configs/grafana/`.
+
+    During development, you can build and publish dashboards on local Grafana with following commands:
+
+    ```bash
+    cd configs/grafana/
+    ./build.sh && ./publish.sh
+    ```
+
+    And connect to Grafana on <http://localhost:3000>.
+
+    Tips: Grafana automatically reload dashboards on change.
+
+1. Commit changes within a Merge Request
+
+1. Once merge request is merged, upload dashboard on Grafana.com
 
     1. Go to the Grafana.com dashboard public page (see [list](https://github.com/qonto/prometheus-rds-exporter#dashboards)), select revisions and click on `Upload revision`
 

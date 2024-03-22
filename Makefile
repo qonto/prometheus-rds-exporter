@@ -49,6 +49,10 @@ kubeconform:
 goreleaser-check:
 	goreleaser check
 
+.PHONY: dashboards
+dashboards:
+	cd configs/grafana/ && ./build.sh
+
 .PHONY: metrics-list
 metrics-list:
 	echo "| Name | Description |" > metrics
