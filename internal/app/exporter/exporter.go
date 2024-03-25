@@ -479,7 +479,7 @@ func (c *rdsCollector) getInstanceTagLabels(dbidentifier string, instance rds.Rd
 	// Add instance tags to labels
 	// Prefix label containing instance's tags with "tag_" prefix to avoid conflict with other labels
 	for k, v := range instance.Tags {
-		labelName := fmt.Sprintf("tag_%s", ClearPrometheusLabel(k))
+		labelName := fmt.Sprintf("tag_%s", clearPrometheusLabel(k))
 		labels[labelName] = v
 	}
 

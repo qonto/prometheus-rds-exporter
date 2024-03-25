@@ -4,7 +4,7 @@ import (
 	"regexp"
 )
 
-func ClearPrometheusLabel(str string) string {
+func clearPrometheusLabel(str string) string {
 	// Prometheus metric names may contain ASCII letters, digits, underscores, and colons.
 	// https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
 	InvalidFirstLetterCharacters := regexp.MustCompile(`[^a-zA-Z]+`)
