@@ -1,10 +1,8 @@
-package exporter_test
+package exporter
 
 import (
 	"fmt"
 	"testing"
-
-	"github.com/qonto/prometheus-rds-exporter/internal/app/exporter"
 )
 
 func TestClearPrometheusLabel(t *testing.T) {
@@ -23,7 +21,7 @@ func TestClearPrometheusLabel(t *testing.T) {
 		testName := fmt.Sprintf("Label %s", tc.label)
 
 		t.Run(testName, func(t *testing.T) {
-			got := exporter.ClearPrometheusLabel(tc.label)
+			got := clearPrometheusLabel(tc.label)
 			if got != tc.want {
 				t.Errorf("got %q; want %q", got, tc.want)
 			}

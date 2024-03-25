@@ -1,8 +1,6 @@
 package exporter
 
 import (
-	"regexp"
-
 	"github.com/qonto/prometheus-rds-exporter/internal/app/rds"
 	"golang.org/x/exp/slices"
 )
@@ -24,14 +22,11 @@ func getUniqTypeAndIdentifiers(instances map[string]rds.RdsInstanceMetrics) ([]s
 		}
 	}
 
-	return instanceIdentifiers, instanceTypes
-}
+	// Remove incompatible instance types
+	supportedInstanceTypes := removeElementsByValue(instanceTypes, []string{"db.serverless"})
 
-func ClearPrometheusLabel(str string) string {
-	// Prometheus metric names may contain ASCII letters, digits, underscores, and colons.
-	// https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels
-	InvalidFirstLetterCharacters := regexp.MustCompile(`[^a-zA-Z]+`)
-	InvalidCharacters := regexp.MustCompile(`[^a-zA-Z0-9_]+`)
+	slices.Sort(instanceIdentifiers)
+	slices.Sort(supportedInstanceTypes)
 
-	return InvalidFirstLetterCharacters.ReplaceAllString(string(str[0]), "") + InvalidCharacters.ReplaceAllString(str[1:], "_")
+	return instanceIdentifiers, supportedInstanceTypes
 }
