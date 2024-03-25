@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_ec2 "github.com/aws/aws-sdk-go-v2/service/ec2"
 	aws_ec2_types "github.com/aws/aws-sdk-go-v2/service/ec2/types"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/trace"
@@ -90,10 +91,10 @@ func (e *EC2Fetcher) GetDBInstanceTypeInformation(instanceTypes []string) (Metri
 		for _, i := range resp.InstanceTypes {
 			instanceName := addDBPrefix(string(i.InstanceType))
 			metrics[instanceName] = EC2InstanceMetrics{
-				Vcpu:              *i.VCpuInfo.DefaultVCpus,
-				MaximumIops:       *i.EbsInfo.EbsOptimizedInfo.MaximumIops,
-				MaximumThroughput: converter.MegaBytesToBytes(*i.EbsInfo.EbsOptimizedInfo.MaximumThroughputInMBps),
-				Memory:            converter.MegaBytesToBytes(*i.MemoryInfo.SizeInMiB),
+				Vcpu:              aws.ToInt32(i.VCpuInfo.DefaultVCpus),
+				MaximumIops:       aws.ToInt32(i.EbsInfo.EbsOptimizedInfo.MaximumIops),
+				MaximumThroughput: converter.MegaBytesToBytes(aws.ToFloat64(i.EbsInfo.EbsOptimizedInfo.MaximumThroughputInMBps)),
+				Memory:            converter.MegaBytesToBytes(aws.ToInt64(i.MemoryInfo.SizeInMiB)),
 			}
 		}
 
