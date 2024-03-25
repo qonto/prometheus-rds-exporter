@@ -1,10 +1,9 @@
-package exporter_test
+package exporter
 
 import (
 	"slices"
 	"testing"
 
-	"github.com/qonto/prometheus-rds-exporter/internal/app/exporter"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/rds"
 )
 
@@ -35,7 +34,7 @@ func TestGetUniqTypeAndIdentifiers(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-			instanceIdentifiers, instanceTypes := exporter.GetUniqTypeAndIdentifiers(tc.instances)
+			instanceIdentifiers, instanceTypes := getUniqTypeAndIdentifiers(tc.instances)
 			if !slices.Equal(instanceIdentifiers, tc.instanceIdentifiers) {
 				t.Errorf("instance identifiers mismatch. got %q; want %q", instanceIdentifiers, tc.instanceIdentifiers)
 			}

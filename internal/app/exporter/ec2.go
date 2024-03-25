@@ -5,7 +5,7 @@ import (
 	"golang.org/x/exp/slices"
 )
 
-func GetUniqTypeAndIdentifiers(instances map[string]rds.RdsInstanceMetrics) ([]string, []string) {
+func getUniqTypeAndIdentifiers(instances map[string]rds.RdsInstanceMetrics) ([]string, []string) {
 	var (
 		instanceTypes       []string
 		instanceIdentifiers []string
@@ -26,7 +26,7 @@ func GetUniqTypeAndIdentifiers(instances map[string]rds.RdsInstanceMetrics) ([]s
 	supportedInstanceTypes := removeElementsByValue(instanceTypes, []string{"db.serverless"})
 
 	slices.Sort(instanceIdentifiers)
-	slices.Sort(instanceTypes)
+	slices.Sort(supportedInstanceTypes)
 
 	return instanceIdentifiers, supportedInstanceTypes
 }
