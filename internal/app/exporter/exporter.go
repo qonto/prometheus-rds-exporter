@@ -369,7 +369,7 @@ func (c *rdsCollector) fetchMetrics() error {
 	c.logger.Debug("RDS metrics fetched")
 
 	// Compute uniq instances identifiers and instance types
-	instanceIdentifiers, instanceTypes := getUniqTypeAndIdentifiers(rdsMetrics.Instances)
+	instanceIdentifiers, instanceTypes := GetUniqTypeAndIdentifiers(rdsMetrics.Instances)
 
 	// Fetch EC2 Metrics for instance types
 	if c.configuration.CollectInstanceTypes && len(instanceTypes) > 0 {
