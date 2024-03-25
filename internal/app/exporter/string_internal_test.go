@@ -1,11 +1,9 @@
-package exporter_test
+package exporter
 
 import (
 	"fmt"
 	"slices"
 	"testing"
-
-	"github.com/qonto/prometheus-rds-exporter/internal/app/exporter"
 )
 
 func TestRemoveElementsByValue(t *testing.T) {
@@ -23,7 +21,7 @@ func TestRemoveElementsByValue(t *testing.T) {
 		testName := fmt.Sprintf("Label %s", tc.input)
 
 		t.Run(testName, func(t *testing.T) {
-			got := exporter.RemoveElementsByValue(tc.input, tc.removable)
+			got := removeElementsByValue(tc.input, tc.removable)
 			if !slices.Equal(got, tc.want) {
 				t.Errorf("got %q; want %q", got, tc.want)
 			}

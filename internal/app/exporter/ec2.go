@@ -23,7 +23,7 @@ func GetUniqTypeAndIdentifiers(instances map[string]rds.RdsInstanceMetrics) ([]s
 	}
 
 	// Remove incompatible instance types
-	supportedInstanceTypes := RemoveElementsByValue(instanceTypes, []string{"db.serverless"})
+	supportedInstanceTypes := removeElementsByValue(instanceTypes, []string{"db.serverless"})
 
 	slices.Sort(instanceIdentifiers)
 	slices.Sort(instanceTypes)
