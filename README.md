@@ -18,7 +18,7 @@ It collects key metrics about:
 
 ## Key metrics
 
-📊 Advanced Metrics: Gain deep visibility with advanced metrics for AWS RDS. Monitor performance, query efficiency, and resource utilization like never before.
+🥇 Advanced Metrics: Gain deep visibility with advanced metrics for AWS RDS. Monitor performance, query efficiency, and resource utilization like never before.
 
 🧩 AWS Quotas Insights: Stay in control with real-time information about AWS quotas. Ensure you never hit limits unexpectedly.
 
@@ -28,7 +28,7 @@ It collects key metrics about:
 
 🛠️ Simple Setup: Getting started is a breeze! Our clear documentation and examples will have you up and running in no time.
 
-📈 Scalable and Reliable: Prometheus-RDS Exporter scales with your AWS infrastructure, providing reliable monitoring even as you grow.
+📊 Dashboards: Prometheus-RDS Exporter export adopts the [USE methodology](https://www.brendangregg.com/usemethod.html) and provides well-designed, ready-to-use dashboards.
 
 🌐 Community-Driven: Join a vibrant community of users and contributors. Collaborate, share knowledge, and shape the future of AWS RDS monitoring together.
 
@@ -119,7 +119,22 @@ It collects key metrics about:
 
 ## Dashboards
 
-The following Grafana dashboards are available in `configs/grafana/public/` and Grafana labs:
+> [!TIP]
+> Grafana dashboards are deployed by default as [GrafanaDashboard CRD](https://grafana.github.io/grafana-operator/docs/dashboards/) when Prometheus RDS exporter is deployed with Helm. If you deployed [Grafana operator](https://grafana.github.io/grafana-operator/) in your Kubernetes cluster, dashboards will be automatically imported and **maintained up-to-date**.
+
+<details>
+  <summary>Why are we recommending Grafana operator?</summary>
+
+We are committed to providing you with the most efficient and user-friendly experience possible. Therefore, we continuously enhance our dashboards and the metrics produced by our exporters to ensure you have access to the most accurate and relevant data.
+
+To ensure an optimal user experience, it's vital to keep your dashboards up to date. This practice guarantees that you are always working with the latest features and improvements, enabling you to make the most out of the data presented to you. However, maintaining multiple versions of dashboards can be challenging and is not desirable. It introduces complexity and can lead to inconsistencies between what you see and the actual data.
+
+By leveraging the Grafana Operator, you can rest assured that the version of your dashboard will always match the metrics presented by your exporter. This synchronization between your dashboards and the underlying data ensures a seamless and accurate monitoring experience. This move towards operator-based deployment is designed to streamline your monitoring process, ensuring accuracy and efficiency in your data visualization efforts.
+
+Kubernetes operators aim to simplify deployments, and as part of this evolution, we will eventually stop publishing dashboards on Grafana Labs.
+</details>
+
+For convenience, dashboards are also available in `configs/grafana/public/` folder and Grafana labs:
 
 <table>
 <tr>
