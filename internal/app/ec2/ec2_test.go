@@ -36,10 +36,21 @@ func TestGetDBInstanceTypeInformation(t *testing.T) {
 			maximumIops:       mock.InstanceT3Small.MaximumIops,
 			maximumThroughput: converter.MegaBytesToBytes(mock.InstanceT3Small.MaximumThroughput),
 		},
+		{
+			instanceType:      "t2.small",
+			vCPU:              mock.InstanceT2Small.Vcpu,
+			memory:            converter.MegaBytesToBytes(mock.InstanceT2Small.Memory),
+			maximumIops:       0, // Don't have Maximum IOPS for non EBS optimized instances
+			maximumThroughput: 0, // Don't have Maximum throughput for non EBS optimized instances
+		},
 	}
 	expectedAPICalls := float64(1)
 
-	instanceTypes := []string{"db.t3.large", "db.t3.small"}
+	instanceTypes := make([]string, len(testCases))
+	for i, instance := range testCases {
+		instanceTypes[i] = instance.instanceType
+	}
+
 	fetcher := ec2.NewFetcher(context, client)
 	result, err := fetcher.GetDBInstanceTypeInformation(instanceTypes)
 

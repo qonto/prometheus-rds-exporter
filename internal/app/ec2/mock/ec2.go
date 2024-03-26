@@ -25,6 +25,12 @@ var InstanceT3Small = ec2.EC2InstanceMetrics{
 	Vcpu:              2,
 }
 
+//nolint:golint,gomnd
+var InstanceT2Small = ec2.EC2InstanceMetrics{
+	Memory: 2,
+	Vcpu:   1,
+}
+
 type EC2Client struct{}
 
 func (m EC2Client) DescribeInstanceTypes(ctx context.Context, input *aws_ec2.DescribeInstanceTypesInput, optFns ...func(*aws_ec2.Options)) (*aws_ec2.DescribeInstanceTypesOutput, error) {
@@ -52,6 +58,12 @@ func (m EC2Client) DescribeInstanceTypes(ctx context.Context, input *aws_ec2.Des
 					MaximumIops:             &InstanceT3Small.MaximumIops,
 					MaximumThroughputInMBps: &InstanceT3Small.MaximumThroughput,
 				}},
+			})
+		case "t2.small":
+			instances = append(instances, aws_ec2_types.InstanceTypeInfo{
+				InstanceType: instanceType,
+				VCpuInfo:     &aws_ec2_types.VCpuInfo{DefaultVCpus: &InstanceT2Small.Vcpu},
+				MemoryInfo:   &aws_ec2_types.MemoryInfo{SizeInMiB: &InstanceT2Small.Memory},
 			})
 		}
 	}
