@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/helm-unittest/helm-unittest/main/schema/helm-testsuite.json
+---
+suite: grafana dashboard tests
+templates:
+  - grafanadashboard.yaml
+tests:
+  - it: render default Grafana dashboards
+    asserts:
+      - isKind:
+          of: GrafanaDashboard
+      - hasDocuments:
+          count: 3
+      - documentIndex: 0
+        equal:
+          path: metadata.name
+          value: prometheus-rds-exporter
+      - documentIndex: 1
+        equal:
+          path: metadata.name
+          value: rds-instance
+      - documentIndex: 2
+        equal:
+          path: metadata.name
+          value: rds-instances
+      - equal:
+          path: spec.resyncPeriod
+          value: 24h
+      - equal:
+          path: spec.folder
+          value:
+      - equal:
+          path: spec.instanceSelector.matchLabels.dashboards
+          value: grafana
+  - it: render custom Grafana dashboards settings
+    values:
+      - ./values/with_grafanadashboards.yaml
+    asserts:
+      - equal:
+          path: spec.resyncPeriod
+          value: 1m
+      - equal:
+          path: spec.folder
+          value: dmf
+      - equal:
+          path: spec.instanceSelector.matchLabels.dashboards
+          value: my-grafana
+  - it: disable Grafana dashboards
+    values:
+      - ./values/without_grafanadashboards.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
