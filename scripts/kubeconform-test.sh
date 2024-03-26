@@ -52,7 +52,7 @@ do
 		-kubernetes-version ${KUBERNETES_VERSION} \
 		-cache ${KUBECONFORM_CACHE_DIRECTORY} \
 		-schema-location default \
-		-schema-location 'kubeconform/{{ .ResourceKind }}{{ .KindSuffix }}.json' \
+		-schema-location 'scripts/kubeconform/{{.Group}}/{{ .ResourceKind }}_{{.ResourceAPIVersion}}.json' \
 		-schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
 		-summary
 

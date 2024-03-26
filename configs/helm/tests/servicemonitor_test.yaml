@@ -4,7 +4,7 @@ suite: service monitor tests
 templates:
   - servicemonitor.yaml
 tests:
-  - it: render defaul service monitor
+  - it: render default service monitor
     asserts:
       - isKind:
           of: ServiceMonitor
