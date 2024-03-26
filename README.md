@@ -275,6 +275,12 @@ Terraform users can take example on Terraform code in `configs/terraform/`.
 
 </details>
 
+### Helm
+
+We recommend deployment using helm [Helm](https://helm.sh/).
+
+See all available configuration parameters in [configs/helm/values.yaml](https://github.com/qonto/prometheus-rds-exporter/blob/main/configs/helm/values.yaml)
+
 ## Installation
 
 See the [Development environment](#development-environment) to start the Prometheus RDS exporter, Prometheus, and Grafana with dashboards in a minute.
