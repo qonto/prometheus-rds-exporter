@@ -89,13 +89,23 @@ func (e *EC2Fetcher) GetDBInstanceTypeInformation(instanceTypes []string) (Metri
 		e.statistics.EC2ApiCall++
 
 		for _, i := range resp.InstanceTypes {
-			instanceName := addDBPrefix(string(i.InstanceType))
-			metrics[instanceName] = EC2InstanceMetrics{
-				Vcpu:              aws.ToInt32(i.VCpuInfo.DefaultVCpus),
-				MaximumIops:       aws.ToInt32(i.EbsInfo.EbsOptimizedInfo.MaximumIops),
-				MaximumThroughput: converter.MegaBytesToBytes(aws.ToFloat64(i.EbsInfo.EbsOptimizedInfo.MaximumThroughputInMBps)),
-				Memory:            converter.MegaBytesToBytes(aws.ToInt64(i.MemoryInfo.SizeInMiB)),
+			instanceMetrics := EC2InstanceMetrics{}
+
+			if i.VCpuInfo != nil {
+				instanceMetrics.Vcpu = aws.ToInt32(i.VCpuInfo.DefaultVCpus)
 			}
+
+			if i.MemoryInfo != nil {
+				instanceMetrics.Memory = converter.MegaBytesToBytes(aws.ToInt64(i.MemoryInfo.SizeInMiB))
+			}
+
+			if i.EbsInfo != nil && i.EbsInfo.EbsOptimizedInfo != nil {
+				instanceMetrics.MaximumIops = aws.ToInt32(i.EbsInfo.EbsOptimizedInfo.MaximumIops)
+				instanceMetrics.MaximumThroughput = converter.MegaBytesToBytes(aws.ToFloat64(i.EbsInfo.EbsOptimizedInfo.MaximumThroughputInMBps))
+			}
+
+			instanceName := addDBPrefix(string(i.InstanceType))
+			metrics[instanceName] = instanceMetrics
 		}
 
 		instanceTypeSpan.SetStatus(codes.Ok, "metrics fetched")
