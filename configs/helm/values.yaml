@@ -86,7 +86,7 @@ tolerations: []
 affinity: {}
 
 dashboards:
-  enabled: true  # enabled GrafanaDashboard CRD import
+  enabled: false  # enabled GrafanaDashboard CRD import
   resyncPeriod: 24h  # how often the dashboard is refreshed
   instanceSelector: grafana  # selects Grafana for import
   folderName:  # folder assignment for dashboard

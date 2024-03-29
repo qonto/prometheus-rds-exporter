@@ -1,5 +1,3 @@
 ---
 dashboards:
-  resyncPeriod: 1m
-  instanceSelector: my-grafana
-  folderName: dmf
+  enabled: true
