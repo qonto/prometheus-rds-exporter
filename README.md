@@ -120,7 +120,8 @@ It collects key metrics about:
 ## Dashboards
 
 > [!TIP]
-> Grafana dashboards are deployed by default as [GrafanaDashboard CRD](https://grafana.github.io/grafana-operator/docs/dashboards/) when Prometheus RDS exporter is deployed with Helm. If you deployed [Grafana operator](https://grafana.github.io/grafana-operator/) in your Kubernetes cluster, dashboards will be automatically imported and **maintained up-to-date**.
+> If you deploy [Grafana operator](https://grafana.github.io/grafana-operator/) in your Kubernetes cluster, dashboards could be automatically deployed and **maintained up-to-date**.
+> Set `dashboards.enabled: true` in your Helm deployment to deploy dashboards as [GrafanaDashboard CRD](https://grafana.github.io/grafana-operator/docs/dashboards/)
 
 <details>
   <summary>Why are we recommending Grafana operator?</summary>

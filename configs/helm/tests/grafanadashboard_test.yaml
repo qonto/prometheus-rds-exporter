@@ -4,7 +4,13 @@ suite: grafana dashboard tests
 templates:
   - grafanadashboard.yaml
 tests:
+  - it: disable Grafana dashboards by default
+    asserts:
+      - hasDocuments:
+          count: 0
   - it: render default Grafana dashboards
+    values:
+      - ./values/with_grafanadashboards.yaml
     asserts:
       - isKind:
           of: GrafanaDashboard
@@ -33,7 +39,7 @@ tests:
           value: grafana
   - it: render custom Grafana dashboards settings
     values:
-      - ./values/with_grafanadashboards.yaml
+      - ./values/with_grafanadashboards_custom.yaml
     asserts:
       - equal:
           path: spec.resyncPeriod
@@ -44,9 +50,3 @@ tests:
       - equal:
           path: spec.instanceSelector.matchLabels.dashboards
           value: my-grafana
-  - it: disable Grafana dashboards
-    values:
-      - ./values/without_grafanadashboards.yaml
-    asserts:
-      - hasDocuments:
-          count: 0
