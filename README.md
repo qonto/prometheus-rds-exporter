@@ -1,3 +1,6 @@
+<!-- markdownlint-disable-next-line -->
+![prometheus-rds-exporter-illustration](https://repository-images.githubusercontent.com/693053543/44064d1c-56a3-44f2-8246-92fa6a1d4205)
+
 # Prometheus RDS exporter
 
 Are you ready to take your AWS RDS monitoring to the next level? Say hello to prometheus-rds-exporter, your ultimate solution for comprehensive, real-time insights into your Amazon RDS instances!
