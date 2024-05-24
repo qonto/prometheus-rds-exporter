@@ -1504,7 +1504,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Total of read and write disk IOPS regarding instance IOPS limits. For optimal performances, you should not reach IOPS limits",
+         "description": "Total of read and write disk IOPS regarding RDS instance IOPS limits. For optimal performances, you should not reach IOPS limits",
          "fieldConfig": {
             "defaults": {
                "custom": {
@@ -1795,7 +1795,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "The average number of bytes read/write from disk per second. For optimal performances, you should not reach disk throughput",
+         "description": "The average number of bytes read/write from disk per second regarding RDS instance disk throughput limits. For optimal performances, you should not reach disk throughput",
          "fieldConfig": {
             "defaults": {
                "custom": {
@@ -2551,7 +2551,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Regardless of the allocated disk IOPS, the EC2 instance behind RDS also has disk IOPS limits. You can't use more IOPS than EC2's instance limit. Burst IOPS are supported 30 minutes at least once every 24 hours.",
+         "description": "The RDS instance cannot use more disk IOPS than supported by the EC2 instance baseline, but it can burst 30 minutes at least once every 24 hours. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-optimized.html",
          "fieldConfig": {
             "defaults": {
                "custom": {
@@ -2565,7 +2565,7 @@
                {
                   "matcher": {
                      "id": "byName",
-                     "options": "Max"
+                     "options": "Allocated"
                   },
                   "properties": [
                      {
@@ -2578,10 +2578,6 @@
                      {
                         "id": "custom.fillOpacity",
                         "value": 0
-                     },
-                     {
-                        "id": "displayName",
-                        "value": "Allocated"
                      }
                   ]
                },
@@ -2670,8 +2666,8 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "max(rds_max_disk_iops_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
-               "legendFormat": "Max"
+               "expr": "max(rds_allocated_disk_iops_average{dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Allocated"
             },
             {
                "datasource": {
@@ -2773,7 +2769,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Regardless of the allocated disk throughput, the EC2 instance behind RDS also has disk throughput limits. You can't use more throughput than EC2's instance limit. Burst throughput is supported 30 minutes at least once every 24 hours.",
+         "description": "The RDS instance cannot use more disk throughput than supported by the EC2 instance baseline, but it can burst 30 minutes at least once every 24 hours. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-optimized.html",
          "fieldConfig": {
             "defaults": {
                "custom": {
@@ -2787,7 +2783,7 @@
                {
                   "matcher": {
                      "id": "byName",
-                     "options": "Max"
+                     "options": "Allocated"
                   },
                   "properties": [
                      {
@@ -2800,10 +2796,6 @@
                      {
                         "id": "custom.fillOpacity",
                         "value": 0
-                     },
-                     {
-                        "id": "displayName",
-                        "value": "Allocated"
                      }
                   ]
                },
@@ -2892,8 +2884,8 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "max(rds_max_storage_throughput_bytes{dbidentifier=\"$dbidentifier\"})\n",
-               "legendFormat": "Max"
+               "expr": "max(rds_allocated_disk_throughput_bytes{dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Allocated"
             },
             {
                "datasource": {

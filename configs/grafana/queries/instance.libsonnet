@@ -221,6 +221,15 @@ local variables = import '../variables.libsonnet';
           )
           + prometheusQuery.withLegendFormat('Usage'),
 
+        allocated:
+          prometheusQuery.new(
+            '$' + variables.datasource.name,
+            |||
+              max(rds_allocated_disk_iops_average{dbidentifier="$dbidentifier"})
+            |||
+          )
+          + prometheusQuery.withLegendFormat('Allocated'),
+
         instanceTypeBurst:
           prometheusQuery.new(
             '$' + variables.datasource.name,
@@ -286,6 +295,15 @@ local variables = import '../variables.libsonnet';
             |||
           )
           + prometheusQuery.withLegendFormat('Max'),
+
+        allocated:
+          prometheusQuery.new(
+            '$' + variables.datasource.name,
+            |||
+              max(rds_allocated_disk_throughput_bytes{dbidentifier="$dbidentifier"})
+            |||
+          )
+          + prometheusQuery.withLegendFormat('Allocated'),
 
         instanceTypeBurst:
           prometheusQuery.new(

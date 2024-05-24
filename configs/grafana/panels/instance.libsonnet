@@ -160,16 +160,15 @@ local colors = common.colors;
       ]),
 
     diskIOPSScaling:
-      ts.base('Disk IOPS', "Regardless of the allocated disk IOPS, the EC2 instance behind RDS also has disk IOPS limits. You can't use more IOPS than EC2's instance limit. Burst IOPS are supported 30 minutes at least once every 24 hours.", [queries.instance.disk.iops.usage, queries.instance.disk.iops.max, queries.instance.disk.iops.instanceTypeBaseline, queries.instance.disk.iops.instanceTypeBurst])
+      ts.base('Disk IOPS', 'The RDS instance cannot use more disk IOPS than supported by the EC2 instance baseline, but it can burst 30 minutes at least once every 24 hours. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-optimized.html', [queries.instance.disk.iops.usage, queries.instance.disk.iops.allocated, queries.instance.disk.iops.instanceTypeBaseline, queries.instance.disk.iops.instanceTypeBurst])
       + options.legend.withSortBy('Max')
       + options.legend.withSortDesc(true)
       + standardOptions.withUnit('locale')
       + standardOptions.withOverrides([
-        fieldOverride.byName.new('Max')
+        fieldOverride.byName.new('Allocated')
         + standardOptions.override.byType.withPropertiesFromOptions(
           color.withMode('fixed')
           + color.withFixedColor(colors.warning)
-          + standardOptions.withDisplayName('Allocated')
           + custom.withFillOpacity(0)
         ),
         fieldOverride.byRegexp.new('.* burst')
@@ -189,16 +188,15 @@ local colors = common.colors;
       ]),
 
     diskThroughputScaling:
-      ts.base('Disk throughput', "Regardless of the allocated disk throughput, the EC2 instance behind RDS also has disk throughput limits. You can't use more throughput than EC2's instance limit. Burst throughput is supported 30 minutes at least once every 24 hours.", [queries.instance.disk.throughput.usage, queries.instance.disk.throughput.max, queries.instance.disk.throughput.instanceTypeBaseline, queries.instance.disk.throughput.instanceTypeBurst])
+      ts.base('Disk throughput', 'The RDS instance cannot use more disk throughput than supported by the EC2 instance baseline, but it can burst 30 minutes at least once every 24 hours. See https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-optimized.html', [queries.instance.disk.throughput.usage, queries.instance.disk.throughput.allocated, queries.instance.disk.throughput.instanceTypeBaseline, queries.instance.disk.throughput.instanceTypeBurst])
       + options.legend.withSortBy('Max')
       + options.legend.withSortDesc(true)
       + standardOptions.withUnit('bytes')
       + standardOptions.withOverrides([
-        fieldOverride.byName.new('Max')
+        fieldOverride.byName.new('Allocated')
         + standardOptions.override.byType.withPropertiesFromOptions(
           color.withMode('fixed')
           + color.withFixedColor(colors.warning)
-          + standardOptions.withDisplayName('Allocated')
           + custom.withFillOpacity(0)
         ),
         fieldOverride.byRegexp.new('.* burst')
@@ -247,7 +245,7 @@ local colors = common.colors;
       + ts.singleMetric,
 
     diskIOPS:
-      ts.base('Disk IOPS usage', 'Total of read and write disk IOPS regarding instance IOPS limits. For optimal performances, you should not reach IOPS limits', [queries.instance.disk.iops.max, queries.instance.disk.iops.read, queries.instance.disk.iops.write])
+      ts.base('Disk IOPS usage', 'Total of read and write disk IOPS regarding RDS instance IOPS limits. For optimal performances, you should not reach IOPS limits', [queries.instance.disk.iops.max, queries.instance.disk.iops.read, queries.instance.disk.iops.write])
       + standardOptions.withOverrides([
         fieldOverride.byName.new('Max')
         + standardOptions.override.byType.withPropertiesFromOptions(
@@ -273,7 +271,7 @@ local colors = common.colors;
       ]),
 
     diskThroughput:
-      ts.base('Disk throughput', 'The average number of bytes read/write from disk per second. For optimal performances, you should not reach disk throughput', [queries.instance.disk.throughput.read, queries.instance.disk.throughput.write, queries.instance.disk.throughput.max])
+      ts.base('Disk throughput', 'The average number of bytes read/write from disk per second regarding RDS instance disk throughput limits. For optimal performances, you should not reach disk throughput', [queries.instance.disk.throughput.read, queries.instance.disk.throughput.write, queries.instance.disk.throughput.max])
       + standardOptions.withDecimals(0)
       + standardOptions.withUnit('bytes')
       + standardOptions.withOverrides([
