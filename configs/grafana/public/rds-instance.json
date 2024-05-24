@@ -2551,7 +2551,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Regardless of the allocated disk IOPS, the EC2 instance behind RDS also has disk IOPS limits. You can't use more IOPS than EC2's instance limit",
+         "description": "Regardless of the allocated disk IOPS, the EC2 instance behind RDS also has disk IOPS limits. You can't use more IOPS than EC2's instance limit. Burst IOPS are supported 30 minutes at least once every 24 hours.",
          "fieldConfig": {
             "defaults": {
                "custom": {
@@ -2588,7 +2588,36 @@
                {
                   "matcher": {
                      "id": "byRegexp",
-                     "options": "Instance type limit.*"
+                     "options": ".* burst"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "yellow",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                     },
+                     {
+                        "id": "custom.lineStyle",
+                        "value": {
+                           "dash": [
+                              10,
+                              10
+                           ],
+                           "fill": "dash"
+                        }
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byRegexp",
+                     "options": ".* baseline"
                   },
                   "properties": [
                      {
@@ -2621,7 +2650,9 @@
                   "max"
                ],
                "displayMode": "table",
-               "placement": "right"
+               "placement": "right",
+               "sortBy": "Max",
+               "sortDesc": true
             }
          },
          "pluginVersion": "v10.2.0",
@@ -2647,8 +2678,16 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
+               "expr": "max(\n    max(rds_instance_baseline_iops_average{}) by (instance_class)\n    * on (instance_class)\n    group_left(aws_account_id,aws_region,dbidentifier)\n    max(rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (aws_account_id, aws_region, dbidentifier, instance_class)\n) by (instance_class)\n",
+               "legendFormat": "{{instance_class}} baseline"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
                "expr": "max(\n    max(rds_instance_max_iops_average{}) by (instance_class)\n    * on (instance_class)\n    group_left(aws_account_id,aws_region,dbidentifier)\n    max(rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (aws_account_id, aws_region, dbidentifier, instance_class)\n) by (instance_class)\n",
-               "legendFormat": "Instance type limit ({{instance_class}})"
+               "legendFormat": "{{instance_class}} burst"
             }
          ],
          "title": "Disk IOPS",
@@ -2734,7 +2773,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Regardless of the allocated disk throughput, the EC2 instance behind RDS also has disk throughput limits. You can't use more throughput than EC2's instance limit",
+         "description": "Regardless of the allocated disk throughput, the EC2 instance behind RDS also has disk throughput limits. You can't use more throughput than EC2's instance limit. Burst throughput is supported 30 minutes at least once every 24 hours.",
          "fieldConfig": {
             "defaults": {
                "custom": {
@@ -2771,13 +2810,42 @@
                {
                   "matcher": {
                      "id": "byRegexp",
-                     "options": "Instance type limit.*"
+                     "options": ".* burst"
                   },
                   "properties": [
                      {
                         "id": "color",
                         "value": {
                            "fixedColor": "red",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                     },
+                     {
+                        "id": "custom.lineStyle",
+                        "value": {
+                           "dash": [
+                              10,
+                              10
+                           ],
+                           "fill": "dash"
+                        }
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byRegexp",
+                     "options": ".* baseline"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "yellow",
                            "mode": "fixed"
                         }
                      },
@@ -2804,7 +2872,9 @@
                   "max"
                ],
                "displayMode": "table",
-               "placement": "right"
+               "placement": "right",
+               "sortBy": "Max",
+               "sortDesc": true
             }
          },
          "pluginVersion": "v10.2.0",
@@ -2830,8 +2900,16 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
+               "expr": "max(\nmax(rds_instance_baseline_throughput_bytes{}) by (instance_class)\n* on (instance_class)\ngroup_left(aws_account_id,aws_region,dbidentifier)\nmax(rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (aws_account_id, aws_region, dbidentifier, instance_class)\n) by (instance_class)\n",
+               "legendFormat": "{{instance_class}} baseline"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
                "expr": "max(\nmax(rds_instance_max_throughput_bytes{}) by (instance_class)\n* on (instance_class)\ngroup_left(aws_account_id,aws_region,dbidentifier)\nmax(rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"}) by (aws_account_id, aws_region, dbidentifier, instance_class)\n) by (instance_class)\n",
-               "legendFormat": "Instance type limit ({{instance_class}})"
+               "legendFormat": "{{instance_class}} burst"
             }
          ],
          "title": "Disk throughput",

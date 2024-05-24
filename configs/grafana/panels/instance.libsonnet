@@ -160,7 +160,9 @@ local colors = common.colors;
       ]),
 
     diskIOPSScaling:
-      ts.base('Disk IOPS', "Regardless of the allocated disk IOPS, the EC2 instance behind RDS also has disk IOPS limits. You can't use more IOPS than EC2's instance limit", [queries.instance.disk.iops.usage, queries.instance.disk.iops.max, queries.instance.disk.iops.instanceTypeMax])
+      ts.base('Disk IOPS', "Regardless of the allocated disk IOPS, the EC2 instance behind RDS also has disk IOPS limits. You can't use more IOPS than EC2's instance limit. Burst IOPS are supported 30 minutes at least once every 24 hours.", [queries.instance.disk.iops.usage, queries.instance.disk.iops.max, queries.instance.disk.iops.instanceTypeBaseline, queries.instance.disk.iops.instanceTypeBurst])
+      + options.legend.withSortBy('Max')
+      + options.legend.withSortDesc(true)
       + standardOptions.withUnit('locale')
       + standardOptions.withOverrides([
         fieldOverride.byName.new('Max')
@@ -170,7 +172,15 @@ local colors = common.colors;
           + standardOptions.withDisplayName('Allocated')
           + custom.withFillOpacity(0)
         ),
-        fieldOverride.byRegexp.new('Instance type limit.*')
+        fieldOverride.byRegexp.new('.* burst')
+        + standardOptions.override.byType.withPropertiesFromOptions(
+          timeSeries.fieldConfig.defaults.custom.lineStyle.withDash([10, 10])
+          + timeSeries.fieldConfig.defaults.custom.lineStyle.withFill('dash')
+          + color.withMode('fixed')
+          + color.withFixedColor(colors.notice)
+          + custom.withFillOpacity(0)
+        ),
+        fieldOverride.byRegexp.new('.* baseline')
         + standardOptions.override.byType.withPropertiesFromOptions(
           color.withMode('fixed')
           + color.withFixedColor(colors.limit)
@@ -179,20 +189,30 @@ local colors = common.colors;
       ]),
 
     diskThroughputScaling:
-      ts.base('Disk throughput', "Regardless of the allocated disk throughput, the EC2 instance behind RDS also has disk throughput limits. You can't use more throughput than EC2's instance limit", [queries.instance.disk.throughput.usage, queries.instance.disk.throughput.max, queries.instance.disk.throughput.instanceTypeMax])
+      ts.base('Disk throughput', "Regardless of the allocated disk throughput, the EC2 instance behind RDS also has disk throughput limits. You can't use more throughput than EC2's instance limit. Burst throughput is supported 30 minutes at least once every 24 hours.", [queries.instance.disk.throughput.usage, queries.instance.disk.throughput.max, queries.instance.disk.throughput.instanceTypeBaseline, queries.instance.disk.throughput.instanceTypeBurst])
+      + options.legend.withSortBy('Max')
+      + options.legend.withSortDesc(true)
       + standardOptions.withUnit('bytes')
       + standardOptions.withOverrides([
         fieldOverride.byName.new('Max')
         + standardOptions.override.byType.withPropertiesFromOptions(
           color.withMode('fixed')
-          + standardOptions.withDisplayName('Allocated')
           + color.withFixedColor(colors.warning)
+          + standardOptions.withDisplayName('Allocated')
           + custom.withFillOpacity(0)
         ),
-        fieldOverride.byRegexp.new('Instance type limit.*')
+        fieldOverride.byRegexp.new('.* burst')
+        + standardOptions.override.byType.withPropertiesFromOptions(
+          timeSeries.fieldConfig.defaults.custom.lineStyle.withDash([10, 10])
+          + timeSeries.fieldConfig.defaults.custom.lineStyle.withFill('dash')
+          + color.withMode('fixed')
+          + color.withFixedColor(colors.limit)
+          + custom.withFillOpacity(0)
+        ),
+        fieldOverride.byRegexp.new('.* baseline')
         + standardOptions.override.byType.withPropertiesFromOptions(
           color.withMode('fixed')
-          + color.withFixedColor(colors.limit)
+          + color.withFixedColor(colors.notice)
           + custom.withFillOpacity(0)
         ),
       ]),

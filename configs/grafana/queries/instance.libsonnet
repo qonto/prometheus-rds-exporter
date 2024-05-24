@@ -220,7 +220,8 @@ local variables = import '../variables.libsonnet';
             |||
           )
           + prometheusQuery.withLegendFormat('Usage'),
-        instanceTypeMax:
+
+        instanceTypeBurst:
           prometheusQuery.new(
             '$' + variables.datasource.name,
             |||
@@ -232,7 +233,21 @@ local variables = import '../variables.libsonnet';
               ) by (instance_class)
             |||
           )
-          + prometheusQuery.withLegendFormat('Instance type limit ({{instance_class}})'),
+          + prometheusQuery.withLegendFormat('{{instance_class}} burst'),
+
+        instanceTypeBaseline:
+          prometheusQuery.new(
+            '$' + variables.datasource.name,
+            |||
+              max(
+                  max(rds_instance_baseline_iops_average{}) by (instance_class)
+                  * on (instance_class)
+                  group_left(aws_account_id,aws_region,dbidentifier)
+                  max(rds_instance_info{aws_account_id="$aws_account_id",aws_region="$aws_region",dbidentifier="$dbidentifier"}) by (aws_account_id, aws_region, dbidentifier, instance_class)
+              ) by (instance_class)
+            |||
+          )
+          + prometheusQuery.withLegendFormat('{{instance_class}} baseline'),
       },
       throughput: {
         read:
@@ -272,7 +287,7 @@ local variables = import '../variables.libsonnet';
           )
           + prometheusQuery.withLegendFormat('Max'),
 
-        instanceTypeMax:
+        instanceTypeBurst:
           prometheusQuery.new(
             '$' + variables.datasource.name,
             |||
@@ -284,7 +299,21 @@ local variables = import '../variables.libsonnet';
               ) by (instance_class)
             |||
           )
-          + prometheusQuery.withLegendFormat('Instance type limit ({{instance_class}})'),
+          + prometheusQuery.withLegendFormat('{{instance_class}} burst'),
+
+        instanceTypeBaseline:
+          prometheusQuery.new(
+            '$' + variables.datasource.name,
+            |||
+              max(
+              max(rds_instance_baseline_throughput_bytes{}) by (instance_class)
+              * on (instance_class)
+              group_left(aws_account_id,aws_region,dbidentifier)
+              max(rds_instance_info{aws_account_id="$aws_account_id",aws_region="$aws_region",dbidentifier="$dbidentifier"}) by (aws_account_id, aws_region, dbidentifier, instance_class)
+              ) by (instance_class)
+            |||
+          )
+          + prometheusQuery.withLegendFormat('{{instance_class}} baseline'),
       },
     },
     memory: {
