@@ -75,7 +75,9 @@ type rdsCollector struct {
 	dBLoadNonCPU                *prometheus.Desc
 	allocatedStorage            *prometheus.Desc
 	information                 *prometheus.Desc
+	instanceBaselineIops        *prometheus.Desc
 	instanceMaximumIops         *prometheus.Desc
+	instanceBaselineThroughput  *prometheus.Desc
 	instanceMaximumThroughput   *prometheus.Desc
 	instanceMemory              *prometheus.Desc
 	instanceVCPU                *prometheus.Desc
@@ -192,8 +194,16 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			"Maximum throughput of underlying EC2 instance class",
 			[]string{"aws_account_id", "aws_region", "instance_class"}, nil,
 		),
+		instanceBaselineThroughput: prometheus.NewDesc("rds_instance_baseline_throughput_bytes",
+			"Baseline throughput of underlying EC2 instance class",
+			[]string{"aws_account_id", "aws_region", "instance_class"}, nil,
+		),
 		instanceMaximumIops: prometheus.NewDesc("rds_instance_max_iops_average",
 			"Maximum IOPS of underlying EC2 instance class",
+			[]string{"aws_account_id", "aws_region", "instance_class"}, nil,
+		),
+		instanceBaselineIops: prometheus.NewDesc("rds_instance_baseline_iops_average",
+			"Baseline IOPS of underlying EC2 instance class",
 			[]string{"aws_account_id", "aws_region", "instance_class"}, nil,
 		),
 		freeStorageSpace: prometheus.NewDesc("rds_free_storage_bytes",
@@ -308,7 +318,9 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.freeStorageSpace
 	ch <- c.freeableMemory
 	ch <- c.information
+	ch <- c.instanceBaselineIops
 	ch <- c.instanceMaximumIops
+	ch <- c.instanceBaselineThroughput
 	ch <- c.instanceMaximumThroughput
 	ch <- c.instanceMemory
 	ch <- c.instanceVCPU
@@ -654,6 +666,8 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 	// EC2 metrics
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.EC2APIcalls, c.awsAccountID, c.awsRegion, "ec2")
 	for instanceType, instance := range c.metrics.EC2.Instances {
+		ch <- prometheus.MustNewConstMetric(c.instanceBaselineIops, prometheus.GaugeValue, float64(instance.BaselineIOPS), c.awsAccountID, c.awsRegion, instanceType)
+		ch <- prometheus.MustNewConstMetric(c.instanceBaselineThroughput, prometheus.GaugeValue, instance.BaselineThroughput, c.awsAccountID, c.awsRegion, instanceType)
 		ch <- prometheus.MustNewConstMetric(c.instanceMaximumIops, prometheus.GaugeValue, float64(instance.MaximumIops), c.awsAccountID, c.awsRegion, instanceType)
 		ch <- prometheus.MustNewConstMetric(c.instanceMaximumThroughput, prometheus.GaugeValue, instance.MaximumThroughput, c.awsAccountID, c.awsRegion, instanceType)
 		ch <- prometheus.MustNewConstMetric(c.instanceMemory, prometheus.GaugeValue, float64(instance.Memory), c.awsAccountID, c.awsRegion, instanceType)

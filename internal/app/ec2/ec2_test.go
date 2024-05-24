@@ -16,32 +16,40 @@ func TestGetDBInstanceTypeInformation(t *testing.T) {
 	client := mock.EC2Client{}
 
 	testCases := []struct {
-		instanceType      string
-		vCPU              int32
-		memory            int64
-		maximumIops       int32
-		maximumThroughput float64
+		instanceType       string
+		vCPU               int32
+		memory             int64
+		baselineIops       int32
+		maximumIops        int32
+		baselineThroughput float64
+		maximumThroughput  float64
 	}{
 		{
-			instanceType:      "t3.large",
-			vCPU:              mock.InstanceT3Large.Vcpu,
-			memory:            converter.MegaBytesToBytes(mock.InstanceT3Large.Memory),
-			maximumIops:       mock.InstanceT3Large.MaximumIops,
-			maximumThroughput: converter.MegaBytesToBytes(mock.InstanceT3Large.MaximumThroughput),
+			baselineIops:       mock.InstanceT3Large.BaselineIOPS,
+			baselineThroughput: converter.MegaBytesToBytes(mock.InstanceT3Large.BaselineThroughput),
+			instanceType:       "t3.large",
+			vCPU:               mock.InstanceT3Large.Vcpu,
+			memory:             converter.MegaBytesToBytes(mock.InstanceT3Large.Memory),
+			maximumIops:        mock.InstanceT3Large.MaximumIops,
+			maximumThroughput:  converter.MegaBytesToBytes(mock.InstanceT3Large.MaximumThroughput),
 		},
 		{
-			instanceType:      "t3.small",
-			vCPU:              mock.InstanceT3Small.Vcpu,
-			memory:            converter.MegaBytesToBytes(mock.InstanceT3Small.Memory),
-			maximumIops:       mock.InstanceT3Small.MaximumIops,
-			maximumThroughput: converter.MegaBytesToBytes(mock.InstanceT3Small.MaximumThroughput),
+			baselineIops:       mock.InstanceT3Small.BaselineIOPS,
+			baselineThroughput: converter.MegaBytesToBytes(mock.InstanceT3Small.BaselineThroughput),
+			instanceType:       "t3.small",
+			vCPU:               mock.InstanceT3Small.Vcpu,
+			memory:             converter.MegaBytesToBytes(mock.InstanceT3Small.Memory),
+			maximumIops:        mock.InstanceT3Small.MaximumIops,
+			maximumThroughput:  converter.MegaBytesToBytes(mock.InstanceT3Small.MaximumThroughput),
 		},
 		{
-			instanceType:      "t2.small",
-			vCPU:              mock.InstanceT2Small.Vcpu,
-			memory:            converter.MegaBytesToBytes(mock.InstanceT2Small.Memory),
-			maximumIops:       0, // Don't have Maximum IOPS for non EBS optimized instances
-			maximumThroughput: 0, // Don't have Maximum throughput for non EBS optimized instances
+			baselineIops:       0, // Don't have Maximum IOPS for non EBS optimized instances
+			baselineThroughput: 0, // Don't have Maximum IOPS for non EBS optimized instances
+			instanceType:       "t2.small",
+			vCPU:               mock.InstanceT2Small.Vcpu,
+			memory:             converter.MegaBytesToBytes(mock.InstanceT2Small.Memory),
+			maximumIops:        0, // Don't have Maximum IOPS for non EBS optimized instances
+			maximumThroughput:  0, // Don't have Maximum throughput for non EBS optimized instances
 		},
 	}
 	expectedAPICalls := float64(1)
@@ -64,6 +72,8 @@ func TestGetDBInstanceTypeInformation(t *testing.T) {
 
 			assert.Equal(t, tc.vCPU, instance.Vcpu, "vCPU don't match")
 			assert.Equal(t, tc.memory, instance.Memory, "Memory don't match")
+			assert.Equal(t, tc.baselineIops, instance.BaselineIOPS, "Baseline IOPS don't match")
+			assert.Equal(t, tc.baselineThroughput, instance.BaselineThroughput, "Baseline throughput don't match")
 			assert.Equal(t, tc.maximumIops, instance.MaximumIops, "Maximum IOPS don't match")
 			assert.Equal(t, tc.maximumThroughput, instance.MaximumThroughput, "Maximum throughput don't match")
 		})

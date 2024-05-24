@@ -11,18 +11,22 @@ import (
 
 //nolint:golint,gomnd
 var InstanceT3Large = ec2.EC2InstanceMetrics{
-	MaximumIops:       15700,
-	MaximumThroughput: 347.5,
-	Memory:            8,
-	Vcpu:              2,
+	BaselineIOPS:       4000,
+	BaselineThroughput: 86.88,
+	MaximumIops:        15700,
+	MaximumThroughput:  347.5,
+	Memory:             8,
+	Vcpu:               2,
 }
 
 //nolint:golint,gomnd
 var InstanceT3Small = ec2.EC2InstanceMetrics{
-	MaximumIops:       11800,
-	MaximumThroughput: 260.62,
-	Memory:            2,
-	Vcpu:              2,
+	BaselineIOPS:       1000,
+	BaselineThroughput: 21.75,
+	MaximumIops:        11800,
+	MaximumThroughput:  260.62,
+	Memory:             2,
+	Vcpu:               2,
 }
 
 //nolint:golint,gomnd
@@ -45,8 +49,10 @@ func (m EC2Client) DescribeInstanceTypes(ctx context.Context, input *aws_ec2.Des
 				VCpuInfo:     &aws_ec2_types.VCpuInfo{DefaultVCpus: &InstanceT3Large.Vcpu},
 				MemoryInfo:   &aws_ec2_types.MemoryInfo{SizeInMiB: &InstanceT3Large.Memory},
 				EbsInfo: &aws_ec2_types.EbsInfo{EbsOptimizedInfo: &aws_ec2_types.EbsOptimizedInfo{
-					MaximumIops:             &InstanceT3Large.MaximumIops,
-					MaximumThroughputInMBps: &InstanceT3Large.MaximumThroughput,
+					BaselineIops:             &InstanceT3Large.BaselineIOPS,
+					BaselineThroughputInMBps: &InstanceT3Large.BaselineThroughput,
+					MaximumIops:              &InstanceT3Large.MaximumIops,
+					MaximumThroughputInMBps:  &InstanceT3Large.MaximumThroughput,
 				}},
 			})
 		case "t3.small":
@@ -55,8 +61,10 @@ func (m EC2Client) DescribeInstanceTypes(ctx context.Context, input *aws_ec2.Des
 				VCpuInfo:     &aws_ec2_types.VCpuInfo{DefaultVCpus: &InstanceT3Small.Vcpu},
 				MemoryInfo:   &aws_ec2_types.MemoryInfo{SizeInMiB: &InstanceT3Small.Memory},
 				EbsInfo: &aws_ec2_types.EbsInfo{EbsOptimizedInfo: &aws_ec2_types.EbsOptimizedInfo{
-					MaximumIops:             &InstanceT3Small.MaximumIops,
-					MaximumThroughputInMBps: &InstanceT3Small.MaximumThroughput,
+					BaselineIops:             &InstanceT3Small.BaselineIOPS,
+					BaselineThroughputInMBps: &InstanceT3Small.BaselineThroughput,
+					MaximumIops:              &InstanceT3Small.MaximumIops,
+					MaximumThroughputInMBps:  &InstanceT3Small.MaximumThroughput,
 				}},
 			})
 		case "t2.small":
