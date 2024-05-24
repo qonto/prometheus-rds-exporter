@@ -68,8 +68,8 @@ It collects key metrics about:
 | rds_instance_tags | `aws_account_id`, `aws_region`, `dbidentifier`, `tag_<AWS_TAG>`... | AWS tags attached to the instance |
 | rds_instance_vcpu_average | `aws_account_id`, `aws_region`, `instance_class` | Total vCPU for this instance class |
 | rds_max_allocated_storage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Upper limit in gibibytes to which Amazon RDS can automatically scale the storage of the DB instance |
-| rds_max_disk_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Max IOPS for the instance |
-| rds_max_storage_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Max storage throughput |
+| rds_max_disk_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Max disk IOPS evaluated with disk IOPS and EC2 capacity |
+| rds_max_storage_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Max disk throughput evaluated with disk throughput and EC2 capacity |
 | rds_maximum_used_transaction_ids_average | `aws_account_id`, `aws_region`, `dbidentifier` | Maximum transaction IDs that have been used. Applies to only PostgreSQL |
 | rds_quota_max_dbinstances_average | `aws_account_id`, `aws_region` | Maximum number of RDS instances allowed in the AWS account |
 | rds_quota_maximum_db_instance_snapshots_average | `aws_account_id`, `aws_region` | Maximum number of manual DB instance snapshots |
