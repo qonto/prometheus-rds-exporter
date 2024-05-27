@@ -74,6 +74,8 @@ type rdsCollector struct {
 	dBLoadCPU                   *prometheus.Desc
 	dBLoadNonCPU                *prometheus.Desc
 	allocatedStorage            *prometheus.Desc
+	allocatedDiskIOPS           *prometheus.Desc
+	allocatedDiskThroughput     *prometheus.Desc
 	information                 *prometheus.Desc
 	instanceBaselineIops        *prometheus.Desc
 	instanceMaximumIops         *prometheus.Desc
@@ -138,6 +140,14 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			"Allocated storage",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
+		allocatedDiskIOPS: prometheus.NewDesc("rds_allocated_disk_iops_average",
+			"Allocated disk IOPS",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		allocatedDiskThroughput: prometheus.NewDesc("rds_allocated_disk_throughput_bytes",
+			"Allocated disk throughput",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
 		information: prometheus.NewDesc("rds_instance_info",
 			"RDS instance information",
 			[]string{"aws_account_id", "aws_region", "dbidentifier", "dbi_resource_id", "instance_class", "engine", "engine_version", "storage_type", "multi_az", "deletion_protection", "role", "source_dbidentifier", "pending_modified_values", "pending_maintenance", "performance_insights_enabled", "ca_certificate_identifier", "arn"}, nil,
@@ -151,11 +161,11 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		maxIops: prometheus.NewDesc("rds_max_disk_iops_average",
-			"Max IOPS for the instance",
+			"Max disk IOPS evaluated with disk IOPS and EC2 capacity",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		storageThroughput: prometheus.NewDesc("rds_max_storage_throughput_bytes",
-			"Max storage throughput",
+			"Max disk throughput evaluated with disk throughput and EC2 capacity",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		readThroughput: prometheus.NewDesc("rds_read_throughput_bytes",
@@ -305,6 +315,8 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.DBLoad
 	ch <- c.age
 	ch <- c.allocatedStorage
+	ch <- c.allocatedDiskIOPS
+	ch <- c.allocatedDiskThroughput
 	ch <- c.apiCall
 	ch <- c.apiCall
 	ch <- c.backupRetentionPeriod
@@ -561,10 +573,22 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 			instance.Arn,
 		)
 		ch <- prometheus.MustNewConstMetric(c.maxAllocatedStorage, prometheus.GaugeValue, float64(instance.MaxAllocatedStorage), c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.maxIops, prometheus.GaugeValue, float64(instance.MaxIops), c.awsAccountID, c.awsRegion, dbidentifier)
+		ch <- prometheus.MustNewConstMetric(c.allocatedDiskIOPS, prometheus.GaugeValue, float64(instance.MaxIops), c.awsAccountID, c.awsRegion, dbidentifier)
+		ch <- prometheus.MustNewConstMetric(c.allocatedDiskThroughput, prometheus.GaugeValue, float64(instance.StorageThroughput), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.status, prometheus.GaugeValue, float64(instance.Status), c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.storageThroughput, prometheus.GaugeValue, float64(instance.StorageThroughput), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.backupRetentionPeriod, prometheus.GaugeValue, float64(instance.BackupRetentionPeriod), c.awsAccountID, c.awsRegion, dbidentifier)
+
+		maxIops := instance.MaxIops
+		storageThroughput := float64(instance.StorageThroughput)
+
+		// RDS disk performance are limited by the EBS volume attached the RDS instance
+		if ec2Metrics, ok := c.metrics.EC2.Instances[instance.DBInstanceClass]; ok {
+			maxIops = min(instance.MaxIops, int64(ec2Metrics.BaselineIOPS))
+			storageThroughput = min(float64(instance.StorageThroughput), ec2Metrics.BaselineThroughput)
+		}
+
+		ch <- prometheus.MustNewConstMetric(c.maxIops, prometheus.GaugeValue, float64(maxIops), c.awsAccountID, c.awsRegion, dbidentifier)
+		ch <- prometheus.MustNewConstMetric(c.storageThroughput, prometheus.GaugeValue, storageThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
 
 		if c.configuration.CollectInstanceTags {
 			names, values := c.getInstanceTagLabels(dbidentifier, instance)
