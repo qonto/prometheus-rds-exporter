@@ -21,10 +21,12 @@ const (
 var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/ec2")
 
 type EC2InstanceMetrics struct {
-	MaximumIops       int32
-	MaximumThroughput float64
-	Memory            int64
-	Vcpu              int32
+	BaselineIOPS       int32
+	BaselineThroughput float64
+	MaximumIops        int32
+	MaximumThroughput  float64
+	Memory             int64
+	Vcpu               int32
 }
 
 type Metrics struct {
@@ -100,6 +102,9 @@ func (e *EC2Fetcher) GetDBInstanceTypeInformation(instanceTypes []string) (Metri
 			}
 
 			if i.EbsInfo != nil && i.EbsInfo.EbsOptimizedInfo != nil {
+				instanceMetrics.BaselineIOPS = aws.ToInt32(i.EbsInfo.EbsOptimizedInfo.BaselineIops)
+				instanceMetrics.BaselineThroughput = converter.MegaBytesToBytes(aws.ToFloat64(i.EbsInfo.EbsOptimizedInfo.BaselineThroughputInMBps))
+
 				instanceMetrics.MaximumIops = aws.ToInt32(i.EbsInfo.EbsOptimizedInfo.MaximumIops)
 				instanceMetrics.MaximumThroughput = converter.MegaBytesToBytes(aws.ToFloat64(i.EbsInfo.EbsOptimizedInfo.MaximumThroughputInMBps))
 			}
