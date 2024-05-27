@@ -41,6 +41,8 @@ It collects key metrics about:
 
 | Name | Labels | Description |
 | ---- | ------ | ----------- |
+| rds_allocated_disk_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Allocated disk IOPS |
+| rds_allocated_disk_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Allocated disk throughput |
 | rds_allocated_storage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Allocated storage |
 | rds_api_call_total | `api`, `aws_account_id`, `aws_region` | Number of call to AWS API |
 | rds_backup_retention_period_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | Automatic DB snapshots retention period |
@@ -55,6 +57,8 @@ It collects key metrics about:
 | rds_free_storage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Free storage on the instance |
 | rds_freeable_memory_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Amount of available random access memory. For MariaDB, MySQL, Oracle, and PostgreSQL DB instances, this metric reports the value of the MemAvailable field of /proc/meminfo |
 | rds_instance_age_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | Time since instance creation |
+| rds_instance_baseline_iops_average | `aws_account_id`, `aws_region`, `instance_class` | Baseline IOPS of underlying EC2 instance class |
+| rds_instance_baseline_throughput_bytes | `aws_account_id`, `aws_region`, `instance_class` | Baseline throughput of underlying EC2 instance class |
 | rds_instance_info | `arn`, `aws_account_id`, `aws_region`, `dbi_resource_id`, `dbidentifier`, `deletion_protection`, `engine`, `engine_version`, `instance_class`, `multi_az`, `performance_insights_enabled`, `pending_maintenance`, `pending_modified_values`, `role`, `source_dbidentifier`, `storage_type`, `ca_certificate_identifier` | RDS instance information |
 | rds_instance_log_files_size_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Total of log files on the instance |
 | rds_instance_max_iops_average | `aws_account_id`, `aws_region`, `instance_class` | Maximum IOPS of underlying EC2 instance class |
@@ -64,8 +68,8 @@ It collects key metrics about:
 | rds_instance_tags | `aws_account_id`, `aws_region`, `dbidentifier`, `tag_<AWS_TAG>`... | AWS tags attached to the instance |
 | rds_instance_vcpu_average | `aws_account_id`, `aws_region`, `instance_class` | Total vCPU for this instance class |
 | rds_max_allocated_storage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Upper limit in gibibytes to which Amazon RDS can automatically scale the storage of the DB instance |
-| rds_max_disk_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Max IOPS for the instance |
-| rds_max_storage_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Max storage throughput |
+| rds_max_disk_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Max disk IOPS evaluated with disk IOPS and EC2 capacity |
+| rds_max_storage_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Max disk throughput evaluated with disk throughput and EC2 capacity |
 | rds_maximum_used_transaction_ids_average | `aws_account_id`, `aws_region`, `dbidentifier` | Maximum transaction IDs that have been used. Applies to only PostgreSQL |
 | rds_quota_max_dbinstances_average | `aws_account_id`, `aws_region` | Maximum number of RDS instances allowed in the AWS account |
 | rds_quota_maximum_db_instance_snapshots_average | `aws_account_id`, `aws_region` | Maximum number of manual DB instance snapshots |
