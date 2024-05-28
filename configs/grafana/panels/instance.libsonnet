@@ -141,18 +141,18 @@ local colors = common.colors;
       + standardOptions.withNoValue('Disabled'),
 
     activeQueries:
-      ts.base('Active queries vs vCPU', 'Number of active queries waiting for CPU and non CPU wait. For optimal performances, you should not have more CPU wait that number of CPU', [queries.instance.cpu.wait, queries.instance.cpu.nonWait, queries.instance.cpu.count])
+      ts.base('Average Active Sessions', "A session is active when it's either running on CPU or waiting for a resource to become available so that it can proceed (e.g. IOPS or CPU). For optimal performances, you should not have more AAS than the total number of vCPU. Investigate AAS in RDS performance insights. See also https://www.kylehailey.com/post/setting-the-record-straight-a-comprehensive-guide-to-understanding-the-aas-metric-in-databases and https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PerfInsights.Overview.ActiveSessions.html", [queries.instance.cpu.wait, queries.instance.cpu.nonWait, queries.instance.cpu.count])
       + standardOptions.withDecimals(1)
       + custom.stacking.withMode('normal')
       + standardOptions.withOverrides([
         fieldOverride.byName.new('Number of vCPU')
         + ts.max,
-        fieldOverride.byName.new('CPU wait')
+        fieldOverride.byName.new('CPU execution')
         + standardOptions.override.byType.withPropertiesFromOptions(
           color.withMode('fixed')
           + color.withFixedColor(colors.ok)
         ),
-        fieldOverride.byName.new('Non CPU wait')
+        fieldOverride.byName.new('Non CPU execution')
         + standardOptions.override.byType.withPropertiesFromOptions(
           color.withMode('fixed')
           + color.withFixedColor(colors.warning)

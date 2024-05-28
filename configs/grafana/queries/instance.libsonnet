@@ -81,7 +81,7 @@ local variables = import '../variables.libsonnet';
             max(rds_dbload_cpu_average{aws_account_id="$aws_account_id",aws_region="$aws_region",dbidentifier="$dbidentifier"})
           |||
         )
-        + prometheusQuery.withLegendFormat('CPU wait'),
+        + prometheusQuery.withLegendFormat('CPU execution'),
       nonWait:
         prometheusQuery.new(
           '$' + variables.datasource.name,
@@ -89,7 +89,7 @@ local variables = import '../variables.libsonnet';
             max(rds_dbload_noncpu_average{aws_account_id="$aws_account_id",aws_region="$aws_region",dbidentifier="$dbidentifier"})
           |||
         )
-        + prometheusQuery.withLegendFormat('Non CPU wait'),
+        + prometheusQuery.withLegendFormat('Non CPU execution'),
     },
     storage: {
       allocated:
