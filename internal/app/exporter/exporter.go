@@ -29,6 +29,7 @@ var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/expo
 
 type Configuration struct {
 	CollectInstanceMetrics bool
+	FilterInstances        []string
 	CollectInstanceTags    bool
 	CollectInstanceTypes   bool
 	CollectLogsSize        bool
@@ -381,6 +382,7 @@ func (c *rdsCollector) fetchMetrics() error {
 	rdsFetcher := rds.NewFetcher(c.ctx, c.rdsClient, rds.Configuration{
 		CollectLogsSize:     c.configuration.CollectLogsSize,
 		CollectMaintenances: c.configuration.CollectMaintenances,
+		FilterInstances:     c.configuration.FilterInstances,
 	})
 
 	rdsMetrics, err := rdsFetcher.GetInstancesMetrics()

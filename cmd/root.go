@@ -30,22 +30,23 @@ const (
 var cfgFile string
 
 type exporterConfig struct {
-	Debug                  bool   `mapstructure:"debug"`
-	LogFormat              string `mapstructure:"log-format"`
-	TLSCertPath            string `mapstructure:"tls-cert-path"`
-	TLSKeyPath             string `mapstructure:"tls-key-path"`
-	MetricPath             string `mapstructure:"metrics-path"`
-	ListenAddress          string `mapstructure:"listen-address"`
-	AWSAssumeRoleSession   string `mapstructure:"aws-assume-role-session"`
-	AWSAssumeRoleArn       string `mapstructure:"aws-assume-role-arn"`
-	CollectInstanceMetrics bool   `mapstructure:"collect-instance-metrics"`
-	CollectInstanceTags    bool   `mapstructure:"collect-instance-tags"`
-	CollectInstanceTypes   bool   `mapstructure:"collect-instance-types"`
-	CollectLogsSize        bool   `mapstructure:"collect-logs-size"`
-	CollectMaintenances    bool   `mapstructure:"collect-maintenances"`
-	CollectQuotas          bool   `mapstructure:"collect-quotas"`
-	CollectUsages          bool   `mapstructure:"collect-usages"`
-	OTELTracesEnabled      bool   `mapstructure:"enable-otel-traces"`
+	Debug                  bool     `mapstructure:"debug"`
+	LogFormat              string   `mapstructure:"log-format"`
+	TLSCertPath            string   `mapstructure:"tls-cert-path"`
+	TLSKeyPath             string   `mapstructure:"tls-key-path"`
+	MetricPath             string   `mapstructure:"metrics-path"`
+	ListenAddress          string   `mapstructure:"listen-address"`
+	AWSAssumeRoleSession   string   `mapstructure:"aws-assume-role-session"`
+	AWSAssumeRoleArn       string   `mapstructure:"aws-assume-role-arn"`
+	CollectInstanceMetrics bool     `mapstructure:"collect-instance-metrics"`
+	FilterInstances        []string `mapstructure:"filter-instances"`
+	CollectInstanceTags    bool     `mapstructure:"collect-instance-tags"`
+	CollectInstanceTypes   bool     `mapstructure:"collect-instance-types"`
+	CollectLogsSize        bool     `mapstructure:"collect-logs-size"`
+	CollectMaintenances    bool     `mapstructure:"collect-maintenances"`
+	CollectQuotas          bool     `mapstructure:"collect-quotas"`
+	CollectUsages          bool     `mapstructure:"collect-usages"`
+	OTELTracesEnabled      bool     `mapstructure:"enable-otel-traces"`
 }
 
 func run(configuration exporterConfig) {
@@ -74,6 +75,7 @@ func run(configuration exporterConfig) {
 
 	collectorConfiguration := exporter.Configuration{
 		CollectInstanceMetrics: configuration.CollectInstanceMetrics,
+		FilterInstances:        configuration.FilterInstances,
 		CollectInstanceTypes:   configuration.CollectInstanceTypes,
 		CollectInstanceTags:    configuration.CollectInstanceTags,
 		CollectLogsSize:        configuration.CollectLogsSize,
@@ -137,6 +139,7 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().BoolP("collect-instance-tags", "", true, "Collect AWS RDS tags")
 	cmd.Flags().BoolP("collect-instance-types", "", true, "Collect AWS instance types")
 	cmd.Flags().BoolP("collect-instance-metrics", "", true, "Collect AWS instance metrics")
+	cmd.Flags().StringSliceP("filter-instances", "", []string{}, "Collect AWS instances metrics only for the listed instance ids")
 	cmd.Flags().BoolP("collect-logs-size", "", true, "Collect AWS instances logs size")
 	cmd.Flags().BoolP("collect-maintenances", "", true, "Collect AWS instances maintenances")
 	cmd.Flags().BoolP("collect-quotas", "", true, "Collect AWS RDS quotas")
@@ -190,6 +193,11 @@ func NewRootCommand() (*cobra.Command, error) {
 	err = viper.BindPFlag("collect-instance-metrics", cmd.Flags().Lookup("collect-instance-metrics"))
 	if err != nil {
 		return cmd, fmt.Errorf("failed to bind 'collect-instance-metrics' parameter: %w", err)
+	}
+
+	err = viper.BindPFlag("filter-instances", cmd.Flags().Lookup("filter-instances"))
+	if err != nil {
+		return cmd, fmt.Errorf("failed to bind 'filter-instances' parameter: %w", err)
 	}
 
 	err = viper.BindPFlag("collect-instance-tags", cmd.Flags().Lookup("collect-instance-tags"))

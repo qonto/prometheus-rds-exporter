@@ -177,6 +177,7 @@ Configuration could be defined in [prometheus-rds-exporter.yaml](https://github.
 | aws-assume-role-arn | AWS IAM ARN role to assume to fetch metrics | |
 | aws-assume-role-session | AWS assume role session name | prometheus-rds-exporter |
 | collect-instance-metrics | Collect AWS instances metrics (AWS Cloudwatch API) | true |
+| filter-instances | Collect AWS instances metrics only for the listed instance ids | ['exampleid1','exampleid2'] |
 | collect-instance-tags | Collect AWS RDS tags | true |
 | collect-instance-types | Collect AWS instance types information (AWS EC2 API) | true |
 | collect-logs-size | Collect AWS instances logs size (AWS RDS API) | true |

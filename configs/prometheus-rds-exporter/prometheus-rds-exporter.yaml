@@ -41,6 +41,9 @@
 # Collect AWS instances metrics (AWS Cloudwatch API)
 # collect-instance-metrics: true
 
+# Collect AWS instances metrics only for the listed instance ids (RDS)
+# filter-instances: ['exampleid1','exampleid2']
+
 # Collect AWS instance tags (AWS RDS API)
 # collect-instance-tags: true
 
