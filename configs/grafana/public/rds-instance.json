@@ -1254,7 +1254,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Number of active queries waiting for CPU and non CPU wait. For optimal performances, you should not have more CPU wait that number of CPU",
+         "description": "A session is active when it's either running on CPU or waiting for a resource to become available so that it can proceed (e.g. IOPS or CPU). For optimal performances, you should not have more AAS than the total number of vCPU. Investigate AAS in RDS performance insights. See also https://www.kylehailey.com/post/setting-the-record-straight-a-comprehensive-guide-to-understanding-the-aas-metric-in-databases and https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PerfInsights.Overview.ActiveSessions.html",
          "fieldConfig": {
             "defaults": {
                "custom": {
@@ -1301,7 +1301,7 @@
                {
                   "matcher": {
                      "id": "byName",
-                     "options": "CPU wait"
+                     "options": "CPU execution"
                   },
                   "properties": [
                      {
@@ -1316,7 +1316,7 @@
                {
                   "matcher": {
                      "id": "byName",
-                     "options": "Non CPU wait"
+                     "options": "Non CPU execution"
                   },
                   "properties": [
                      {
@@ -1356,7 +1356,7 @@
                   "uid": "$datasource"
                },
                "expr": "max(rds_dbload_cpu_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
-               "legendFormat": "CPU wait"
+               "legendFormat": "CPU execution"
             },
             {
                "datasource": {
@@ -1364,7 +1364,7 @@
                   "uid": "$datasource"
                },
                "expr": "max(rds_dbload_noncpu_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
-               "legendFormat": "Non CPU wait"
+               "legendFormat": "Non CPU execution"
             },
             {
                "datasource": {
@@ -1375,7 +1375,7 @@
                "legendFormat": "Number of vCPU"
             }
          ],
-         "title": "Active queries vs vCPU",
+         "title": "Average Active Sessions",
          "type": "timeseries"
       },
       {
