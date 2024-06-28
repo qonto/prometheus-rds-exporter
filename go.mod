@@ -13,7 +13,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/servicequotas v1.21.8
 	github.com/aws/aws-sdk-go-v2/service/sts v1.28.10
 	github.com/prometheus/client_golang v1.19.1
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.52.0
