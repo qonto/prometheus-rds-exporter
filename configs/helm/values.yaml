@@ -48,6 +48,8 @@ securityContext:
 service:
   type: ClusterIP
   port: 9043
+  # Additional annotations for the service
+  annotations: {}
 
 ingress:
   enabled: false
