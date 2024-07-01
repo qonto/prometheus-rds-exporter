@@ -27,6 +27,13 @@
 #
 # AWS credentials
 #
+# accounts:
+# - aws_access_key_id: <placeholder>
+#   aws_secret_access_key: <placeholder>
+#   regions: 
+#   - ap-northeast-1
+#   - eu-central-1
+#   - us-east-1
 
 # AWS IAM ARN role to assume to fetch metrics
 # aws-assume-role-arn: arn:aws:iam::000000000000:role/prometheus-rds-exporter

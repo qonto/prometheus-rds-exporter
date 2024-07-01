@@ -28,6 +28,7 @@ const (
 )
 
 var cfgFile string
+var actRegionClient []exporter.AccountRegionClients
 
 type exporterConfig struct {
 	Debug                  bool   `mapstructure:"debug"`
@@ -46,6 +47,7 @@ type exporterConfig struct {
 	CollectQuotas          bool   `mapstructure:"collect-quotas"`
 	CollectUsages          bool   `mapstructure:"collect-usages"`
 	OTELTracesEnabled      bool   `mapstructure:"enable-otel-traces"`
+	AwsCredentials         AWSCredentials
 }
 
 func run(configuration exporterConfig) {
@@ -54,24 +56,6 @@ func run(configuration exporterConfig) {
 		fmt.Println("ERROR: Fail to initialize logger: %w", err)
 		panic(err)
 	}
-
-	cfg, err := getAWSConfiguration(logger, configuration.AWSAssumeRoleArn, configuration.AWSAssumeRoleSession)
-	if err != nil {
-		logger.Error("can't initialize AWS configuration", "reason", err)
-		os.Exit(awsErrorExitCode)
-	}
-
-	awsAccountID, awsRegion, err := getAWSSessionInformation(cfg)
-	if err != nil {
-		logger.Error("can't identify AWS account and/or region", "reason", err)
-		os.Exit(awsErrorExitCode)
-	}
-
-	rdsClient := rds.NewFromConfig(cfg)
-	ec2Client := ec2.NewFromConfig(cfg)
-	cloudWatchClient := cloudwatch.NewFromConfig(cfg)
-	servicequotasClient := servicequotas.NewFromConfig(cfg)
-
 	collectorConfiguration := exporter.Configuration{
 		CollectInstanceMetrics: configuration.CollectInstanceMetrics,
 		CollectInstanceTypes:   configuration.CollectInstanceTypes,
@@ -82,16 +66,65 @@ func run(configuration exporterConfig) {
 		CollectUsages:          configuration.CollectUsages,
 	}
 
-	collector := exporter.NewCollector(*logger, collectorConfiguration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient)
+	cfgs, err := getAWSConfigurationByCredentials(logger, configuration)
+	if err != nil {
+		logger.Error("can't initialize AWS configuration", "reason", err)
+		os.Exit(awsErrorExitCode)
+	}
+	if cfgs == nil {
+		logger.Info("Didn't configure aws IAM User credentials in configuration file, will use default aws configuration")
+		cfg, err := getAWSConfiguration(logger, configuration.AWSAssumeRoleArn, configuration.AWSAssumeRoleSession)
+		if err != nil {
+			logger.Error("can't initialize AWS configuration", "reason", err)
+			os.Exit(awsErrorExitCode)
+		}
+		awsAccountID, awsRegion, err := getAWSSessionInformation(cfg)
+		if err != nil {
+			logger.Error("can't identify AWS account and/or region", "reason", err)
+			os.Exit(awsErrorExitCode)
+		}
 
-	prometheus.MustRegister(collector)
+		rdsClient := rds.NewFromConfig(cfg)
+		ec2Client := ec2.NewFromConfig(cfg)
+		cloudWatchClient := cloudwatch.NewFromConfig(cfg)
+		servicequotasClient := servicequotas.NewFromConfig(cfg)
 
+		collector := exporter.NewCollector(*logger, collectorConfiguration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient)
+
+		prometheus.MustRegister(collector)
+
+	} else {
+		for _, cfg := range cfgs {
+			awsAccountID, awsRegion, err := getAWSSessionInformation(cfg)
+			if err != nil {
+				logger.Error("can't identify AWS account and/or region", "reason", err)
+				os.Exit(awsErrorExitCode)
+			}
+
+			rdsClient := rds.NewFromConfig(cfg)
+			ec2Client := ec2.NewFromConfig(cfg)
+			cloudWatchClient := cloudwatch.NewFromConfig(cfg)
+			servicequotasClient := servicequotas.NewFromConfig(cfg)
+
+			var accountRegionClients exporter.AccountRegionClients
+			accountRegionClients.AwsAccountID = awsAccountID
+			accountRegionClients.AwsRegion = awsRegion
+			accountRegionClients.RdsClient = rdsClient
+			accountRegionClients.Ec2Client = ec2Client
+			accountRegionClients.CloudWatchClient = cloudWatchClient
+			accountRegionClients.ServicequotasClient = servicequotasClient
+			actRegionClient = append(actRegionClient, accountRegionClients)
+		}
+		collector := exporter.NewMultiCollector(*logger, collectorConfiguration, actRegionClient)
+		prometheus.MustRegister(collector)
+	}
+
+	// http configurations for exporter service
 	serverConfiguration := http.Config{
-		ListenAddress:     configuration.ListenAddress,
-		MetricPath:        configuration.MetricPath,
-		TLSCertPath:       configuration.TLSCertPath,
-		TLSKeyPath:        configuration.TLSKeyPath,
-		OTELTracesEnabled: configuration.OTELTracesEnabled,
+		ListenAddress: configuration.ListenAddress,
+		MetricPath:    configuration.MetricPath,
+		TLSCertPath:   configuration.TLSCertPath,
+		TLSKeyPath:    configuration.TLSKeyPath,
 	}
 
 	server := http.New(*logger, serverConfiguration)
@@ -118,6 +151,7 @@ func NewRootCommand() (*cobra.Command, error) {
 
 				return
 			}
+			viper.UnmarshalKey("accounts", &c.AwsCredentials.Accounts)
 			run(c)
 		},
 	}
