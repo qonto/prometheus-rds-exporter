@@ -1,0 +1,4 @@
+---
+service:
+  annotations:
+    "prometheus.io/scrape": "true"
