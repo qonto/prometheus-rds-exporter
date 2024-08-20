@@ -17,6 +17,7 @@ import (
 
 func TestGetRDSQuotas(t *testing.T) {
 	logger := slog.Default()
+
 	t.Run("GetRDSQuotasHappyPath", func(t *testing.T) {
 		context := context.TODO()
 		client := mock.ServiceQuotasClient{}
