@@ -5,13 +5,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	aws_servicequotas "github.com/aws/aws-sdk-go-v2/service/servicequotas"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/trace"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
-	"golang.org/x/exp/slog"
 )
 
 var (
@@ -44,10 +44,11 @@ type ServiceQuotasClient interface {
 	GetServiceQuota(ctx context.Context, input *aws_servicequotas.GetServiceQuotaInput, optFns ...func(*aws_servicequotas.Options)) (*aws_servicequotas.GetServiceQuotaOutput, error)
 }
 
-func NewFetcher(ctx context.Context, client ServiceQuotasClient) *serviceQuotaFetcher {
+func NewFetcher(ctx context.Context, client ServiceQuotasClient, logger slog.Logger) *serviceQuotaFetcher {
 	return &serviceQuotaFetcher{
 		ctx:    ctx,
 		client: client,
+		logger: &logger,
 	}
 }
 

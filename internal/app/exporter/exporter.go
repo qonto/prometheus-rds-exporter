@@ -477,7 +477,7 @@ func (c *rdsCollector) getQuotasMetrics(client servicequotas.ServiceQuotasClient
 
 	c.logger.Debug("fetch quotas")
 
-	fetcher := servicequotas.NewFetcher(ctx, client)
+	fetcher := servicequotas.NewFetcher(ctx, client, c.logger)
 
 	metrics, err := fetcher.GetRDSQuotas()
 	if err != nil {
