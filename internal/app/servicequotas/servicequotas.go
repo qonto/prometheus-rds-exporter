@@ -5,13 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_servicequotas "github.com/aws/aws-sdk-go-v2/service/servicequotas"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/trace"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
-	"golang.org/x/exp/slog"
 )
 
 var (
@@ -44,10 +45,11 @@ type ServiceQuotasClient interface {
 	GetServiceQuota(ctx context.Context, input *aws_servicequotas.GetServiceQuotaInput, optFns ...func(*aws_servicequotas.Options)) (*aws_servicequotas.GetServiceQuotaOutput, error)
 }
 
-func NewFetcher(ctx context.Context, client ServiceQuotasClient) *serviceQuotaFetcher {
+func NewFetcher(ctx context.Context, client ServiceQuotasClient, logger slog.Logger) *serviceQuotaFetcher {
 	return &serviceQuotaFetcher{
 		ctx:    ctx,
 		client: client,
+		logger: &logger,
 	}
 }
 
@@ -86,7 +88,7 @@ func (s *serviceQuotaFetcher) getQuota(serviceCode string, quotaCode string) (fl
 
 	// AWS response payload could contains errors (eg. missing permission)
 	if result.Quota.ErrorReason != nil {
-		s.logger.Error("AWS quota error: ", "errorCode", result.Quota.ErrorReason.ErrorCode, "message", *result.Quota.ErrorReason.ErrorMessage)
+		s.logger.Error("AWS quota error: ", "errorCode", result.Quota.ErrorReason.ErrorCode, "message", aws.ToString(result.Quota.ErrorReason.ErrorMessage))
 		span.SetStatus(codes.Error, "failed to fetch quota")
 		span.RecordError(errQuotaError)
 
