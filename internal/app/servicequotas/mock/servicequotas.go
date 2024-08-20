@@ -37,3 +37,29 @@ func (m ServiceQuotasClient) GetServiceQuota(context context.Context, input *aws
 
 	return &aws_servicequotas.GetServiceQuotaOutput{Quota: quota}, nil
 }
+
+type ServiceQuotasClientQuotaError struct {
+	ExpectedErrorQotaCode    string
+	ExpectedErrorQuotaOutput *aws_servicequotas.GetServiceQuotaOutput
+}
+
+func (m ServiceQuotasClientQuotaError) GetServiceQuota(context context.Context, input *aws_servicequotas.GetServiceQuotaInput, optFns ...func(*aws_servicequotas.Options)) (*aws_servicequotas.GetServiceQuotaOutput, error) {
+	value := UnknownServiceQuota
+
+	if *input.ServiceCode == servicequotas.RDSServiceCode {
+		switch *input.QuotaCode {
+		case m.ExpectedErrorQotaCode:
+			return m.ExpectedErrorQuotaOutput, nil
+		case servicequotas.DBinstancesQuotacode:
+			value = DBinstancesQuota
+		case servicequotas.TotalStorageQuotaCode:
+			value = TotalStorage
+		case servicequotas.ManualDBInstanceSnapshotsQuotaCode:
+			value = ManualDBInstanceSnapshots
+		}
+	}
+
+	quota := &aws_servicequotas_types.ServiceQuota{Value: &value}
+
+	return &aws_servicequotas.GetServiceQuotaOutput{Quota: quota}, nil
+}
