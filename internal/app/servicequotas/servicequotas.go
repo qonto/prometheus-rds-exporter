@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_servicequotas "github.com/aws/aws-sdk-go-v2/service/servicequotas"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/trace"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
@@ -87,7 +88,7 @@ func (s *serviceQuotaFetcher) getQuota(serviceCode string, quotaCode string) (fl
 
 	// AWS response payload could contains errors (eg. missing permission)
 	if result.Quota.ErrorReason != nil {
-		s.logger.Error("AWS quota error: ", "errorCode", result.Quota.ErrorReason.ErrorCode, "message", *result.Quota.ErrorReason.ErrorMessage)
+		s.logger.Error("AWS quota error: ", "errorCode", result.Quota.ErrorReason.ErrorCode, "message", aws.ToString(result.Quota.ErrorReason.ErrorMessage))
 		span.SetStatus(codes.Error, "failed to fetch quota")
 		span.RecordError(errQuotaError)
 
