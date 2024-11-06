@@ -343,7 +343,8 @@ See the [Development environment](#development-environment) to start the Prometh
     --version ${PROMETHEUS_RDS_EXPORTER_VERSION} \
     --install \
     --namespace ${KUBERNETES_NAMESPACE} \
-    --set serviceAccount.annotations."eks\.amazonaws\.com\/role-arn"="${SERVICE_ACCOUNT_ANNOTATION}"
+    --set serviceAccount.annotations."eks\.amazonaws\.com\/role-arn"="${SERVICE_ACCOUNT_ANNOTATION}" \
+    --set serviceAccount.name="${IAM_ROLE_NAME}"
     ```
 
 1. Option. Customize Prometheus exporter settings
@@ -379,6 +380,7 @@ See the [Development environment](#development-environment) to start the Prometh
     --install \
     --namespace ${KUBERNETES_NAMESPACE} \
     --set serviceAccount.annotations."eks\.amazonaws\.com\/role-arn"="${SERVICE_ACCOUNT_ANNOTATION}" \
+    --set serviceAccount.name="${IAM_ROLE_NAME}" \
     --values values.yaml
     ```
 
