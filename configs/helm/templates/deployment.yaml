@@ -63,6 +63,14 @@ spec:
               port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.config }}
+          args:
+          - --config
+          - /config/prometheus-rds-exporter.yaml
+          volumeMounts:
+            - mountPath: /config
+              name: config
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
@@ -75,3 +83,10 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- if .Values.config }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "prometheus-rds-exporter.fullname" . }}
+      {{- end }}
+

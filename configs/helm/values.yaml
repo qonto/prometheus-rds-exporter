@@ -11,6 +11,9 @@ image:
 # Define environment variables
 env: {}
 
+# Configuration to generate
+config: {}
+
 # Name of the secret containing AWS credentials
 awsCredentialsSecret: ""
 

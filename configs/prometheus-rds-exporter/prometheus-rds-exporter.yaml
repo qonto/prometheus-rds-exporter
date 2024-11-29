@@ -58,3 +58,8 @@
 
 # Collect AWS RDS usages (AWS Cloudwatch API)
 # collect-usages: true
+
+# Select AWS instances by tags
+# tag-selections:
+#   Environment:
+#   - staging
