@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
+
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/rds"
@@ -31,8 +33,10 @@ const (
 	awsErrorExitCode      = 4
 )
 
-var cfgFile string
-var k = koanf.New(".")
+var (
+	cfgFile string
+	k       = koanf.New(".")
+)
 
 type exporterConfig struct {
 	Debug                  bool                `koanf:"debug"`
@@ -51,6 +55,7 @@ type exporterConfig struct {
 	CollectQuotas          bool                `koanf:"collect-quotas"`
 	CollectUsages          bool                `koanf:"collect-usages"`
 	OTELTracesEnabled      bool                `koanf:"enable-otel-traces"`
+	TagSelections          map[string][]string `koanf:"tag-selections"`
 }
 
 func run(configuration exporterConfig) {
@@ -59,6 +64,7 @@ func run(configuration exporterConfig) {
 		fmt.Println("ERROR: Fail to initialize logger: %w", err)
 		panic(err)
 	}
+
 	logger.Debug(fmt.Sprintf("Config: %+v\n", configuration))
 
 	cfg, err := getAWSConfiguration(logger, configuration.AWSAssumeRoleArn, configuration.AWSAssumeRoleSession)
@@ -74,6 +80,13 @@ func run(configuration exporterConfig) {
 	}
 
 	rdsClient := rds.NewFromConfig(cfg)
+
+	var tagClient *resourcegroupstaggingapi.Client
+
+	if configuration.TagSelections != nil {
+		tagClient = resourcegroupstaggingapi.NewFromConfig(cfg)
+	}
+
 	ec2Client := ec2.NewFromConfig(cfg)
 	cloudWatchClient := cloudwatch.NewFromConfig(cfg)
 	servicequotasClient := servicequotas.NewFromConfig(cfg)
@@ -86,9 +99,10 @@ func run(configuration exporterConfig) {
 		CollectMaintenances:    configuration.CollectMaintenances,
 		CollectQuotas:          configuration.CollectQuotas,
 		CollectUsages:          configuration.CollectUsages,
+		TagSelections:          configuration.TagSelections,
 	}
 
-	collector := exporter.NewCollector(*logger, collectorConfiguration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient)
+	collector := exporter.NewCollector(*logger, collectorConfiguration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, tagClient)
 
 	prometheus.MustRegister(collector)
 
@@ -120,12 +134,14 @@ func NewRootCommand() (*cobra.Command, error) {
 			err := k.Load(posflag.Provider(cmd.Flags(), ".", k), nil)
 			if err != nil {
 				fmt.Printf("ERROR: Unable to interpret flags, %v\n", err)
+
 				return
 			}
 
 			var c exporterConfig
 			if err := k.Unmarshal("", &c); err != nil {
 				fmt.Printf("ERROR: Unable to decode configuration, %v\n", err)
+
 				return
 			}
 			run(c)
@@ -173,17 +189,12 @@ func Execute() {
 func initConfig() {
 	if cfgFile != "" {
 		// Use config file from the flag.
-		if err := k.Load(file.Provider(cfgFile), yaml.Parser()); err != nil {
-			fmt.Printf("error loading config: %v\n", err)
-			os.Exit(1)
-		}
+		err := k.Load(file.Provider(cfgFile), yaml.Parser())
+		cobra.CheckErr(err)
 	} else {
 		// Find home directory.
 		home, err := os.UserHomeDir()
-		if err != nil {
-			fmt.Printf("error finding the home directory: %v\n", err)
-			os.Exit(1)
-		}
+		cobra.CheckErr(err)
 
 		// Search config in home directory or current directory with name "prometheus-rds-exporter.yaml".
 		configurationFilename := "prometheus-rds-exporter.yaml"
@@ -200,7 +211,8 @@ func initConfig() {
 	}
 
 	// Set environment variables.
-	k.Load(env.Provider("PROMETHEUS_RDS_EXPORTER_", ".", func(s string) string {
-		return strings.Replace(strings.ToLower(strings.TrimPrefix(s, "PROMETHEUS_RDS_EXPORTER_")), "_", ".", -1)
+	err := k.Load(env.Provider("PROMETHEUS_RDS_EXPORTER_", ".", func(s string) string {
+		return strings.ReplaceAll(strings.ToLower(strings.TrimPrefix(s, "PROMETHEUS_RDS_EXPORTER_")), "_", ".")
 	}), nil)
+	cobra.CheckErr(err)
 }
