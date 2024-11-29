@@ -11,7 +11,7 @@ image:
 # Define environment variables
 env: {}
 
-# Configuration to generate
+# Application configuration. If set a configmap will be created. For example values see https://github.com/qonto/prometheus-rds-exporter/blob/main/configs/prometheus-rds-exporter/prometheus-rds-exporter.yaml
 config: {}
 
 # Name of the secret containing AWS credentials
