@@ -11,13 +11,17 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
 	"github.com/aws/aws-sdk-go-v2/service/rds"
 	"github.com/aws/aws-sdk-go-v2/service/servicequotas"
+	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/file"
+	"github.com/knadh/koanf/providers/posflag"
+	"github.com/knadh/koanf/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/exporter"
 	"github.com/qonto/prometheus-rds-exporter/internal/infra/build"
 	"github.com/qonto/prometheus-rds-exporter/internal/infra/http"
 	"github.com/qonto/prometheus-rds-exporter/internal/infra/logger"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 const (
@@ -28,24 +32,25 @@ const (
 )
 
 var cfgFile string
+var k = koanf.New(".")
 
 type exporterConfig struct {
-	Debug                  bool   `mapstructure:"debug"`
-	LogFormat              string `mapstructure:"log-format"`
-	TLSCertPath            string `mapstructure:"tls-cert-path"`
-	TLSKeyPath             string `mapstructure:"tls-key-path"`
-	MetricPath             string `mapstructure:"metrics-path"`
-	ListenAddress          string `mapstructure:"listen-address"`
-	AWSAssumeRoleSession   string `mapstructure:"aws-assume-role-session"`
-	AWSAssumeRoleArn       string `mapstructure:"aws-assume-role-arn"`
-	CollectInstanceMetrics bool   `mapstructure:"collect-instance-metrics"`
-	CollectInstanceTags    bool   `mapstructure:"collect-instance-tags"`
-	CollectInstanceTypes   bool   `mapstructure:"collect-instance-types"`
-	CollectLogsSize        bool   `mapstructure:"collect-logs-size"`
-	CollectMaintenances    bool   `mapstructure:"collect-maintenances"`
-	CollectQuotas          bool   `mapstructure:"collect-quotas"`
-	CollectUsages          bool   `mapstructure:"collect-usages"`
-	OTELTracesEnabled      bool   `mapstructure:"enable-otel-traces"`
+	Debug                  bool                `koanf:"debug"`
+	LogFormat              string              `koanf:"log-format"`
+	TLSCertPath            string              `koanf:"tls-cert-path"`
+	TLSKeyPath             string              `koanf:"tls-key-path"`
+	MetricPath             string              `koanf:"metrics-path"`
+	ListenAddress          string              `koanf:"listen-address"`
+	AWSAssumeRoleSession   string              `koanf:"aws-assume-role-session"`
+	AWSAssumeRoleArn       string              `koanf:"aws-assume-role-arn"`
+	CollectInstanceMetrics bool                `koanf:"collect-instance-metrics"`
+	CollectInstanceTags    bool                `koanf:"collect-instance-tags"`
+	CollectInstanceTypes   bool                `koanf:"collect-instance-types"`
+	CollectLogsSize        bool                `koanf:"collect-logs-size"`
+	CollectMaintenances    bool                `koanf:"collect-maintenances"`
+	CollectQuotas          bool                `koanf:"collect-quotas"`
+	CollectUsages          bool                `koanf:"collect-usages"`
+	OTELTracesEnabled      bool                `koanf:"enable-otel-traces"`
 }
 
 func run(configuration exporterConfig) {
@@ -54,6 +59,7 @@ func run(configuration exporterConfig) {
 		fmt.Println("ERROR: Fail to initialize logger: %w", err)
 		panic(err)
 	}
+	logger.Debug(fmt.Sprintf("Config: %+v\n", configuration))
 
 	cfg, err := getAWSConfiguration(logger, configuration.AWSAssumeRoleArn, configuration.AWSAssumeRoleSession)
 	if err != nil {
@@ -111,11 +117,15 @@ func NewRootCommand() (*cobra.Command, error) {
 		Long: `Collect AWS RDS key metrics from AWS APIs
 	and expose them as Prometheus metrics.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			var c exporterConfig
-			err := viper.Unmarshal(&c)
+			err := k.Load(posflag.Provider(cmd.Flags(), ".", k), nil)
 			if err != nil {
-				fmt.Println("ERROR: Unable to decode configuration, %w", err)
+				fmt.Printf("ERROR: Unable to interpret flags, %v\n", err)
+				return
+			}
 
+			var c exporterConfig
+			if err := k.Unmarshal("", &c); err != nil {
+				fmt.Printf("ERROR: Unable to decode configuration, %v\n", err)
 				return
 			}
 			run(c)
@@ -142,86 +152,6 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().BoolP("collect-quotas", "", true, "Collect AWS RDS quotas")
 	cmd.Flags().BoolP("collect-usages", "", true, "Collect AWS RDS usages")
 
-	err := viper.BindPFlag("debug", cmd.Flags().Lookup("debug"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'debug' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("log-format", cmd.Flags().Lookup("log-format"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'log-format' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("enable-otel-traces", cmd.Flags().Lookup("enable-otel-traces"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'enable-otel-traces' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("metrics-path", cmd.Flags().Lookup("metrics-path"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'metrics-path' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("tls-cert-path", cmd.Flags().Lookup("tls-cert-path"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'tls-cert-path' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("tls-key-path", cmd.Flags().Lookup("tls-key-path"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'tls-key-path' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("listen-address", cmd.Flags().Lookup("listen-address"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'listen-address' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("aws-assume-role-arn", cmd.Flags().Lookup("aws-assume-role-arn"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'aws-assume-role-arn' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("aws-assume-role-session", cmd.Flags().Lookup("aws-assume-role-session"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'aws-assume-role-session' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("collect-instance-metrics", cmd.Flags().Lookup("collect-instance-metrics"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'collect-instance-metrics' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("collect-instance-tags", cmd.Flags().Lookup("collect-instance-tags"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'collect-instance-tags' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("collect-instance-types", cmd.Flags().Lookup("collect-instance-types"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'collect-instance-types' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("collect-quotas", cmd.Flags().Lookup("collect-quotas"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'collect-quotas' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("collect-usages", cmd.Flags().Lookup("collect-usages"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'collect-usages' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("collect-logs-size", cmd.Flags().Lookup("collect-logs-size"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'collect-logs-size' parameter: %w", err)
-	}
-
-	err = viper.BindPFlag("collect-maintenances", cmd.Flags().Lookup("collect-maintenances"))
-	if err != nil {
-		return cmd, fmt.Errorf("failed to bind 'collect-maintenances' parameter: %w", err)
-	}
-
 	return cmd, nil
 }
 
@@ -243,32 +173,34 @@ func Execute() {
 func initConfig() {
 	if cfgFile != "" {
 		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
+		if err := k.Load(file.Provider(cfgFile), yaml.Parser()); err != nil {
+			fmt.Printf("error loading config: %v\n", err)
+			os.Exit(1)
+		}
 	} else {
-		// Find home directory
+		// Find home directory.
 		home, err := os.UserHomeDir()
-		cobra.CheckErr(err)
+		if err != nil {
+			fmt.Printf("error finding the home directory: %v\n", err)
+			os.Exit(1)
+		}
 
-		// Search config in home directory or current directory with name "prometheus-rds-exporter.yaml"
-
+		// Search config in home directory or current directory with name "prometheus-rds-exporter.yaml".
 		configurationFilename := "prometheus-rds-exporter.yaml"
 		currentPathFilename := configurationFilename
 		homeFilename := filepath.Join(home, configurationFilename)
 
-		if _, err := os.Stat(homeFilename); err == nil {
-			viper.SetConfigFile(homeFilename)
+		if err := k.Load(file.Provider(homeFilename), yaml.Parser()); err == nil {
+			fmt.Printf("Using config file: %s\n", homeFilename)
 		}
 
-		if _, err := os.Stat(currentPathFilename); err == nil {
-			viper.SetConfigFile(currentPathFilename)
+		if err := k.Load(file.Provider(currentPathFilename), yaml.Parser()); err == nil {
+			fmt.Printf("Using config file: %s\n", currentPathFilename)
 		}
 	}
 
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Fprintln(os.Stderr, "Using config file:", viper.ConfigFileUsed())
-	}
-
-	viper.SetEnvPrefix("prometheus_rds_exporter") // will be uppercased automatically
-	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
-	viper.AutomaticEnv()
+	// Set environment variables.
+	k.Load(env.Provider("PROMETHEUS_RDS_EXPORTER_", ".", func(s string) string {
+		return strings.Replace(strings.ToLower(strings.TrimPrefix(s, "PROMETHEUS_RDS_EXPORTER_")), "_", ".", -1)
+	}), nil)
 }
