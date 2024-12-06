@@ -40,7 +40,7 @@ func TestWithAllDisabledCollectors(t *testing.T) {
 		CollectUsages:          false,
 	}
 
-	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient)
+	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
 
 	testutil.CollectAndCount(collector)
 
@@ -76,7 +76,7 @@ func TestCollector(t *testing.T) {
 		CollectUsages:          true,
 	}
 
-	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient)
+	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
 
 	testutil.CollectAndCount(collector)
 

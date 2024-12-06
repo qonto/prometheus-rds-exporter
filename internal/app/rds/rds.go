@@ -5,12 +5,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"reflect"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_rds "github.com/aws/aws-sdk-go-v2/service/rds"
 	aws_rds_types "github.com/aws/aws-sdk-go-v2/service/rds/types"
+	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
+	tag_types "github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi/types"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/codes"
@@ -20,6 +23,7 @@ import (
 type Configuration struct {
 	CollectLogsSize     bool
 	CollectMaintenances bool
+	TagSelections       map[string][]string
 }
 
 type Metrics struct {
@@ -28,6 +32,7 @@ type Metrics struct {
 
 type Statistics struct {
 	RdsAPICall float64
+	TagAPICall float64
 }
 
 type RdsInstanceMetrics struct {
@@ -114,10 +119,12 @@ type RDSClient interface {
 	DescribeDBLogFiles(context.Context, *aws_rds.DescribeDBLogFilesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBLogFilesOutput, error)
 }
 
-func NewFetcher(ctx context.Context, client RDSClient, configuration Configuration) RDSFetcher {
+func NewFetcher(ctx context.Context, client RDSClient, tagClient resourcegroupstaggingapi.GetResourcesAPIClient, logger slog.Logger, configuration Configuration) RDSFetcher {
 	return RDSFetcher{
 		ctx:           ctx,
 		client:        client,
+		tagClient:     tagClient,
+		logger:        logger,
 		configuration: configuration,
 	}
 }
@@ -127,6 +134,8 @@ type RDSFetcher struct {
 	client        RDSClient
 	statistics    Statistics
 	configuration Configuration
+	tagClient     resourcegroupstaggingapi.GetResourcesAPIClient
+	logger        slog.Logger
 }
 
 func (r *RDSFetcher) GetStatistics() Statistics {
@@ -199,7 +208,57 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 		}
 	}
 
-	input := &aws_rds.DescribeDBInstancesInput{}
+	var filters []aws_rds_types.Filter
+
+	if r.configuration.TagSelections != nil {
+		var tagFilters []tag_types.TagFilter
+
+		for k, v := range r.configuration.TagSelections {
+			keyCopy := k
+			tagFilters = append(tagFilters, tag_types.TagFilter{
+				Key:    &keyCopy,
+				Values: v,
+			})
+		}
+
+		_, resourcesSpan := tracer.Start(ctx, "find-rds-instances")
+		resourcesInput := &resourcegroupstaggingapi.GetResourcesInput{
+			ResourceTypeFilters: []string{"rds:db"},
+			TagFilters:          tagFilters,
+		}
+
+		var arns []string
+
+		resourcesPaginator := resourcegroupstaggingapi.NewGetResourcesPaginator(r.tagClient, resourcesInput)
+
+		for resourcesPaginator.HasMorePages() {
+			r.statistics.TagAPICall++
+
+			resources, err := resourcesPaginator.NextPage(ctx)
+			if err != nil {
+				return Metrics{}, fmt.Errorf("can't find instances for tags %v: %w", r.configuration.TagSelections, err)
+			}
+
+			for _, res := range resources.ResourceTagMappingList {
+				arns = append(arns, *res.ResourceARN)
+			}
+		}
+
+		if len(arns) == 0 {
+			r.logger.Warn(fmt.Sprintf("no resources any matching tag selection (won't limit which dbs to get metrics for): %v", r.configuration.TagSelections))
+			resourcesSpan.SetStatus(codes.Error, "did not find any RDS instances matching tag selection")
+		} else {
+			id := "db-instance-id"
+			filters = append(filters, aws_rds_types.Filter{
+				Name:   &id,
+				Values: arns,
+			})
+
+			resourcesSpan.SetStatus(codes.Ok, "found RDS instances matching tag selection")
+		}
+	}
+
+	input := &aws_rds.DescribeDBInstancesInput{Filters: filters}
 
 	paginator := aws_rds.NewDescribeDBInstancesPaginator(r.client, input)
 	for paginator.HasMorePages() {

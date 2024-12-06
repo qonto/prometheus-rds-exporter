@@ -10,7 +10,6 @@ Steps:
 
     1. Add a new field in `exporterConfig` structure in `cmd/root.go`
     1. Add the parameter in flag `cmd.Flags()`
-    1. Add the parameter in viper `viper.BindPFlag()`
 
 1. Add tests
 

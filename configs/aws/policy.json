@@ -2,6 +2,14 @@
     "Version": "2012-10-17",
     "Statement": [
         {
+            "Sid": "AllowSearchDBByTags",
+            "Effect": "Allow",
+            "Action": [
+                "tag:GetResources"
+            ],
+            "Resource": "*"
+        },
+        {
             "Sid": "AllowInstanceAndLogDescriptions",
             "Effect": "Allow",
             "Action": [
