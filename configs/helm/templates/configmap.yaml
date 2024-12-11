@@ -1,0 +1,10 @@
+{{- if .Values.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "prometheus-rds-exporter.fullname" . }}
+  labels:
+    {{- include "prometheus-rds-exporter.labels" . | nindent 4 }}
+data:
+  prometheus-rds-exporter.yaml: | {{ toYaml .Values.config | nindent 4 }}
+{{- end }}
