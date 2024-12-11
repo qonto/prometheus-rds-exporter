@@ -172,25 +172,25 @@ Prometheus RDS exporter</br>
 
 Configuration could be defined in [prometheus-rds-exporter.yaml](https://github.com/qonto/prometheus-rds-exporter/blob/main/configs/prometheus-rds-exporter/prometheus-rds-exporter.yaml) or environment variables (format `PROMETHEUS_RDS_EXPORTER_<PARAMETER_NAME>`).
 
-| Parameter                | Description                                           | Default                 |
-|--------------------------|-------------------------------------------------------|-------------------------|
-| aws-assume-role-arn      | AWS IAM ARN role to assume to fetch metrics           |                         |
-| aws-assume-role-session  | AWS assume role session name                          | prometheus-rds-exporter |
-| collect-instance-metrics | Collect AWS instances metrics (AWS Cloudwatch API)    | true                    |
-| collect-instance-tags    | Collect AWS RDS tags                                  | true                    |
-| collect-instance-types   | Collect AWS instance types information (AWS EC2 API)  | true                    |
-| collect-logs-size        | Collect AWS instances logs size (AWS RDS API)         | true                    |
-| collect-maintenances     | Collect AWS instances maintenances (AWS RDS API)      | true                    |
-| collect-quotas           | Collect AWS RDS quotas (AWS quotas API)               | true                    |
-| collect-usages           | Collect AWS RDS usages (AWS Cloudwatch API)           | true                    |
-| debug                    | Enable debug mode                                     |                         |
-| tag-selections           | Tags to select database instances with                |                         |
-| enable-otel-traces       | Enable OpenTelemetry traces. See [configuration](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/) | false                   |
-| listen-address           | Address to listen on for web interface                | :9043                   |
-| log-format               | Log format (`text` or `json`)                         | json                    |
-| metrics-path             | Path under which to expose metrics                    | /metrics                |
-| tls-cert-path            | Path to TLS certificate                               |                         |
-| tls-key-path             | Path to private key for TLS                           |                         |
+| Parameter                | Description                                                                                                                                                                                                                       | Default                 |
+|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------|
+| aws-assume-role-arn      | AWS IAM ARN role to assume to fetch metrics                                                                                                                                                                                       |                         |
+| aws-assume-role-session  | AWS assume role session name                                                                                                                                                                                                      | prometheus-rds-exporter |
+| collect-instance-metrics | Collect AWS instances metrics (AWS Cloudwatch API)                                                                                                                                                                                | true                    |
+| collect-instance-tags    | Collect AWS RDS tags                                                                                                                                                                                                              | true                    |
+| collect-instance-types   | Collect AWS instance types information (AWS EC2 API)                                                                                                                                                                              | true                    |
+| collect-logs-size        | Collect AWS instances logs size (AWS RDS API)                                                                                                                                                                                     | true                    |
+| collect-maintenances     | Collect AWS instances maintenances (AWS RDS API)                                                                                                                                                                                  | true                    |
+| collect-quotas           | Collect AWS RDS quotas (AWS quotas API)                                                                                                                                                                                           | true                    |
+| collect-usages           | Collect AWS RDS usages (AWS Cloudwatch API)                                                                                                                                                                                       | true                    |
+| tag-selections           | Tags to select database instances with. See [configuration on TagFilters field](https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/API_GetResources.html#resourcegrouptagging-GetResources-request-TagFilters) |                         |
+| debug                    | Enable debug mode                                                                                                                                                                                                                 |                         |
+| enable-otel-traces       | Enable OpenTelemetry traces. See [configuration](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/)                                                                                                        | false                   |
+| listen-address           | Address to listen on for web interface                                                                                                                                                                                            | :9043                   |
+| log-format               | Log format (`text` or `json`)                                                                                                                                                                                                     | json                    |
+| metrics-path             | Path under which to expose metrics                                                                                                                                                                                                | /metrics                |
+| tls-cert-path            | Path to TLS certificate                                                                                                                                                                                                           |                         |
+| tls-key-path             | Path to private key for TLS                                                                                                                                                                                                       |                         |
 
 Configuration parameters priorities:
 
