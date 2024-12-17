@@ -297,6 +297,9 @@ See the [Development environment](#development-environment) to start the Prometh
 
 **Recommended method** to deploy on AWS EKS using [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) and Helm.
 
+> [!IMPORTANT]
+> You need a [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator) already installed in your cluster.
+
 1. Create an IAM policy
 
     ```bash
