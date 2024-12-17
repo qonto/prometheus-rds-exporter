@@ -293,6 +293,9 @@ See all available configuration parameters in [configs/helm/values.yaml](https:/
 
 See the [Development environment](#development-environment) to start the Prometheus RDS exporter, Prometheus, and Grafana with dashboards in a minute.
 
+> [!NOTE]
+> You use Istio and have Prometheus within Istio-system? [Do this first.](#istio-specific-steps)
+
 ### AWS EKS
 
 **Recommended method** to deploy on AWS EKS using [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) and Helm.
@@ -523,6 +526,24 @@ See the [Development environment](#development-environment) to start the Prometh
     ```bash
     docker run -p 9043:9043 -e AWS_PROFILE=${AWS_PROFILE} -v $HOME/.aws:/app/.aws public.ecr.aws/qonto/prometheus-rds-exporter:latest
     ```
+
+### Istio specific steps
+
+If you use **Istio** and have **Prometheus within Istio-system**, you'll need to do the following modification before following the install instructions.
+
+1. Get your `values.yaml` for your currently deployed Prometheus system (ex: `helm get values RELEASE_NAME [flags]`)
+1. Edit the values, under `additionalScrapeConfigs` insert an additional `job_name`:
+
+    ```yaml
+        - job_name: prometheus-rds-exporter
+          kubernetes_sd_configs:
+            - namespaces:
+                names:
+                - monitoring
+              role: endpoints
+    ```
+
+1. Apply the edited values (ex: `helm upgrade prometheus prometheus-community/kube-prometheus-stack -n istio-system -f values.yaml --version 62.2.1` - _add the repo if you haven't on helm, and change the repo if you're using another version_).
 
 ## Alternative
 
