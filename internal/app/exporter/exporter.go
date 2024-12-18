@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"sync"
 
+	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/cloudwatch"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/ec2"
@@ -35,6 +37,7 @@ type Configuration struct {
 	CollectMaintenances    bool
 	CollectQuotas          bool
 	CollectUsages          bool
+	TagSelections          map[string][]string
 }
 
 type counters struct {
@@ -44,6 +47,7 @@ type counters struct {
 	RDSAPIcalls           float64
 	ServiceQuotasAPICalls float64
 	UsageAPIcalls         float64
+	TagAPICalls           float64
 }
 
 type metrics struct {
@@ -68,6 +72,7 @@ type rdsCollector struct {
 	EC2Client           EC2Client
 	servicequotasClient servicequotasClient
 	cloudWatchClient    cloudWatchClient
+	tagClient           resourcegroupstaggingapi.GetResourcesAPIClient
 
 	errors                      *prometheus.Desc
 	DBLoad                      *prometheus.Desc
@@ -116,7 +121,7 @@ type rdsCollector struct {
 	age                         *prometheus.Desc
 }
 
-func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient) *rdsCollector {
+func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient, tagClient resourcegroupstaggingapi.GetResourcesAPIClient) *rdsCollector {
 	return &rdsCollector{
 		logger:              logger,
 		awsAccountID:        awsAccountID,
@@ -125,6 +130,7 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 		servicequotasClient: servicequotasClient,
 		EC2Client:           ec2Client,
 		cloudWatchClient:    cloudWatchClient,
+		tagClient:           tagClient,
 
 		configuration: collectorConfiguration,
 
@@ -378,9 +384,10 @@ func (c *rdsCollector) fetchMetrics() error {
 	// Fetch RDS instances metrics
 	c.logger.Info("get RDS metrics")
 
-	rdsFetcher := rds.NewFetcher(c.ctx, c.rdsClient, rds.Configuration{
+	rdsFetcher := rds.NewFetcher(c.ctx, c.rdsClient, c.tagClient, c.logger, rds.Configuration{
 		CollectLogsSize:     c.configuration.CollectLogsSize,
 		CollectMaintenances: c.configuration.CollectMaintenances,
+		TagSelections:       c.configuration.TagSelections,
 	})
 
 	rdsMetrics, err := rdsFetcher.GetInstancesMetrics()
@@ -390,6 +397,7 @@ func (c *rdsCollector) fetchMetrics() error {
 
 	c.metrics.RDS = rdsMetrics
 	c.counters.RDSAPIcalls += rdsFetcher.GetStatistics().RdsAPICall
+	c.counters.TagAPICalls += rdsFetcher.GetStatistics().TagAPICall
 	c.logger.Debug("RDS metrics fetched")
 
 	// Compute uniq instances identifiers and instance types
@@ -543,6 +551,8 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 
 	// RDS metrics
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.RDSAPIcalls, c.awsAccountID, c.awsRegion, "rds")
+	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.TagAPICalls, c.awsAccountID, c.awsRegion, "tag")
+
 	for dbidentifier, instance := range c.metrics.RDS.Instances {
 		ch <- prometheus.MustNewConstMetric(
 			c.allocatedStorage,

@@ -38,6 +38,7 @@ func TestGetUniqTypeAndIdentifiers(t *testing.T) {
 			if !slices.Equal(instanceIdentifiers, tc.instanceIdentifiers) {
 				t.Errorf("instance identifiers mismatch. got %q; want %q", instanceIdentifiers, tc.instanceIdentifiers)
 			}
+
 			if !slices.Equal(instanceTypes, tc.instanceTypes) {
 				t.Errorf("instance types mismatch. got %q; want %q", instanceTypes, tc.instanceTypes)
 			}
