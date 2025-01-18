@@ -262,11 +262,15 @@ func TestGetDBInstanceStatusCode(t *testing.T) {
 		{input: "backing-up", want: rds.InstanceStatusBackingUp},
 		{input: "creating", want: rds.InstanceStatusCreating},
 		{input: "deleting", want: rds.InstanceStatusDeleting},
+		{input: "failed", want: rds.InstanceStatusFailed},
 		{input: "future", want: rds.InstanceStatusUnknown},
 		{input: "modifying", want: rds.InstanceStatusModifying},
 		{input: "stopped", want: rds.InstanceStatusStopped},
 		{input: "stopping", want: rds.InstanceStatusStopping},
+		{input: "storage-full", want: rds.InstanceStatusStorageFull},
+		{input: "rebooting", want: rds.InstanceStatusRebooting},
 		{input: "unknown", want: rds.InstanceStatusUnknown},
+		{input: "upgrading", want: rds.InstanceStatusUpgrading},
 	}
 
 	for _, tc := range tests {
