@@ -69,6 +69,10 @@ const (
 	InstanceStatusStopping                 int     = -2
 	InstanceStatusCreating                 int     = -3
 	InstanceStatusDeleting                 int     = -4
+	InstanceStatusRebooting                int     = -5
+	InstanceStatusFailed                   int     = -6
+	InstanceStatusStorageFull              int     = -7
+	InstanceStatusUpgrading                int     = -8
 	NoPendingMaintenanceOperation          string  = "no"
 	UnknownMaintenanceOperation            string  = "unknown"
 	UnscheduledPendingMaintenanceOperation string  = "pending"
@@ -97,15 +101,19 @@ const (
 var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/rds")
 
 var instanceStatuses = map[string]int{
-	"available":  InstanceStatusAvailable,
-	"backing-up": InstanceStatusBackingUp,
-	"creating":   InstanceStatusCreating,
-	"deleting":   InstanceStatusDeleting,
-	"modifying":  InstanceStatusModifying,
-	"starting":   InstanceStatusStarting,
-	"stopped":    InstanceStatusStopped,
-	"stopping":   InstanceStatusStopping,
-	"unknown":    InstanceStatusUnknown,
+	"available":    InstanceStatusAvailable,
+	"backing-up":   InstanceStatusBackingUp,
+	"creating":     InstanceStatusCreating,
+	"deleting":     InstanceStatusDeleting,
+	"failed":       InstanceStatusFailed,
+	"modifying":    InstanceStatusModifying,
+	"rebooting":    InstanceStatusRebooting,
+	"starting":     InstanceStatusStarting,
+	"stopped":      InstanceStatusStopped,
+	"storage-full": InstanceStatusStorageFull,
+	"stopping":     InstanceStatusStopping,
+	"unknown":      InstanceStatusUnknown,
+	"upgrading":    InstanceStatusUpgrading,
 }
 
 type RDSClient interface {
