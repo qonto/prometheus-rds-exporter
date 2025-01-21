@@ -119,10 +119,19 @@ local colors = common.colors;
       + standardOptions.withMappings([
         standardOptions.mapping.ValueMap.withType('value')
         + standardOptions.mapping.ValueMap.withOptions({
-          '-1': { index: 0, color: 'purple', text: 'Unknown' },
-          '0': { index: 1, color: colors.danger, text: 'Stopped' },
-          '1': { index: 2, color: colors.ok, text: 'Available' },
-          '2': { index: 3, color: colors.notice, text: 'Backing-up' },
+          '-8': { index: 0, color: colors.info, text: 'Upgrading' },
+          '-7': { index: 1, color: colors.danger, text: 'Storage-full' },
+          '-6': { index: 2, color: colors.danger, text: 'Failed' },
+          '-5': { index: 3, color: colors.warning, text: 'Rebooting' },
+          '-4': { index: 4, color: colors.danger, text: 'Deleting' },
+          '-3': { index: 5, color: colors.notice, text: 'Creating' },
+          '-2': { index: 6, color: colors.notice, text: 'Stopping' },
+          '-1': { index: 7, color: 'purple', text: 'Unknown' },
+          '0': { index: 8, color: colors.danger, text: 'Stopped' },
+          '1': { index: 9, color: colors.ok, text: 'Available' },
+          '2': { index: 10, color: colors.notice, text: 'Backing-up' },
+          '3': { index: 11, color: colors.ok, text: 'Starting' },
+          '4': { index: 12, color: colors.info, text: 'Modifying' },
         }),
       ]),
   },
@@ -386,13 +395,13 @@ local colors = common.colors;
         fieldOverride.byName.new('Replication slots')
         + standardOptions.override.byType.withPropertiesFromOptions(
           color.withMode('fixed')
-          + color.withFixedColor('blue')
+          + color.withFixedColor(colors.info)
           + custom.stacking.withMode('normal')
         ),
         fieldOverride.byName.new('Other')
         + standardOptions.override.byType.withPropertiesFromOptions(
           color.withMode('fixed')
-          + color.withFixedColor('orange')
+          + color.withFixedColor(colors.warning)
           + custom.stacking.withMode('normal')
         ),
         fieldOverride.byName.new('Used')
@@ -455,12 +464,19 @@ local colors = common.colors;
       + standardOptions.withMappings([
         standardOptions.mapping.ValueMap.withType('value')
         + standardOptions.mapping.ValueMap.withOptions({
-          '-2': { index: -2, color: colors.warning, text: 'Stopping' },
-          '-1': { index: -1, color: colors.notice, text: 'Unknown' },
-          '0': { index: -1, color: colors.warning, text: 'Stopped' },
-          '1': { index: -1, color: colors.ok, text: 'Available' },
-          '2': { index: -1, color: colors.notice, text: 'Backing-up' },
-          '3': { index: -1, color: colors.warning, text: 'Starting' },
+          '-8': { index: 0, color: colors.info, text: 'Upgrading' },
+          '-7': { index: 1, color: colors.danger, text: 'Storage-full' },
+          '-6': { index: 2, color: colors.danger, text: 'Failed' },
+          '-5': { index: 3, color: colors.warning, text: 'Rebooting' },
+          '-4': { index: 4, color: colors.danger, text: 'Deleting' },
+          '-3': { index: 5, color: colors.notice, text: 'Creating' },
+          '-2': { index: 6, color: colors.notice, text: 'Stopping' },
+          '-1': { index: 7, color: 'purple', text: 'Unknown' },
+          '0': { index: 8, color: colors.danger, text: 'Stopped' },
+          '1': { index: 9, color: colors.ok, text: 'Available' },
+          '2': { index: 10, color: colors.notice, text: 'Backing-up' },
+          '3': { index: 11, color: colors.ok, text: 'Starting' },
+          '4': { index: 12, color: colors.info, text: 'Modifying' },
         }),
       ])
       + standardOptions.withMin(null)

@@ -12,6 +12,7 @@ local options = link.dashboards.options;
     transparent: 'transparent',
     default: 'white',
     ok: 'green',
+    info: 'blue',
     notice: 'yellow',
     warning: 'orange',
     danger: 'red',
