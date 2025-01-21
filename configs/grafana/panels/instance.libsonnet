@@ -131,7 +131,7 @@ local colors = common.colors;
           '1': { index: 9, color: colors.ok, text: 'Available' },
           '2': { index: 10, color: colors.notice, text: 'Backing-up' },
           '3': { index: 11, color: colors.ok, text: 'Starting' },
-          '4': { index: 12, color: colors.transparent, text: 'Modifying' },
+          '4': { index: 12, color: colors.info, text: 'Modifying' },
         }),
       ]),
   },
@@ -476,7 +476,7 @@ local colors = common.colors;
           '1': { index: 9, color: colors.ok, text: 'Available' },
           '2': { index: 10, color: colors.notice, text: 'Backing-up' },
           '3': { index: 11, color: colors.ok, text: 'Starting' },
-          '4': { index: 12, color: colors.transparent, text: 'Modifying' },
+          '4': { index: 12, color: colors.info, text: 'Modifying' },
         }),
       ])
       + standardOptions.withMin(null)
