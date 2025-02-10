@@ -90,37 +90,37 @@ It collects key metrics about:
 <details>
   <summary>Standard Go and Prometheus metrics are also available</summary>
 
-| Name   | Labels | Description |
-| ------ | -------| ----------- |
-| go_gc_duration_seconds | `quantile` | A summary of the pause duration of garbage collection cycles. |
-| go_goroutines | | Number of goroutines that currently exist. |
-| go_info | `version` | Information about the Go environment. |
-| go_memstats_alloc_bytes | | Number of bytes allocated and still in use. |
-| go_memstats_alloc_bytes_total | | Total number of bytes allocated, even if freed. |
-| go_memstats_buck_hash_sys_bytes | | Number of bytes used by the profiling bucket hash table. |
-| go_memstats_frees_total | | Total number of frees. |
-| go_memstats_gc_sys_bytes | | Number of bytes used for garbage collection system metadata. |
-| go_memstats_heap_alloc_bytes | | Number of heap bytes allocated and still in use. |
-| go_memstats_heap_idle_bytes | | Number of heap bytes waiting to be used. |
-| go_memstats_heap_inuse_bytes | | Number of heap bytes that are in use. |
-| go_memstats_heap_objects | | Number of allocated objects. |
-| go_memstats_heap_released_bytes | | Number of heap bytes released to OS. |
-| go_memstats_heap_sys_bytes | | Number of heap bytes obtained from system. |
-| go_memstats_last_gc_time_seconds | | Number of seconds since 1970 of last garbage collection. |
-| go_memstats_lookups_total | | Total number of pointer lookups. |
-| go_memstats_mallocs_total | | Total number of mallocs. |
-| go_memstats_mcache_inuse_bytes | | Number of bytes in use by mcache structures. |
-| go_memstats_mcache_sys_bytes | | Number of bytes used for mcache structures obtained from system. |
-| go_memstats_mspan_inuse_bytes | | Number of bytes in use by mspan structures. |
-| go_memstats_mspan_sys_bytes | | Number of bytes used for mspan structures obtained from system. |
-| go_memstats_next_gc_bytes | | Number of heap bytes when next garbage collection will take place. |
-| go_memstats_other_sys_bytes | | Number of bytes used for other system allocations. |
-| go_memstats_stack_inuse_bytes | | Number of bytes in use by the stack allocator. |
-| go_memstats_stack_sys_bytes | | Number of bytes obtained from system for stack allocator. |
-| go_memstats_sys_bytes | | Number of bytes obtained from system. |
-| go_threads | | Number of OS threads created. |
-| promhttp_metric_handler_requests_in_flight | | Current number of scrapes being served. |
-| promhttp_metric_handler_requests_total | `code` | Total number of scrapes by HTTP status code. |
+| Name                                       | Labels     | Description                                                        |
+| ------------------------------------------ | ---------- | ------------------------------------------------------------------ |
+| go_gc_duration_seconds                     | `quantile` | A summary of the pause duration of garbage collection cycles.      |
+| go_goroutines                              |            | Number of goroutines that currently exist.                         |
+| go_info                                    | `version`  | Information about the Go environment.                              |
+| go_memstats_alloc_bytes                    |            | Number of bytes allocated and still in use.                        |
+| go_memstats_alloc_bytes_total              |            | Total number of bytes allocated, even if freed.                    |
+| go_memstats_buck_hash_sys_bytes            |            | Number of bytes used by the profiling bucket hash table.           |
+| go_memstats_frees_total                    |            | Total number of frees.                                             |
+| go_memstats_gc_sys_bytes                   |            | Number of bytes used for garbage collection system metadata.       |
+| go_memstats_heap_alloc_bytes               |            | Number of heap bytes allocated and still in use.                   |
+| go_memstats_heap_idle_bytes                |            | Number of heap bytes waiting to be used.                           |
+| go_memstats_heap_inuse_bytes               |            | Number of heap bytes that are in use.                              |
+| go_memstats_heap_objects                   |            | Number of allocated objects.                                       |
+| go_memstats_heap_released_bytes            |            | Number of heap bytes released to OS.                               |
+| go_memstats_heap_sys_bytes                 |            | Number of heap bytes obtained from system.                         |
+| go_memstats_last_gc_time_seconds           |            | Number of seconds since 1970 of last garbage collection.           |
+| go_memstats_lookups_total                  |            | Total number of pointer lookups.                                   |
+| go_memstats_mallocs_total                  |            | Total number of mallocs.                                           |
+| go_memstats_mcache_inuse_bytes             |            | Number of bytes in use by mcache structures.                       |
+| go_memstats_mcache_sys_bytes               |            | Number of bytes used for mcache structures obtained from system.   |
+| go_memstats_mspan_inuse_bytes              |            | Number of bytes in use by mspan structures.                        |
+| go_memstats_mspan_sys_bytes                |            | Number of bytes used for mspan structures obtained from system.    |
+| go_memstats_next_gc_bytes                  |            | Number of heap bytes when next garbage collection will take place. |
+| go_memstats_other_sys_bytes                |            | Number of bytes used for other system allocations.                 |
+| go_memstats_stack_inuse_bytes              |            | Number of bytes in use by the stack allocator.                     |
+| go_memstats_stack_sys_bytes                |            | Number of bytes obtained from system for stack allocator.          |
+| go_memstats_sys_bytes                      |            | Number of bytes obtained from system.                              |
+| go_threads                                 |            | Number of OS threads created.                                      |
+| promhttp_metric_handler_requests_in_flight |            | Current number of scrapes being served.                            |
+| promhttp_metric_handler_requests_total     | `code`     | Total number of scrapes by HTTP status code.                       |
 
 </details>
 
@@ -172,25 +172,25 @@ Prometheus RDS exporter</br>
 
 Configuration could be defined in [prometheus-rds-exporter.yaml](https://github.com/qonto/prometheus-rds-exporter/blob/main/configs/prometheus-rds-exporter/prometheus-rds-exporter.yaml) or environment variables (format `PROMETHEUS_RDS_EXPORTER_<PARAMETER_NAME>`).
 
-| Parameter                | Description                                                                                                                                                                                                                       | Default                 |
-|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------|
-| aws-assume-role-arn      | AWS IAM ARN role to assume to fetch metrics                                                                                                                                                                                       |                         |
-| aws-assume-role-session  | AWS assume role session name                                                                                                                                                                                                      | prometheus-rds-exporter |
-| collect-instance-metrics | Collect AWS instances metrics (AWS Cloudwatch API)                                                                                                                                                                                | true                    |
-| collect-instance-tags    | Collect AWS RDS tags                                                                                                                                                                                                              | true                    |
-| collect-instance-types   | Collect AWS instance types information (AWS EC2 API)                                                                                                                                                                              | true                    |
-| collect-logs-size        | Collect AWS instances logs size (AWS RDS API)                                                                                                                                                                                     | true                    |
-| collect-maintenances     | Collect AWS instances maintenances (AWS RDS API)                                                                                                                                                                                  | true                    |
-| collect-quotas           | Collect AWS RDS quotas (AWS quotas API)                                                                                                                                                                                           | true                    |
-| collect-usages           | Collect AWS RDS usages (AWS Cloudwatch API)                                                                                                                                                                                       | true                    |
-| tag-selections           | Tags to select database instances with. See [configuration on TagFilters field](https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/API_GetResources.html#resourcegrouptagging-GetResources-request-TagFilters) |                         |
-| debug                    | Enable debug mode                                                                                                                                                                                                                 |                         |
-| enable-otel-traces       | Enable OpenTelemetry traces. See [configuration](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/)                                                                                                        | false                   |
-| listen-address           | Address to listen on for web interface                                                                                                                                                                                            | :9043                   |
-| log-format               | Log format (`text` or `json`)                                                                                                                                                                                                     | json                    |
-| metrics-path             | Path under which to expose metrics                                                                                                                                                                                                | /metrics                |
-| tls-cert-path            | Path to TLS certificate                                                                                                                                                                                                           |                         |
-| tls-key-path             | Path to private key for TLS                                                                                                                                                                                                       |                         |
+|Parameter                | Description                                                                                                                | Default                 |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| aws-assume-role-arn      | AWS IAM ARN role to assume to fetch metrics                                                                                |                         |
+| aws-assume-role-session  | AWS assume role session name                                                                                               | prometheus-rds-exporter |
+| collect-instance-metrics | Collect AWS instances metrics (AWS Cloudwatch API)                                                                         | true                    |
+| collect-instance-tags    | Collect AWS RDS tags                                                                                                       | true                    |
+| collect-instance-types   | Collect AWS instance types information (AWS EC2 API)                                                                       | true                    |
+| collect-logs-size        | Collect AWS instances logs size (AWS RDS API)                                                                              | true                    |
+| collect-maintenances     | Collect AWS instances maintenances (AWS RDS API)                                                                           | true                    |
+| collect-quotas           | Collect AWS RDS quotas (AWS quotas API)                                                                                    | true                    |
+| collect-usages           | Collect AWS RDS usages (AWS Cloudwatch API)                                                                                | true                    |
+| tag-selections           | Tags to select database instances with. Refer to [dedicated section on tag configuration](#tag-configuration)                      |                         |
+| debug                    | Enable debug mode                                                                                                          |                         |
+| enable-otel-traces       | Enable OpenTelemetry traces. See [configuration](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/) | false                   |
+| listen-address           | Address to listen on for web interface                                                                                     | :9043                   |
+| log-format               | Log format (`text` or `json`)                                                                                              | json                    |
+| metrics-path             | Path under which to expose metrics                                                                                         | /metrics                |
+| tls-cert-path            | Path to TLS certificate                                                                                                    |                         |
+| tls-key-path             | Path to private key for TLS                                                                                                |                         |
 
 Configuration parameters priorities:
 
@@ -198,6 +198,22 @@ Configuration parameters priorities:
 2. `prometheus-rds-exporter.yaml` file
 3. Environment variables
 4. Command line flags
+
+### Tag configuration
+
+In your chart, add:
+
+```yaml
+  config:
+    tag-selections:
+      ExampleKey:
+      - examplevalue
+```
+
+_Refer to [AWS configuration on TagFilters field](https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/API_GetResources.html#resourcegrouptagging-GetResources-request-TagFilters)_
+
+> [!IMPORTANT]
+> Tag selection cannot be setup using environment variables configuration.
 
 ### AWS authentication
 
@@ -262,6 +278,14 @@ If you are running on [AWS EKS](https://aws.amazon.com/eks/), we strongly recomm
             "Effect": "Allow",
             "Action": [
                 "ec2:DescribeInstanceTypes"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowInstanceFilterByTags",
+            "Effect": "Allow",
+            "Action": [
+                "tag:GetResources"
             ],
             "Resource": "*"
         }

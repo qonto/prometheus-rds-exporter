@@ -59,6 +59,14 @@
                 "ec2:DescribeInstanceTypes"
             ],
             "Resource": "*"
+        },
+        {
+            "Sid": "AllowInstanceFilterByTag",
+            "Effect": "Allow",
+            "Action": [
+                "tag:GetResources"
+            ],
+            "Resource": "*"
         }
     ]
 }
