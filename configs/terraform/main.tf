@@ -80,4 +80,13 @@ data "aws_iam_policy_document" "prometheus-rds-exporter" {
     ]
     resources = ["*"]
   }
+
+  statement {
+    sid    = "AllowInstanceFilterByTag"
+    effect = "Allow"
+    actions = [
+      "tag:GetResources",
+    ]
+    resources = ["*"]
+  }
 }
