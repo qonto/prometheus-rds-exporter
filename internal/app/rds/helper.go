@@ -7,12 +7,12 @@ import (
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 )
 
-func ThresholdValue(min int64, value int64, max int64) int64 {
+func ThresholdValue(lowerBoundary int64, value int64, higherBoundary int64) int64 {
 	switch {
-	case value < min:
-		return min
-	case value > max:
-		return max
+	case value < lowerBoundary:
+		return lowerBoundary
+	case value > higherBoundary:
+		return higherBoundary
 	default:
 		return value
 	}

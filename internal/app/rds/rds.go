@@ -262,53 +262,56 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 
 func (r *RDSFetcher) getDBInstanceFilters(ctx context.Context) ([]aws_rds_types.Filter, error) {
 	var filters []aws_rds_types.Filter
-	if r.configuration.TagSelections != nil {
-		var tagFilters []tag_types.TagFilter
+	if r.configuration.TagSelections == nil {
+		return filters, nil
+	}
 
-		for k, v := range r.configuration.TagSelections {
-			keyCopy := k
-			tagFilters = append(tagFilters, tag_types.TagFilter{
-				Key:    &keyCopy,
-				Values: v,
-			})
+	var tagFilters []tag_types.TagFilter
+
+	for k, v := range r.configuration.TagSelections {
+		keyCopy := k
+		tagFilters = append(tagFilters, tag_types.TagFilter{
+			Key:    &keyCopy,
+			Values: v,
+		})
+	}
+
+	_, resourcesSpan := tracer.Start(ctx, "find-rds-instances")
+	resourcesInput := &resourcegroupstaggingapi.GetResourcesInput{
+		ResourceTypeFilters: []string{"rds:db"},
+		TagFilters:          tagFilters,
+	}
+
+	var arns []string
+
+	resourcesPaginator := resourcegroupstaggingapi.NewGetResourcesPaginator(r.tagClient, resourcesInput)
+
+	for resourcesPaginator.HasMorePages() {
+		r.statistics.TagAPICall++
+
+		resources, err := resourcesPaginator.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("can't find instances for tags %v: %w", r.configuration.TagSelections, err)
 		}
 
-		_, resourcesSpan := tracer.Start(ctx, "find-rds-instances")
-		resourcesInput := &resourcegroupstaggingapi.GetResourcesInput{
-			ResourceTypeFilters: []string{"rds:db"},
-			TagFilters:          tagFilters,
-		}
-
-		var arns []string
-
-		resourcesPaginator := resourcegroupstaggingapi.NewGetResourcesPaginator(r.tagClient, resourcesInput)
-
-		for resourcesPaginator.HasMorePages() {
-			r.statistics.TagAPICall++
-
-			resources, err := resourcesPaginator.NextPage(ctx)
-			if err != nil {
-				return nil, fmt.Errorf("can't find instances for tags %v: %w", r.configuration.TagSelections, err)
-			}
-
-			for _, res := range resources.ResourceTagMappingList {
-				arns = append(arns, *res.ResourceARN)
-			}
-		}
-
-		if len(arns) == 0 {
-			r.logger.Warn(fmt.Sprintf("no resources any matching tag selection (won't limit which dbs to get metrics for): %v", r.configuration.TagSelections))
-			resourcesSpan.SetStatus(codes.Error, "did not find any RDS instances matching tag selection")
-		} else {
-			id := "db-instance-id"
-			filters = append(filters, aws_rds_types.Filter{
-				Name:   &id,
-				Values: arns,
-			})
-
-			resourcesSpan.SetStatus(codes.Ok, "found RDS instances matching tag selection")
+		for _, res := range resources.ResourceTagMappingList {
+			arns = append(arns, *res.ResourceARN)
 		}
 	}
+
+	if len(arns) == 0 {
+		r.logger.Warn(fmt.Sprintf("no resources any matching tag selection (won't limit which dbs to get metrics for): %v", r.configuration.TagSelections))
+		resourcesSpan.SetStatus(codes.Error, "did not find any RDS instances matching tag selection")
+	} else {
+		id := "db-instance-id"
+		filters = append(filters, aws_rds_types.Filter{
+			Name:   &id,
+			Values: arns,
+		})
+
+		resourcesSpan.SetStatus(codes.Ok, "found RDS instances matching tag selection")
+	}
+
 	return filters, nil
 }
 
