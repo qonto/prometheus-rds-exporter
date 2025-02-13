@@ -60,7 +60,7 @@ func newRdsCertificateDetails() *aws_rds_types.CertificateDetails {
 	}
 }
 
-//nolint:golint,gomnd
+//nolint:golint,mnd
 func NewRdsInstance() *aws_rds_types.DBInstance {
 	awsRegion := "eu-west-3"
 	awsAccountID := "123456789012"

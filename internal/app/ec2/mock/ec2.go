@@ -9,7 +9,7 @@ import (
 	"github.com/qonto/prometheus-rds-exporter/internal/app/ec2"
 )
 
-//nolint:golint,gomnd
+//nolint:golint,mnd
 var InstanceT3Large = ec2.EC2InstanceMetrics{
 	BaselineIOPS:       4000,
 	BaselineThroughput: 86.88,
@@ -19,7 +19,7 @@ var InstanceT3Large = ec2.EC2InstanceMetrics{
 	Vcpu:               2,
 }
 
-//nolint:golint,gomnd
+//nolint:golint,mnd
 var InstanceT3Small = ec2.EC2InstanceMetrics{
 	BaselineIOPS:       1000,
 	BaselineThroughput: 21.75,
@@ -29,7 +29,7 @@ var InstanceT3Small = ec2.EC2InstanceMetrics{
 	Vcpu:               2,
 }
 
-//nolint:golint,gomnd
+//nolint:golint,mnd
 var InstanceT2Small = ec2.EC2InstanceMetrics{
 	Memory: 2,
 	Vcpu:   1,
