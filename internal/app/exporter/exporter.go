@@ -382,7 +382,7 @@ func (c *rdsCollector) fetchMetrics() error {
 	}
 
 	// Fetch RDS instances metrics
-	c.logger.Info("get RDS metrics")
+	c.logger.Debug("get RDS metrics")
 
 	rdsFetcher := rds.NewFetcher(c.ctx, c.rdsClient, c.tagClient, c.logger, rds.Configuration{
 		CollectLogsSize:     c.configuration.CollectLogsSize,
