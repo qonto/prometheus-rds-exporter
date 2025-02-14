@@ -6,7 +6,7 @@ run:
   tests: true
 
 output:
-  format: colored-line-number
+  formats: colored-line-number
   print-issued-lines: true
   print-linter-name: true
 
@@ -27,18 +27,15 @@ linters:
     - durationcheck
     - errorlint
     - exhaustive
-    - exportloopref
     - forcetypeassert
     - gochecknoinits
     - goconst
     - gocritic
     - gocyclo
     - godox
-    - goerr113
     - gofmt
     - gofumpt
     - goimports
-    - gomnd
     - gomodguard
     - goprintffuncname
     - gosec
