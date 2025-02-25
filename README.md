@@ -64,7 +64,7 @@ It collects key metrics about:
 | rds_instance_max_iops_average | `aws_account_id`, `aws_region`, `instance_class` | Maximum IOPS of underlying EC2 instance class |
 | rds_instance_max_throughput_bytes | `aws_account_id`, `aws_region`, `instance_class` | Maximum throughput of underlying EC2 instance class |
 | rds_instance_memory_bytes | `aws_account_id`, `aws_region`, `instance_class` | Instance class memory |
-| rds_instance_status | `aws_account_id`, `aws_region`, `dbidentifier` | Instance status (1: ok, 0: can't scrap metrics) |
+| rds_instance_status | `aws_account_id`, `aws_region`, `dbidentifier` | Instance status ([refer to supported status list](#supported-rds-status)) |
 | rds_instance_tags | `aws_account_id`, `aws_region`, `dbidentifier`, `tag_<AWS_TAG>`... | AWS tags attached to the instance |
 | rds_instance_vcpu_average | `aws_account_id`, `aws_region`, `instance_class` | Total vCPU for this instance class |
 | rds_max_allocated_storage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Upper limit in gibibytes to which Amazon RDS can automatically scale the storage of the DB instance |
@@ -123,6 +123,28 @@ It collects key metrics about:
 | promhttp_metric_handler_requests_total     | `code`     | Total number of scrapes by HTTP status code.                       |
 
 </details>
+
+### Supported RDS status
+
+|   Id | Meaning                        |
+| ---: | :----------------------------- |
+|    4 | Modifying                      |
+|    3 | Starting                       |
+|    2 | Backing Up                     |
+|    1 | Available                      |
+|      |                                |
+|    0 | Stopped or can't scrap metrics |
+|      |                                |
+|   -1 | Unknown status reported by AWS |
+|   -2 | Stopping                       |
+|   -3 | Creating                       |
+|   -4 | Deleting                       |
+|   -5 | Rebooting                      |
+|   -6 | Failed                         |
+|   -7 | Storage Full                   |
+|   -8 | Upgrading                      |
+
+_IDs were arbitrarily chosen when building the exporter but as a rule of thumb, all ID ≤0 means that instance isn't available._
 
 ## Dashboards
 
