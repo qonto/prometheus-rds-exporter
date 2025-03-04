@@ -92,6 +92,7 @@ affinity: {}
 
 dashboards:
   enabled: false  # enabled GrafanaDashboard CRD import
+  allowCrossNamespaceImport: True  # allow cross-namespace dashboard import. So Grafana and dashboards custom resource can be in different namespaces
   resyncPeriod: 24h  # how often the dashboard is refreshed
   instanceSelector: grafana  # selects Grafana for import
   folderName:  # folder assignment for dashboard

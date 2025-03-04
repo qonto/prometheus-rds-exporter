@@ -29,6 +29,9 @@ tests:
           path: metadata.name
           value: rds-instances
       - equal:
+          path: spec.allowCrossNamespaceImport
+          value: true
+      - equal:
           path: spec.resyncPeriod
           value: 24h
       - equal:
@@ -41,6 +44,9 @@ tests:
     values:
       - ./values/with_grafanadashboards_custom.yaml
     asserts:
+      - equal:
+          path: spec.allowCrossNamespaceImport
+          value: false
       - equal:
           path: spec.resyncPeriod
           value: 1m
