@@ -41,6 +41,8 @@ We use:
 
 * [`yamllint`](https://github.com/adrienverge/yamllint) for linting the YAML documents.
 
+* [`helm unittest`](https://github.com/helm-unittest/helm-unittest) for Helm chart tests
+
 ## Pull Request Checklist
 
 * Branch from the `main` branch and, if needed, rebase to the current main branch before submitting your pull request. If it doesn't merge cleanly with main you may be asked to rebase your changes.
@@ -81,6 +83,8 @@ You have to commit the changes to `go.mod` and `go.sum` before submitting the pu
 1. Install [markdownlint-cli2](https://github.com/DavidAnson/markdownlint-cli2)
 
 1. Install [go-jsonnet](https://github.com/google/go-jsonnet) to build Grafana dashboards
+
+1. Install [helm-unittest](https://github.com/helm-unittest/helm-unittest) to test Helm chart
 
 1. Enable pre-commit for the repository
 
