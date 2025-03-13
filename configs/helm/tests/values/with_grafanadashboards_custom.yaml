@@ -1,6 +1,7 @@
 ---
 dashboards:
   enabled: true
+  allowCrossNamespaceImport: false  # Disable cross namespace dashboard import
   resyncPeriod: 1m
   instanceSelector: my-grafana
   folderName: dmf

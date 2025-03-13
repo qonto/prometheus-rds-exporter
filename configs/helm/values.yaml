@@ -92,6 +92,7 @@ affinity: {}
 
 dashboards:
   enabled: false  # enabled GrafanaDashboard CRD import
+  allowCrossNamespaceImport: true  # define if Grafana operator can loads dashboards when stored in a different namespace
   resyncPeriod: 24h  # how often the dashboard is refreshed
   instanceSelector: grafana  # selects Grafana for import
   folderName:  # folder assignment for dashboard

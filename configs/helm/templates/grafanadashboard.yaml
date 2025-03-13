@@ -8,6 +8,7 @@ kind: GrafanaDashboard
 metadata:
   name: {{ $path | base | trimSuffix ".json" }}
 spec:
+  allowCrossNamespaceImport: {{ .Values.dashboards.allowCrossNamespaceImport }}
   resyncPeriod: {{ .Values.dashboards.resyncPeriod }}
   folder: {{ .Values.dashboards.folderName }}
   instanceSelector:
