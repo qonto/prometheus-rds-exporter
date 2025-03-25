@@ -1081,23 +1081,98 @@
                      "options": {
                         "-1": {
                            "color": "purple",
-                           "index": 0,
+                           "index": 9,
                            "text": "Unknown"
+                        },
+                        "-10": {
+                           "color": "red",
+                           "index": 0,
+                           "text": "Restore error"
+                        },
+                        "-2": {
+                           "color": "yellow",
+                           "index": 8,
+                           "text": "Stopping"
+                        },
+                        "-3": {
+                           "color": "yellow",
+                           "index": 7,
+                           "text": "Creating"
+                        },
+                        "-4": {
+                           "color": "red",
+                           "index": 6,
+                           "text": "Deleting"
+                        },
+                        "-5": {
+                           "color": "orange",
+                           "index": 5,
+                           "text": "Rebooting"
+                        },
+                        "-6": {
+                           "color": "red",
+                           "index": 4,
+                           "text": "Failed"
+                        },
+                        "-7": {
+                           "color": "red",
+                           "index": 3,
+                           "text": "Storage-full"
+                        },
+                        "-8": {
+                           "color": "blue",
+                           "index": 2,
+                           "text": "Upgrading"
+                        },
+                        "-9": {
+                           "color": "orange",
+                           "index": 1,
+                           "text": "Maintenance"
                         },
                         "0": {
                            "color": "red",
-                           "index": 1,
+                           "index": 10,
                            "text": "Stopped"
                         },
                         "1": {
                            "color": "green",
-                           "index": 2,
+                           "index": 11,
                            "text": "Available"
+                        },
+                        "10": {
+                           "colors": "blue",
+                           "index": 16,
+                           "text": "Storage initialization"
+                        },
+                        "11": {
+                           "colors": "yellow",
+                           "index": 17,
+                           "text": "Storage optimization"
                         },
                         "2": {
                            "color": "yellow",
-                           "index": 3,
+                           "index": 12,
                            "text": "Backing-up"
+                        },
+                        "20": {
+                           "colors": "yellow",
+                           "index": 18,
+                           "text": "Renaming"
+                        },
+                        "3": {
+                           "color": "green",
+                           "index": 13,
+                           "text": "Starting"
+                        },
+                        "4": {
+                           "color": "blue",
+                           "index": 14,
+                           "text": "Modifying"
+                        },
+                        "5": {
+                           "color": "blue",
+                           "index": 15,
+                           "text": "Configuring enhanced monitoring"
                         }
                      },
                      "type": "value"
@@ -2262,34 +2337,99 @@
                   {
                      "options": {
                         "-1": {
-                           "color": "yellow",
-                           "index": -1,
+                           "color": "purple",
+                           "index": 9,
                            "text": "Unknown"
                         },
+                        "-10": {
+                           "color": "red",
+                           "index": 0,
+                           "text": "Restore error"
+                        },
                         "-2": {
-                           "color": "orange",
-                           "index": -2,
+                           "color": "yellow",
+                           "index": 8,
                            "text": "Stopping"
                         },
-                        "0": {
+                        "-3": {
+                           "color": "yellow",
+                           "index": 7,
+                           "text": "Creating"
+                        },
+                        "-4": {
+                           "color": "red",
+                           "index": 6,
+                           "text": "Deleting"
+                        },
+                        "-5": {
                            "color": "orange",
-                           "index": -1,
+                           "index": 5,
+                           "text": "Rebooting"
+                        },
+                        "-6": {
+                           "color": "red",
+                           "index": 4,
+                           "text": "Failed"
+                        },
+                        "-7": {
+                           "color": "red",
+                           "index": 3,
+                           "text": "Storage-full"
+                        },
+                        "-8": {
+                           "color": "blue",
+                           "index": 2,
+                           "text": "Upgrading"
+                        },
+                        "-9": {
+                           "color": "orange",
+                           "index": 1,
+                           "text": "Maintenance"
+                        },
+                        "0": {
+                           "color": "red",
+                           "index": 10,
                            "text": "Stopped"
                         },
                         "1": {
                            "color": "green",
-                           "index": -1,
+                           "index": 11,
                            "text": "Available"
+                        },
+                        "10": {
+                           "colors": "blue",
+                           "index": 16,
+                           "text": "Storage initialization"
+                        },
+                        "11": {
+                           "colors": "yellow",
+                           "index": 17,
+                           "text": "Storage optimization"
                         },
                         "2": {
                            "color": "yellow",
-                           "index": -1,
+                           "index": 12,
                            "text": "Backing-up"
                         },
+                        "20": {
+                           "colors": "yellow",
+                           "index": 18,
+                           "text": "Renaming"
+                        },
                         "3": {
-                           "color": "orange",
-                           "index": -1,
+                           "color": "green",
+                           "index": 13,
                            "text": "Starting"
+                        },
+                        "4": {
+                           "color": "blue",
+                           "index": 14,
+                           "text": "Modifying"
+                        },
+                        "5": {
+                           "color": "blue",
+                           "index": 15,
+                           "text": "Configuring enhanced monitoring"
                         }
                      },
                      "type": "value"

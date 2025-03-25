@@ -126,25 +126,31 @@ It collects key metrics about:
 
 ### Supported RDS status
 
-|   Id | Meaning                        |
-| ---: | :----------------------------- |
-|    4 | Modifying                      |
-|    3 | Starting                       |
-|    2 | Backing Up                     |
-|    1 | Available                      |
-|      |                                |
-|    0 | Stopped or can't scrap metrics |
-|      |                                |
-|   -1 | Unknown status reported by AWS |
-|   -2 | Stopping                       |
-|   -3 | Creating                       |
-|   -4 | Deleting                       |
-|   -5 | Rebooting                      |
-|   -6 | Failed                         |
-|   -7 | Storage Full                   |
-|   -8 | Upgrading                      |
+|   Id | Meaning                                                     |
+| ---: | :---------------------------------------------------------- |
+|   20 | Renaming, will reboot soon                                  |
+|   11 | Storage optimization                                        |
+|   10 | Storage initialization                                      |
+|    5 | Configuring Enhanced Monitoring                             |
+|    4 | Modifying                                                   |
+|    3 | Starting                                                    |
+|    2 | Backing Up                                                  |
+|    1 | Available                                                   |
+|      |                                                             |
+|    0 | Stopped or can't scrap metrics                              |
+|      |                                                             |
+|   -1 | Unknown status reported by AWS or unmapped by this exporter |
+|   -2 | Stopping                                                    |
+|   -3 | Creating                                                    |
+|   -4 | Deleting                                                    |
+|   -5 | Rebooting                                                   |
+|   -6 | Failed                                                      |
+|   -7 | Storage Full                                                |
+|   -8 | Upgrading                                                   |
+|   -9 | Maintenance                                                 |
+|  -10 | Restore error                                               |
 
-_IDs were arbitrarily chosen when building the exporter but as a rule of thumb, all ID ≤0 means that instance isn't available._
+_IDs were arbitrarily chosen when building the exporter but as a rule of thumb, all ID ≤0 means that instance isn't available. [Refer to AWS Documentation for details](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/accessing-monitoring.html)_
 
 ## Dashboards
 
