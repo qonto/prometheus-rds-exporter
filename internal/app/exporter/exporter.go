@@ -183,7 +183,7 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		status: prometheus.NewDesc("rds_instance_status",
-			"Instance status (0 stopped or can't scrape) (1 ok | 2 backup | 3 startup | 4 modify) (-1 unknown | -2 stopping | -3 creating | -4 deleting | -5 rebooting | -6 failed | -7 full storage | -8 upgrading )",
+			"Instance status (0 stopped or can't scrape) (1 ok | 2 backup | 3 startup | 4 modify | 5 monitoring config | 1X storage | 20 renaming) (-1 unknown | -2 stopping | -3 creating | -4 deleting | -5 rebooting | -6 failed | -7 full storage | -8 upgrading | -9 maintenance | -10 restore error)",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		logFilesSize: prometheus.NewDesc("rds_instance_log_files_size_bytes",

@@ -65,60 +65,72 @@ type RdsInstanceMetrics struct {
 }
 
 const (
-	InstanceStatusAvailable                int     = 1
-	InstanceStatusBackingUp                int     = 2
-	InstanceStatusStarting                 int     = 3
-	InstanceStatusModifying                int     = 4
-	InstanceStatusStopped                  int     = 0
-	InstanceStatusUnknown                  int     = -1
-	InstanceStatusStopping                 int     = -2
-	InstanceStatusCreating                 int     = -3
-	InstanceStatusDeleting                 int     = -4
-	InstanceStatusRebooting                int     = -5
-	InstanceStatusFailed                   int     = -6
-	InstanceStatusStorageFull              int     = -7
-	InstanceStatusUpgrading                int     = -8
-	NoPendingMaintenanceOperation          string  = "no"
-	UnknownMaintenanceOperation            string  = "unknown"
-	UnscheduledPendingMaintenanceOperation string  = "pending"
-	AutoAppliedPendingMaintenanceOperation string  = "auto-applied"
-	ForcedPendingMaintenanceOperation      string  = "forced"
-	gp2IOPSMin                             int64   = 100
-	gp2IOPSMax                             int64   = 16000
-	gp2IOPSPerGB                           int64   = 3
-	gp2StorageThroughputVolumeThreshold    int64   = 334
-	gp2StorageThroughputSmallVolume        int64   = 128
-	gp2StorageThroughputLargeVolume        int64   = 250
-	io1HighIOPSThroughputThreshold         int64   = 64000
-	io1HighIOPSThroughputValue             int64   = 1000
-	io1LargeIOPSThroughputThreshold        int64   = 32000
-	io1LargeIOPSThroughputValue            int64   = 16
-	io1MediumIOPSThroughputThreshold       int64   = 2000
-	io1MediumIOPSThroughputValue           int64   = 500
-	io1DefaultIOPSThroughputValue          int64   = 256
-	io2StorageMinThroughput                int64   = 256  // 1000 IOPS * 0.256 MiB/s per provisioned IOPS
-	io2StorageMaxThroughput                int64   = 4000 // AWS EBS limit
-	io2StorageThroughputPerIOPS            float64 = 0.256
-	primaryRole                            string  = "primary"
-	replicaRole                            string  = "replica"
+	InstanceStatusAvailable                     int     = 1
+	InstanceStatusBackingUp                     int     = 2
+	InstanceStatusStarting                      int     = 3
+	InstanceStatusModifying                     int     = 4
+	InstanceStatusConfiguringEnhancedMonitoring int     = 5
+	InstanceStatusStorageInitialization         int     = 10
+	InstanceStatusStorageOptimization           int     = 11
+	InstanceStatusRenaming                      int     = 20
+	InstanceStatusStopped                       int     = 0
+	InstanceStatusUnknown                       int     = -1
+	InstanceStatusStopping                      int     = -2
+	InstanceStatusCreating                      int     = -3
+	InstanceStatusDeleting                      int     = -4
+	InstanceStatusRebooting                     int     = -5
+	InstanceStatusFailed                        int     = -6
+	InstanceStatusStorageFull                   int     = -7
+	InstanceStatusUpgrading                     int     = -8
+	InstanceStatusMaintenance                   int     = -9
+	InstanceStatusRestoreError                  int     = -10
+	NoPendingMaintenanceOperation               string  = "no"
+	UnknownMaintenanceOperation                 string  = "unknown"
+	UnscheduledPendingMaintenanceOperation      string  = "pending"
+	AutoAppliedPendingMaintenanceOperation      string  = "auto-applied"
+	ForcedPendingMaintenanceOperation           string  = "forced"
+	gp2IOPSMin                                  int64   = 100
+	gp2IOPSMax                                  int64   = 16000
+	gp2IOPSPerGB                                int64   = 3
+	gp2StorageThroughputVolumeThreshold         int64   = 334
+	gp2StorageThroughputSmallVolume             int64   = 128
+	gp2StorageThroughputLargeVolume             int64   = 250
+	io1HighIOPSThroughputThreshold              int64   = 64000
+	io1HighIOPSThroughputValue                  int64   = 1000
+	io1LargeIOPSThroughputThreshold             int64   = 32000
+	io1LargeIOPSThroughputValue                 int64   = 16
+	io1MediumIOPSThroughputThreshold            int64   = 2000
+	io1MediumIOPSThroughputValue                int64   = 500
+	io1DefaultIOPSThroughputValue               int64   = 256
+	io2StorageMinThroughput                     int64   = 256  // 1000 IOPS * 0.256 MiB/s per provisioned IOPS
+	io2StorageMaxThroughput                     int64   = 4000 // AWS EBS limit
+	io2StorageThroughputPerIOPS                 float64 = 0.256
+	primaryRole                                 string  = "primary"
+	replicaRole                                 string  = "replica"
 )
 
 var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/rds")
 
-var instanceStatuses = map[string]int{
-	"available":    InstanceStatusAvailable,
-	"backing-up":   InstanceStatusBackingUp,
-	"creating":     InstanceStatusCreating,
-	"deleting":     InstanceStatusDeleting,
-	"failed":       InstanceStatusFailed,
-	"modifying":    InstanceStatusModifying,
-	"rebooting":    InstanceStatusRebooting,
-	"starting":     InstanceStatusStarting,
-	"stopped":      InstanceStatusStopped,
-	"storage-full": InstanceStatusStorageFull,
-	"stopping":     InstanceStatusStopping,
-	"unknown":      InstanceStatusUnknown,
-	"upgrading":    InstanceStatusUpgrading,
+var instanceStatuses = map[string]int{ // retrieved from https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/accessing-monitoring.html
+	"available":                       InstanceStatusAvailable,
+	"backing-up":                      InstanceStatusBackingUp,
+	"configuring-enhanced-monitoring": InstanceStatusConfiguringEnhancedMonitoring,
+	"creating":                        InstanceStatusCreating,
+	"deleting":                        InstanceStatusDeleting,
+	"failed":                          InstanceStatusFailed,
+	"maintenance":                     InstanceStatusMaintenance,
+	"modifying":                       InstanceStatusModifying,
+	"rebooting":                       InstanceStatusRebooting,
+	"renaming":                        InstanceStatusRenaming,
+	"restore-error":                   InstanceStatusRestoreError,
+	"starting":                        InstanceStatusStarting,
+	"stopped":                         InstanceStatusStopped,
+	"storage-full":                    InstanceStatusStorageFull,
+	"storage-initialization":          InstanceStatusStorageInitialization,
+	"storage-optimization":            InstanceStatusStorageOptimization,
+	"stopping":                        InstanceStatusStopping,
+	"unknown":                         InstanceStatusUnknown,
+	"upgrading":                       InstanceStatusUpgrading,
 }
 
 type RDSClient interface {
