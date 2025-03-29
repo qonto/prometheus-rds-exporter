@@ -41,7 +41,7 @@ jobs:
       - name: Set up QEMU for ARM64 build
         uses: docker/setup-qemu-action@v3
 
-      - uses: goreleaser/goreleaser-action@v5
+      - uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: latest
