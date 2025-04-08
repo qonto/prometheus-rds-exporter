@@ -2,9 +2,9 @@ package exporter
 
 import (
 	"context"
-
 	aws_cloudwatch "github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	aws_ec2 "github.com/aws/aws-sdk-go-v2/service/ec2"
+	aws_performanceinsights "github.com/aws/aws-sdk-go-v2/service/pi"
 	aws_rds "github.com/aws/aws-sdk-go-v2/service/rds"
 	aws_servicequotas "github.com/aws/aws-sdk-go-v2/service/servicequotas"
 )
@@ -21,6 +21,10 @@ type EC2Client interface {
 
 type cloudWatchClient interface {
 	GetMetricData(context.Context, *aws_cloudwatch.GetMetricDataInput, ...func(*aws_cloudwatch.Options)) (*aws_cloudwatch.GetMetricDataOutput, error)
+}
+
+type performanceInsightsClient interface {
+	GetResourceMetrics(ctx context.Context, params *aws_performanceinsights.GetResourceMetricsInput, optFns ...func(*aws_performanceinsights.Options)) (*aws_performanceinsights.GetResourceMetricsOutput, error)
 }
 
 type servicequotasClient interface {
