@@ -15,6 +15,7 @@ It collects key metrics about:
 - Pending modifications
 - Logs size
 - RDS quota usage information
+- AWS Performance Insights
 
 > [!TIP]
 > Prometheus RDS exporter is part of the [Database Monitoring Framework](https://github.com/qonto/database-monitoring-framework) which provides alerts, along with their handy runbooks for AWS RDS.
@@ -24,6 +25,8 @@ It collects key metrics about:
 🥇 Advanced Metrics: Gain deep visibility with advanced metrics for AWS RDS. Monitor performance, query efficiency, and resource utilization like never before.
 
 🧩 AWS Quotas Insights: Stay in control with real-time information about AWS quotas. Ensure you never hit limits unexpectedly.
+
+📋 AWS Performance Insights: Extended set of metrics with additional of database internals (available only for PostgreSQL).
 
 💡 Hard Limits visibility: Know the hard limits of the EC2 instance used by RDS and manage your resources effectively.
 
@@ -38,6 +41,8 @@ It collects key metrics about:
 🚀 When combined with [prometheus-community/postgres_exporter](https://github.com/prometheus-community/postgres_exporter), it provides a production-ready monitoring framework for RDS PostgreSQL.
 
 ## Metrics
+
+Basic metrics are available:
 
 | Name | Labels | Description |
 | ---- | ------ | ----------- |
@@ -86,6 +91,56 @@ It collects key metrics about:
 | rds_write_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of disk write I/O operations per second |
 | rds_write_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of bytes written to disk per second |
 | up | | Was the last scrape of RDS successful |
+
+<details>
+  <summary>Performance insights metrics for RDS PosrgeSQL also available</summary>
+
+| Name                                                              | Labels                                      | Description                                                                 |
+|-------------------------------------------------------------------|---------------------------------------------|-----------------------------------------------------------------------------|
+| rds_db_cache_blks_hit                                             |      | Number of times disk blocks were found already in the Postgres buffer cache (Blocks per second) |
+| rds_db_cache_buffers_alloc                                        |      | Total number of new buffers allocated by background writer (Blocks per second) |
+| rds_db_checkpoint_buffers_checkpoint                              |      | Number of buffers written during checkpoints (Blocks per second) |
+| rds_db_checkpoint_checkpoint_sync_time                            |      | Total amount of time spent syncing files during checkpoints (Milliseconds per checkpoint) |
+| rds_db_checkpoint_checkpoint_write_time                           |      | Total amount of time spent writing files during checkpoints (Milliseconds per checkpoint) |
+| rds_db_checkpoint_checkpoints_req                                 |      | Number of requested checkpoints that have been performed (Checkpoints per minute) |
+| rds_db_checkpoint_checkpoints_timed                               |      | Number of scheduled checkpoints that have been performed (Checkpoints per minute) |
+| rds_db_checkpoint_maxwritten_clean                                |      | Background writer clean stops due to too many buffers (Bgwriter clean stops per minute) |
+| rds_db_concurrency_deadlocks                                      |      | Deadlocks (Deadlocks per minute) |
+| rds_db_io_blk_read_time                                           |      | Time spent reading data file blocks by backends (Milliseconds) |
+| rds_db_io_blks_read                                               |      | Number of disk blocks read (Blocks per second) |
+| rds_db_io_buffers_backend                                         |      | Number of buffers written directly by a backend (Blocks per second) |
+| rds_db_io_buffers_backend_fsync                                   |      | Number of times a backend had to execute its own fsync call (Blocks per second) |
+| rds_db_io_buffers_clean                                           |      | Number of buffers written by the background writer (Blocks per second) |
+| rds_db_sql_tup_deleted                                            |      | Number of rows deleted by queries (Tuples per second) |
+| rds_db_sql_tup_fetched                                            |      | Number of rows fetched by queries (Tuples per second) |
+| rds_db_sql_tup_inserted                                           |      | Number of rows inserted by queries (Tuples per second) |
+| rds_db_sql_tup_returned                                           |      | Number of rows returned by queries (Tuples per second) |
+| rds_db_sql_tup_updated                                            |      | Number of rows updated by queries (Tuples per second) |
+| rds_db_temp_temp_bytes                                            |      | Total amount of data written to temporary files (Bytes per second) |
+| rds_db_temp_temp_files                                            |      | Number of temporary files created (Files per minute) |
+| rds_db_transactions_blocked_transactions                          |      | Number of blocked transactions (Transactions) |
+| rds_db_transactions_max_used_xact_ids                             |      | Number of unvacuumed transactions (Transactions) |
+| rds_db_transactions_xact_commit                                   |      | Number of committed transactions (Commits per second) |
+| rds_db_transactions_xact_rollback                                 |      | Number of rolled back transactions (Rollbacks per second) |
+| rds_db_transactions_oldest_inactive_logical_replication_slot_xid_age |   | Oldest xid age held by Inactive Logical Replication Slot (Transactions) |
+| rds_db_transactions_oldest_active_logical_replication_slot_xid_age |    | Oldest xid age held by active logical replication slot (Transactions) |
+| rds_db_transactions_oldest_prepared_transaction_xid_age          |      | Oldest xid age held by prepared transactions (Transactions) |
+| rds_db_transactions_oldest_running_transaction_xid_age           |      | Oldest xid age held by running transaction (Transactions) |
+| rds_db_transactions_oldest_hot_standby_feedback_xid_age          |      | Oldest xid age held on replica with hot_standby_feedback=on (Transactions) |
+| rds_db_user_numbackends                                          |      | Number of backends currently connected (Connections) |
+| rds_db_user_max_connections                                       |      | Maximum number of connections allowed by max_connections (Connections) |
+| rds_db_wal_archived_count                                         |      | Number of WAL files successfully archived (Files per minute) |
+| rds_db_wal_archive_failed_count                                   |      | Number of failed attempts to archive WAL files (Files per minute) |
+| rds_db_state_active_count                                         |      | Number of sessions in active state (Sessions) |
+| rds_db_state_idle_count                                           |      | Number of sessions in idle state (Sessions) |
+| rds_db_state_idle_in_transaction_count                            |      | Number of sessions in idle in transaction state (Sessions) |
+| rds_db_state_idle_in_transaction_aborted_count                    |      | Number of sessions in idle in transaction (aborted) state (Sessions) |
+| rds_db_state_idle_in_transaction_max_time                         |      | Duration of longest running idle-in-transaction (Seconds) |
+| rds_db_checkpoint_checkpoint_sync_latency                         |      | Time spent syncing files during checkpoints (Milliseconds per checkpoint) |
+| rds_db_checkpoint_checkpoint_write_latency                        |      | Time spent writing files during checkpoints (Milliseconds per checkpoint) |
+| rds_db_transactions_active_transactions                           |      | Number of active transactions (Transactions) |
+
+</details>
 
 <details>
   <summary>Standard Go and Prometheus metrics are also available</summary>
@@ -200,25 +255,26 @@ Prometheus RDS exporter</br>
 
 Configuration could be defined in [prometheus-rds-exporter.yaml](https://github.com/qonto/prometheus-rds-exporter/blob/main/configs/prometheus-rds-exporter/prometheus-rds-exporter.yaml) or environment variables (format `PROMETHEUS_RDS_EXPORTER_<PARAMETER_NAME>`).
 
-|Parameter                | Description                                                                                                                | Default                 |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| aws-assume-role-arn      | AWS IAM ARN role to assume to fetch metrics                                                                                |                         |
-| aws-assume-role-session  | AWS assume role session name                                                                                               | prometheus-rds-exporter |
+|Parameter | Description                                                                                                                | Default                 |
+| --- |----------------------------------------------------------------------------------------------------------------------------|-------------------------|
+| aws-assume-role-arn | AWS IAM ARN role to assume to fetch metrics                                                                                |                         |
+| aws-assume-role-session | AWS assume role session name                                                                                               | prometheus-rds-exporter |
 | collect-instance-metrics | Collect AWS instances metrics (AWS Cloudwatch API)                                                                         | true                    |
-| collect-instance-tags    | Collect AWS RDS tags                                                                                                       | true                    |
-| collect-instance-types   | Collect AWS instance types information (AWS EC2 API)                                                                       | true                    |
-| collect-logs-size        | Collect AWS instances logs size (AWS RDS API)                                                                              | true                    |
-| collect-maintenances     | Collect AWS instances maintenances (AWS RDS API)                                                                           | true                    |
-| collect-quotas           | Collect AWS RDS quotas (AWS quotas API)                                                                                    | true                    |
-| collect-usages           | Collect AWS RDS usages (AWS Cloudwatch API)                                                                                | true                    |
-| tag-selections           | Tags to select database instances with. Refer to [dedicated section on tag configuration](#tag-configuration)                      |                         |
-| debug                    | Enable debug mode                                                                                                          |                         |
-| enable-otel-traces       | Enable OpenTelemetry traces. See [configuration](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/) | false                   |
-| listen-address           | Address to listen on for web interface                                                                                     | :9043                   |
-| log-format               | Log format (`text` or `json`)                                                                                              | json                    |
-| metrics-path             | Path under which to expose metrics                                                                                         | /metrics                |
-| tls-cert-path            | Path to TLS certificate                                                                                                    |                         |
-| tls-key-path             | Path to private key for TLS                                                                                                |                         |
+| collect-instance-tags | Collect AWS RDS tags                                                                                                       | true                    |
+| collect-instance-types | Collect AWS instance types information (AWS EC2 API)                                                                       | true                    |
+| collect-logs-size | Collect AWS instances logs size (AWS RDS API)                                                                              | true                    |
+| collect-maintenances | Collect AWS instances maintenances (AWS RDS API)                                                                           | true                    |
+| collect-performance-insights    | Collect AWS RDS [Performance Insights Metrics](https://aws.amazon.com/rds/performance-insights/) (AWS PI API)               | false                   |
+| collect-quotas | Collect AWS RDS quotas (AWS quotas API)                                                                                    | true                    |
+| collect-usages | Collect AWS RDS usages (AWS Cloudwatch API)                                                                                | true                    |
+| tag-selections | Tags to select database instances with. Refer to [dedicated section on tag configuration](#tag-configuration)              |                         |
+| debug | Enable debug mode                                                                                                          |                         |
+| enable-otel-traces | Enable OpenTelemetry traces. See [configuration](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/) | false                   |
+| listen-address | Address to listen on for web interface                                                                                     | :9043                   |
+| log-format | Log format (`text` or `json`)                                                                                              | json                    |
+| metrics-path | Path under which to expose metrics                                                                                         | /metrics                |
+| tls-cert-path | Path to TLS certificate                                                                                                    |                         |
+| tls-key-path | Path to private key for TLS                                                                                                |                         |
 
 Configuration parameters priorities:
 
@@ -316,8 +372,133 @@ If you are running on [AWS EKS](https://aws.amazon.com/eks/), we strongly recomm
                 "tag:GetResources"
             ],
             "Resource": "*"
-        }
+        },
+
     ]
+}
+```
+
+<details>
+<summary>Minimal required IAM permissions with performance Insights</summary>
+
+```json
+{
+   "Version": "2012-10-17",
+   "Statement": [
+      {
+         "Sid": "AllowInstanceAndLogDescriptions",
+         "Effect": "Allow",
+         "Action": [
+            "rds:DescribeDBInstances",
+            "rds:DescribeDBLogFiles"
+         ],
+         "Resource": [
+            "arn:aws:rds:*:*:db:*"
+         ]
+      },
+      {
+         "Sid": "AllowMaintenanceDescriptions",
+         "Effect": "Allow",
+         "Action": [
+            "rds:DescribePendingMaintenanceActions"
+         ],
+         "Resource": "*"
+      },
+      {
+         "Sid": "AllowGettingCloudWatchMetrics",
+         "Effect": "Allow",
+         "Action": [
+            "cloudwatch:GetMetricData"
+         ],
+         "Resource": "*"
+      },
+      {
+         "Sid": "AllowRDSUsageDescriptions",
+         "Effect": "Allow",
+         "Action": [
+            "rds:DescribeAccountAttributes"
+         ],
+         "Resource": "*"
+      },
+      {
+         "Sid": "AllowQuotaDescriptions",
+         "Effect": "Allow",
+         "Action": [
+            "servicequotas:GetServiceQuota"
+         ],
+         "Resource": "*"
+      },
+      {
+         "Sid": "AllowInstanceTypeDescriptions",
+         "Effect": "Allow",
+         "Action": [
+            "ec2:DescribeInstanceTypes"
+         ],
+         "Resource": "*"
+      },
+      {
+         "Sid": "AllowInstanceFilterByTags",
+         "Effect": "Allow",
+         "Action": [
+            "tag:GetResources"
+         ],
+         "Resource": "*"
+      },
+      {
+         "Sid" : "AmazonRDSPerformanceInsightsDescribeDimensionKeys",
+         "Effect" : "Allow",
+         "Action" : "pi:DescribeDimensionKeys",
+         "Resource" : "arn:aws:pi:*:*:metrics/rds/*"
+      },
+      {
+         "Sid" : "AmazonRDSPerformanceInsightsGetDimensionKeyDetails",
+         "Effect" : "Allow",
+         "Action" : "pi:GetDimensionKeyDetails",
+         "Resource" : "arn:aws:pi:*:*:metrics/rds/*"
+      },
+      {
+         "Sid" : "AmazonRDSPerformanceInsightsGetResourceMetadata",
+         "Effect" : "Allow",
+         "Action" : "pi:GetResourceMetadata",
+         "Resource" : "arn:aws:pi:*:*:metrics/rds/*"
+      },
+      {
+         "Sid" : "AmazonRDSPerformanceInsightsGetResourceMetrics",
+         "Effect" : "Allow",
+         "Action" : "pi:GetResourceMetrics",
+         "Resource" : "arn:aws:pi:*:*:metrics/rds/*"
+      },
+      {
+         "Sid" : "AmazonRDSPerformanceInsightsListAvailableResourceDimensions",
+         "Effect" : "Allow",
+         "Action" : "pi:ListAvailableResourceDimensions",
+         "Resource" : "arn:aws:pi:*:*:metrics/rds/*"
+      },
+      {
+         "Sid" : "AmazonRDSPerformanceInsightsListAvailableResourceMetrics",
+         "Effect" : "Allow",
+         "Action" : "pi:ListAvailableResourceMetrics",
+         "Resource" : "arn:aws:pi:*:*:metrics/rds/*"
+      },
+      {
+         "Sid" : "AmazonRDSPerformanceInsightsGetPerformanceAnalysisReport",
+         "Effect" : "Allow",
+         "Action" : "pi:GetPerformanceAnalysisReport",
+         "Resource" : "arn:aws:pi:*:*:perf-reports/rds/*/*"
+      },
+      {
+         "Sid" : "AmazonRDSPerformanceInsightsListPerformanceAnalysisReports",
+         "Effect" : "Allow",
+         "Action" : "pi:ListPerformanceAnalysisReports",
+         "Resource" : "arn:aws:pi:*:*:perf-reports/rds/*/*"
+      },
+      {
+         "Sid" : "AmazonRDSPerformanceInsightsListTagsForResource",
+         "Effect" : "Allow",
+         "Action" : "pi:ListTagsForResource",
+         "Resource" : "arn:aws:pi:*:*:*/rds/*"
+      }
+   ]
 }
 ```
 

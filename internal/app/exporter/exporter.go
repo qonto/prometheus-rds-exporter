@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/cloudwatch"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/ec2"
+	"github.com/qonto/prometheus-rds-exporter/internal/app/pi"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/rds"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/servicequotas"
 	"github.com/qonto/prometheus-rds-exporter/internal/infra/build"
@@ -30,27 +31,30 @@ const (
 var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/exporter")
 
 type Configuration struct {
-	CollectInstanceMetrics bool
-	CollectInstanceTags    bool
-	CollectInstanceTypes   bool
-	CollectLogsSize        bool
-	CollectMaintenances    bool
-	CollectQuotas          bool
-	CollectUsages          bool
-	TagSelections          map[string][]string
+	CollectInstanceMetrics     bool
+	CollectInstanceTags        bool
+	CollectInstanceTypes       bool
+	CollectLogsSize            bool
+	CollectMaintenances        bool
+	CollectQuotas              bool
+	CollectUsages              bool
+	CollectPerformanceInsights bool
+	TagSelections              map[string][]string
 }
 
 type counters struct {
-	CloudwatchAPICalls    float64
-	EC2APIcalls           float64
-	Errors                float64
-	RDSAPIcalls           float64
-	ServiceQuotasAPICalls float64
-	UsageAPIcalls         float64
-	TagAPICalls           float64
+	CloudwatchAPICalls          float64
+	EC2APIcalls                 float64
+	Errors                      float64
+	PerformanceInsightsAPICalls float64
+	RDSAPIcalls                 float64
+	ServiceQuotasAPICalls       float64
+	UsageAPIcalls               float64
+	TagAPICalls                 float64
 }
 
 type metrics struct {
+	PerformanceInsights pi.DbMetrics
 	ServiceQuota        servicequotas.Metrics
 	RDS                 rds.Metrics
 	EC2                 ec2.Metrics
@@ -68,11 +72,12 @@ type rdsCollector struct {
 	awsRegion     string
 	configuration Configuration
 
-	rdsClient           rdsClient
-	EC2Client           EC2Client
-	servicequotasClient servicequotasClient
-	cloudWatchClient    cloudWatchClient
-	tagClient           resourcegroupstaggingapi.GetResourcesAPIClient
+	rdsClient                 rdsClient
+	EC2Client                 EC2Client
+	servicequotasClient       servicequotasClient
+	cloudWatchClient          cloudWatchClient
+	performanceInsightsClient performanceInsightsClient
+	tagClient                 resourcegroupstaggingapi.GetResourcesAPIClient
 
 	errors                      *prometheus.Desc
 	DBLoad                      *prometheus.Desc
@@ -119,18 +124,62 @@ type rdsCollector struct {
 	transactionLogsDiskUsage    *prometheus.Desc
 	certificateValidTill        *prometheus.Desc
 	age                         *prometheus.Desc
+	// Performance Insights DB metrics
+	dbCacheBlksHit                             *prometheus.Desc
+	dbCacheBuffersAlloc                        *prometheus.Desc
+	dbCheckpointBuffersCheckpoint              *prometheus.Desc
+	dbCheckpointCheckpointSyncTime             *prometheus.Desc
+	dbCheckpointCheckpointWriteTime            *prometheus.Desc
+	dbCheckpointCheckpointsReq                 *prometheus.Desc
+	dbCheckpointCheckpointsTimed               *prometheus.Desc
+	dbCheckpointMaxwrittenClean                *prometheus.Desc
+	dbConcurrencyDeadlocks                     *prometheus.Desc
+	dbIOBlkReadTime                            *prometheus.Desc
+	dbIOBlksRead                               *prometheus.Desc
+	dbIOBuffersBackend                         *prometheus.Desc
+	dbIOBuffersBackendFsync                    *prometheus.Desc
+	dbIOBuffersClean                           *prometheus.Desc
+	dbSQLTupDeleted                            *prometheus.Desc
+	dbSQLTupFetched                            *prometheus.Desc
+	dbSQLTupInserted                           *prometheus.Desc
+	dbSQLTupReturned                           *prometheus.Desc
+	dbSQLTupUpdated                            *prometheus.Desc
+	dbTempTempBytes                            *prometheus.Desc
+	dbTempTempFiles                            *prometheus.Desc
+	dbTransactionsBlockedTransactions          *prometheus.Desc
+	dbTransactionsMaxUsedXactIds               *prometheus.Desc
+	dbTransactionsXactCommit                   *prometheus.Desc
+	dbTransactionsXactRollback                 *prometheus.Desc
+	dbTransactionsOldestInactiveLogicalSlotXid *prometheus.Desc
+	dbTransactionsOldestActiveLogicalSlotXid   *prometheus.Desc
+	dbTransactionsOldestPreparedXid            *prometheus.Desc
+	dbTransactionsOldestRunningXid             *prometheus.Desc
+	dbTransactionsOldestHotStandbyXid          *prometheus.Desc
+	dbUserNumbackends                          *prometheus.Desc
+	dbUserMaxConnections                       *prometheus.Desc
+	dbWALArchivedCount                         *prometheus.Desc
+	dbWALArchiveFailedCount                    *prometheus.Desc
+	dbStateActiveCount                         *prometheus.Desc
+	dbStateIdleCount                           *prometheus.Desc
+	dbStateIdleInTransactionCount              *prometheus.Desc
+	dbStateIdleInTransactionAbortedCount       *prometheus.Desc
+	dbStateIdleInTransactionMaxTime            *prometheus.Desc
+	dbCheckpointCheckpointSyncLatency          *prometheus.Desc
+	dbCheckpointCheckpointWriteLatency         *prometheus.Desc
+	dbTransactionsActiveTransactions           *prometheus.Desc
 }
 
-func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient, tagClient resourcegroupstaggingapi.GetResourcesAPIClient) *rdsCollector {
+func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, performanceInsightClient performanceInsightsClient, servicequotasClient servicequotasClient, tagClient resourcegroupstaggingapi.GetResourcesAPIClient) *rdsCollector {
 	return &rdsCollector{
-		logger:              logger,
-		awsAccountID:        awsAccountID,
-		awsRegion:           awsRegion,
-		rdsClient:           rdsClient,
-		servicequotasClient: servicequotasClient,
-		EC2Client:           ec2Client,
-		cloudWatchClient:    cloudWatchClient,
-		tagClient:           tagClient,
+		logger:                    logger,
+		awsAccountID:              awsAccountID,
+		awsRegion:                 awsRegion,
+		performanceInsightsClient: performanceInsightClient,
+		rdsClient:                 rdsClient,
+		servicequotasClient:       servicequotasClient,
+		EC2Client:                 ec2Client,
+		cloudWatchClient:          cloudWatchClient,
+		tagClient:                 tagClient,
 
 		configuration: collectorConfiguration,
 
@@ -314,6 +363,217 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			"Manual snapshots count",
 			[]string{"aws_account_id", "aws_region"}, nil,
 		),
+		// Performance Insights DB metrics
+		dbCacheBlksHit: prometheus.NewDesc(
+			"rds_db_cache_blks_hit",
+			"Number of times disk blocks were found already in the Postgres buffer cache (Blocks per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbCacheBuffersAlloc: prometheus.NewDesc(
+			"rds_db_cache_buffers_alloc",
+			"Total number of new buffers allocated by background writer (Blocks per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbCheckpointBuffersCheckpoint: prometheus.NewDesc(
+			"rds_db_checkpoint_buffers_checkpoint",
+			"Number of buffers written during checkpoints (Blocks per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbCheckpointCheckpointSyncTime: prometheus.NewDesc(
+			"rds_db_checkpoint_checkpoint_sync_time",
+			"Total amount of time that has been spent in the portion of checkpoint processing where files are synchronized to disk in milliseconds (Milliseconds per checkpoint)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbCheckpointCheckpointWriteTime: prometheus.NewDesc(
+			"rds_db_checkpoint_checkpoint_write_time",
+			"Total amount of time that has been spent in the portion of checkpoint processing where files are written to disk in milliseconds (Milliseconds per checkpoint)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbCheckpointCheckpointsReq: prometheus.NewDesc(
+			"rds_db_checkpoint_checkpoints_req",
+			"Number of requested checkpoints that have been performed (Checkpoints per minute)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbCheckpointCheckpointsTimed: prometheus.NewDesc(
+			"rds_db_checkpoint_checkpoints_timed",
+			"Number of scheduled checkpoints that have been performed (Checkpoints per minute)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbCheckpointMaxwrittenClean: prometheus.NewDesc(
+			"rds_db_checkpoint_maxwritten_clean",
+			"Number of times the background writer stopped a cleaning scan because it had written too many buffers (Bgwriter clean stops per minute)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbConcurrencyDeadlocks: prometheus.NewDesc(
+			"rds_db_concurrency_deadlocks",
+			"Deadlocks (Deadlocks per minute)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbIOBlkReadTime: prometheus.NewDesc(
+			"rds_db_io_blk_read_time",
+			"Time spent reading data file blocks by backends in milliseconds (Milliseconds)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbIOBlksRead: prometheus.NewDesc(
+			"rds_db_io_blks_read",
+			"Number of disk blocks read (Blocks per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbIOBuffersBackend: prometheus.NewDesc(
+			"rds_db_io_buffers_backend",
+			"Number of buffers written directly by a backend (Blocks per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbIOBuffersBackendFsync: prometheus.NewDesc(
+			"rds_db_io_buffers_backend_fsync",
+			"Number of times a backend had to execute its own fsync call (Blocks per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbIOBuffersClean: prometheus.NewDesc(
+			"rds_db_io_buffers_clean",
+			"Number of buffers written by the background writer (Blocks per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbSQLTupDeleted: prometheus.NewDesc(
+			"rds_db_sql_tup_deleted",
+			"Number of rows deleted by queries in this instance (Tuples per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbSQLTupFetched: prometheus.NewDesc(
+			"rds_db_sql_tup_fetched",
+			"Number of rows fetched by queries in this instance (Tuples per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbSQLTupInserted: prometheus.NewDesc(
+			"rds_db_sql_tup_inserted",
+			"Number of rows inserted by queries in this instance (Tuples per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbSQLTupReturned: prometheus.NewDesc(
+			"rds_db_sql_tup_returned",
+			"Number of rows returned by queries in this instance (Tuples per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbSQLTupUpdated: prometheus.NewDesc(
+			"rds_db_sql_tup_updated",
+			"Number of rows updated by queries in this instance (Tuples per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbTempTempBytes: prometheus.NewDesc(
+			"rds_db_temp_temp_bytes",
+			"Total amount of data written to temporary files by queries in this instance (Bytes per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbTempTempFiles: prometheus.NewDesc(
+			"rds_db_temp_temp_files",
+			"Number of temporary files created by queries in this instance (Files per minute)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbTransactionsBlockedTransactions: prometheus.NewDesc(
+			"rds_db_transactions_blocked_transactions",
+			"Number of blocked transactions (Transactions)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbTransactionsMaxUsedXactIds: prometheus.NewDesc(
+			"rds_db_transactions_max_used_xact_ids",
+			"Number of unvacuumed transactions (Transactions)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbTransactionsXactCommit: prometheus.NewDesc(
+			"rds_db_transactions_xact_commit",
+			"Number of transactions in this instance that have been committed (Commits per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbTransactionsXactRollback: prometheus.NewDesc(
+			"rds_db_transactions_xact_rollback",
+			"Number of transactions in this instance that have been rolled back (Rollbacks per second)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbTransactionsOldestInactiveLogicalSlotXid: prometheus.NewDesc(
+			"rds_db_transactions_oldest_inactive_logical_replication_slot_xid_age",
+			"Oldest xid age held by Inactive Logical Replication Slot (Transactions)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbTransactionsOldestActiveLogicalSlotXid: prometheus.NewDesc(
+			"rds_db_transactions_oldest_active_logical_replication_slot_xid_age",
+			"Oldest xid age held by active logical replication slot  due to logical replication lag (Transactions)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbTransactionsOldestPreparedXid: prometheus.NewDesc(
+			"rds_db_transactions_oldest_prepared_transaction_xid_age",
+			"Oldest xid age held by prepared transactions (Transactions)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbTransactionsOldestRunningXid: prometheus.NewDesc(
+			"rds_db_transactions_oldest_running_transaction_xid_age",
+			"Oldest xid age held by running transaction (Transactions)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbTransactionsOldestHotStandbyXid: prometheus.NewDesc(
+			"rds_db_transactions_oldest_hot_standby_feedback_xid_age",
+			"Oldest xid age held by running transaction on replica with hot_standby_feedback = on (Transactions)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbUserNumbackends: prometheus.NewDesc(
+			"rds_db_user_numbackends",
+			"Number of backends currently connected to this instance (Connections)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbUserMaxConnections: prometheus.NewDesc(
+			"rds_db_user_max_connections",
+			"The maximum number of connections allowed for a DB instance as configured in max_connections parameter (Connections)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbWALArchivedCount: prometheus.NewDesc(
+			"rds_db_wal_archived_count",
+			"Number of WAL files that have been successfully archived (Files per minute)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbWALArchiveFailedCount: prometheus.NewDesc(
+			"rds_db_wal_archive_failed_count",
+			"Number of failed attempts for archiving WAL files (Files per minute)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbStateActiveCount: prometheus.NewDesc(
+			"rds_db_state_active_count",
+			"Number of sessions in active state (Sessions)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbStateIdleCount: prometheus.NewDesc(
+			"rds_db_state_idle_count",
+			"Number of sessions in idle state (Sessions)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbStateIdleInTransactionCount: prometheus.NewDesc(
+			"rds_db_state_idle_in_transaction_count",
+			"Number of sessions in idle in transaction state (Sessions)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbStateIdleInTransactionAbortedCount: prometheus.NewDesc(
+			"rds_db_state_idle_in_transaction_aborted_count",
+			"Number of sessions in idle in transaction (aborted) state (Sessions)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbStateIdleInTransactionMaxTime: prometheus.NewDesc(
+			"rds_db_state_idle_in_transaction_max_time",
+			"Duration of the longest running transaction in the idle in transaction state (Seconds)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbCheckpointCheckpointSyncLatency: prometheus.NewDesc(
+			"rds_db_checkpoint_checkpoint_sync_latency",
+			"Total amount of time that has been spent in the portion of checkpoint processing where files are synchronized to disk (Milliseconds per checkpoint)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbCheckpointCheckpointWriteLatency: prometheus.NewDesc(
+			"rds_db_checkpoint_checkpoint_write_latency",
+			"Total amount of time that has been spent in the portion of checkpoint processing where files are written to disk (Milliseconds per checkpoint)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		dbTransactionsActiveTransactions: prometheus.NewDesc(
+			"rds_db_transactions_active_transactions",
+			"Number of active transactions (Transactions)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
 	}
 }
 
@@ -323,7 +583,6 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.allocatedStorage
 	ch <- c.allocatedDiskIOPS
 	ch <- c.allocatedDiskThroughput
-	ch <- c.apiCall
 	ch <- c.apiCall
 	ch <- c.backupRetentionPeriod
 	ch <- c.certificateValidTill
@@ -363,6 +622,49 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.usageManualSnapshots
 	ch <- c.writeIOPS
 	ch <- c.writeThroughput
+	// Performance Insights DB metrics
+	ch <- c.dbCacheBlksHit
+	ch <- c.dbCacheBuffersAlloc
+	ch <- c.dbCheckpointBuffersCheckpoint
+	ch <- c.dbCheckpointCheckpointSyncTime
+	ch <- c.dbCheckpointCheckpointWriteTime
+	ch <- c.dbCheckpointCheckpointsReq
+	ch <- c.dbCheckpointCheckpointsTimed
+	ch <- c.dbCheckpointMaxwrittenClean
+	ch <- c.dbConcurrencyDeadlocks
+	ch <- c.dbIOBlkReadTime
+	ch <- c.dbIOBlksRead
+	ch <- c.dbIOBuffersBackend
+	ch <- c.dbIOBuffersBackendFsync
+	ch <- c.dbIOBuffersClean
+	ch <- c.dbSQLTupDeleted
+	ch <- c.dbSQLTupFetched
+	ch <- c.dbSQLTupInserted
+	ch <- c.dbSQLTupReturned
+	ch <- c.dbSQLTupUpdated
+	ch <- c.dbTempTempBytes
+	ch <- c.dbTempTempFiles
+	ch <- c.dbTransactionsBlockedTransactions
+	ch <- c.dbTransactionsMaxUsedXactIds
+	ch <- c.dbTransactionsXactCommit
+	ch <- c.dbTransactionsXactRollback
+	ch <- c.dbTransactionsOldestInactiveLogicalSlotXid
+	ch <- c.dbTransactionsOldestActiveLogicalSlotXid
+	ch <- c.dbTransactionsOldestPreparedXid
+	ch <- c.dbTransactionsOldestRunningXid
+	ch <- c.dbTransactionsOldestHotStandbyXid
+	ch <- c.dbUserNumbackends
+	ch <- c.dbUserMaxConnections
+	ch <- c.dbWALArchivedCount
+	ch <- c.dbWALArchiveFailedCount
+	ch <- c.dbStateActiveCount
+	ch <- c.dbStateIdleCount
+	ch <- c.dbStateIdleInTransactionCount
+	ch <- c.dbStateIdleInTransactionAbortedCount
+	ch <- c.dbStateIdleInTransactionMaxTime
+	ch <- c.dbCheckpointCheckpointSyncLatency
+	ch <- c.dbCheckpointCheckpointWriteLatency
+	ch <- c.dbTransactionsActiveTransactions
 }
 
 // getMetrics collects and return all RDS metrics
@@ -400,7 +702,7 @@ func (c *rdsCollector) fetchMetrics() error {
 	c.counters.TagAPICalls += rdsFetcher.GetStatistics().TagAPICall
 	c.logger.Debug("RDS metrics fetched")
 
-	// Compute uniq instances identifiers and instance types
+	// Compute uniq instances identifiers, instance types and instance IDs
 	instanceIdentifiers, instanceTypes := getUniqTypeAndIdentifiers(rdsMetrics.Instances)
 
 	// Fetch EC2 Metrics for instance types
@@ -415,10 +717,34 @@ func (c *rdsCollector) fetchMetrics() error {
 		c.wg.Add(1)
 	}
 
+	// Fetch Performance Insights metrics
+	if c.configuration.CollectPerformanceInsights {
+		go c.getPerformanceInsightsMetrics(c.performanceInsightsClient, rdsMetrics.Instances)
+		c.wg.Add(1)
+	}
+
 	// Wait for all go routines to finish
 	c.wg.Wait()
 
 	return nil
+}
+
+func (c *rdsCollector) getPerformanceInsightsMetrics(client pi.PerformanceInsightsClient, rdsInstances map[string]rds.RdsInstanceMetrics) {
+	defer c.wg.Done()
+	c.logger.Debug("fetch performance insights metrics")
+
+	fetcher := pi.NewFetcher(c.ctx, client, c.logger)
+
+	metrics, err := fetcher.GetDBInstanceMetrics(rdsInstances)
+	if err != nil {
+		c.counters.Errors++
+		c.logger.Error(fmt.Sprintf("can't fetch performance insights metrics: %s", err))
+	}
+
+	c.counters.PerformanceInsightsAPICalls += fetcher.GetStatistics().UsageAPICall
+	c.metrics.PerformanceInsights = metrics
+
+	c.logger.Debug("performance insights metrics fetched", "metrics", metrics)
 }
 
 func (c *rdsCollector) getCloudwatchMetrics(client cloudwatch.CloudWatchClient, instanceIdentifiers []string) {
@@ -724,6 +1050,54 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(c.quotaDBInstances, prometheus.GaugeValue, c.metrics.ServiceQuota.DBinstances, c.awsAccountID, c.awsRegion)
 		ch <- prometheus.MustNewConstMetric(c.quotaTotalStorage, prometheus.GaugeValue, c.metrics.ServiceQuota.TotalStorage, c.awsAccountID, c.awsRegion)
 		ch <- prometheus.MustNewConstMetric(c.quotaMaxDBInstanceSnapshots, prometheus.GaugeValue, c.metrics.ServiceQuota.ManualDBInstanceSnapshots, c.awsAccountID, c.awsRegion)
+	}
+
+	if c.configuration.CollectPerformanceInsights {
+		ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.PerformanceInsightsAPICalls, c.awsAccountID, c.awsRegion, "performanceinsights")
+		for dBIdentifier, piMetrics := range c.metrics.PerformanceInsights.Instances {
+			ch <- prometheus.MustNewConstMetric(c.dbCacheBlksHit, prometheus.GaugeValue, piMetrics.DbCacheBlksHit, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbCacheBuffersAlloc, prometheus.GaugeValue, piMetrics.DbCacheBuffersAlloc, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbCheckpointBuffersCheckpoint, prometheus.GaugeValue, piMetrics.DbCheckpointBuffersCheckpoint, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbCheckpointCheckpointSyncTime, prometheus.GaugeValue, piMetrics.DbCheckpointCheckpointSyncTime, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbCheckpointCheckpointWriteTime, prometheus.GaugeValue, piMetrics.DbCheckpointCheckpointWriteTime, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbCheckpointCheckpointsReq, prometheus.GaugeValue, piMetrics.DbCheckpointCheckpointsReq, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbCheckpointCheckpointsTimed, prometheus.GaugeValue, piMetrics.DbCheckpointCheckpointsTimed, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbCheckpointMaxwrittenClean, prometheus.GaugeValue, piMetrics.DbCheckpointMaxwrittenClean, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbConcurrencyDeadlocks, prometheus.GaugeValue, piMetrics.DbConcurrencyDeadlocks, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbIOBlkReadTime, prometheus.CounterValue, piMetrics.DbIOBlkReadTime, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbIOBlksRead, prometheus.GaugeValue, piMetrics.DbIOBlksRead, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbIOBuffersBackend, prometheus.GaugeValue, piMetrics.DbIOBuffersBackend, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbIOBuffersBackendFsync, prometheus.GaugeValue, piMetrics.DbIOBuffersBackendFsync, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbIOBuffersClean, prometheus.GaugeValue, piMetrics.DbIOBuffersClean, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbSQLTupDeleted, prometheus.GaugeValue, piMetrics.DbSQLTupDeleted, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbSQLTupFetched, prometheus.GaugeValue, piMetrics.DbSQLTupFetched, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbSQLTupInserted, prometheus.GaugeValue, piMetrics.DbSQLTupInserted, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbSQLTupReturned, prometheus.GaugeValue, piMetrics.DbSQLTupReturned, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbSQLTupUpdated, prometheus.GaugeValue, piMetrics.DbSQLTupUpdated, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbTempTempBytes, prometheus.GaugeValue, piMetrics.DbTempTempBytes, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbTempTempFiles, prometheus.GaugeValue, piMetrics.DbTempTempFiles, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbTransactionsBlockedTransactions, prometheus.GaugeValue, piMetrics.DbTransactionsBlockedTransactions, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbTransactionsMaxUsedXactIds, prometheus.GaugeValue, piMetrics.DbTransactionsMaxUsedXactIds, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbTransactionsXactCommit, prometheus.GaugeValue, piMetrics.DbTransactionsXactCommit, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbTransactionsXactRollback, prometheus.GaugeValue, piMetrics.DbTransactionsXactRollback, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbTransactionsOldestInactiveLogicalSlotXid, prometheus.GaugeValue, piMetrics.DbTransactionsOldestInactiveLogicalSlotXid, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbTransactionsOldestActiveLogicalSlotXid, prometheus.GaugeValue, piMetrics.DbTransactionsOldestActiveLogicalSlotXid, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbTransactionsOldestPreparedXid, prometheus.GaugeValue, piMetrics.DbTransactionsOldestPreparedXid, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbTransactionsOldestRunningXid, prometheus.GaugeValue, piMetrics.DbTransactionsOldestRunningXid, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbTransactionsOldestHotStandbyXid, prometheus.GaugeValue, piMetrics.DbTransactionsOldestHotStandbyXid, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbUserNumbackends, prometheus.GaugeValue, piMetrics.DbUserNumbackends, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbUserMaxConnections, prometheus.GaugeValue, piMetrics.DbUserMaxConnections, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbWALArchivedCount, prometheus.CounterValue, piMetrics.DbWALArchivedCount, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbWALArchiveFailedCount, prometheus.CounterValue, piMetrics.DbWALArchiveFailedCount, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbStateActiveCount, prometheus.CounterValue, piMetrics.DbStateActiveCount, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbStateIdleCount, prometheus.CounterValue, piMetrics.DbStateIdleCount, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbStateIdleInTransactionCount, prometheus.CounterValue, piMetrics.DbStateIdleInTransactionCount, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbStateIdleInTransactionAbortedCount, prometheus.CounterValue, piMetrics.DbStateIdleInTransactionAbortedCount, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbStateIdleInTransactionMaxTime, prometheus.GaugeValue, piMetrics.DbStateIdleInTransactionMaxTime, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbCheckpointCheckpointSyncLatency, prometheus.GaugeValue, piMetrics.DbCheckpointCheckpointSyncLatency, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbCheckpointCheckpointWriteLatency, prometheus.GaugeValue, piMetrics.DbCheckpointCheckpointWriteLatency, c.awsAccountID, c.awsRegion, dBIdentifier)
+			ch <- prometheus.MustNewConstMetric(c.dbTransactionsActiveTransactions, prometheus.GaugeValue, piMetrics.DbTransactionsActiveTransactions, c.awsAccountID, c.awsRegion, dBIdentifier)
+		}
 	}
 }
 

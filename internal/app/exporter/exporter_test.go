@@ -12,6 +12,7 @@ import (
 	aws_rds_types "github.com/aws/aws-sdk-go-v2/service/rds/types"
 	cloudwatch_mock "github.com/qonto/prometheus-rds-exporter/internal/app/cloudwatch/mock"
 	ec2_mock "github.com/qonto/prometheus-rds-exporter/internal/app/ec2/mock"
+	performance_insights_mock "github.com/qonto/prometheus-rds-exporter/internal/app/pi/mock"
 	rds_mock "github.com/qonto/prometheus-rds-exporter/internal/app/rds/mock"
 	servicequotas_mock "github.com/qonto/prometheus-rds-exporter/internal/app/servicequotas/mock"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
@@ -29,18 +30,20 @@ func TestWithAllDisabledCollectors(t *testing.T) {
 	ec2Client := ec2_mock.EC2Client{}
 	cloudWatchClient := cloudwatch_mock.CloudwatchClient{}
 	servicequotasClient := servicequotas_mock.ServiceQuotasClient{}
+	performanceInsightClient := performance_insights_mock.PerformanceInsightsClient{}
 
 	configuration := exporter.Configuration{
-		CollectInstanceMetrics: false,
-		CollectInstanceTypes:   false,
-		CollectInstanceTags:    false,
-		CollectLogsSize:        false,
-		CollectMaintenances:    false,
-		CollectQuotas:          false,
-		CollectUsages:          false,
+		CollectPerformanceInsights: false,
+		CollectInstanceMetrics:     false,
+		CollectInstanceTypes:       false,
+		CollectInstanceTags:        false,
+		CollectLogsSize:            false,
+		CollectMaintenances:        false,
+		CollectQuotas:              false,
+		CollectUsages:              false,
 	}
 
-	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
+	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, performanceInsightClient, servicequotasClient, nil)
 
 	testutil.CollectAndCount(collector)
 
@@ -65,18 +68,20 @@ func TestCollector(t *testing.T) {
 	ec2Client := ec2_mock.EC2Client{}
 	cloudWatchClient := cloudwatch_mock.CloudwatchClient{}
 	servicequotasClient := servicequotas_mock.ServiceQuotasClient{}
+	performanceInsightClient := performance_insights_mock.PerformanceInsightsClient{}
 
 	configuration := exporter.Configuration{
-		CollectInstanceMetrics: true,
-		CollectInstanceTypes:   true,
-		CollectInstanceTags:    false,
-		CollectLogsSize:        true,
-		CollectMaintenances:    true,
-		CollectQuotas:          true,
-		CollectUsages:          true,
+		CollectPerformanceInsights: true,
+		CollectInstanceMetrics:     true,
+		CollectInstanceTypes:       true,
+		CollectInstanceTags:        false,
+		CollectLogsSize:            true,
+		CollectMaintenances:        true,
+		CollectQuotas:              true,
+		CollectUsages:              true,
 	}
 
-	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
+	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, performanceInsightClient, servicequotasClient, nil)
 
 	testutil.CollectAndCount(collector)
 
@@ -88,6 +93,7 @@ func TestCollector(t *testing.T) {
 	assert.Equal(t, float64(3), counter.ServiceQuotasAPICalls, "should have 1 call to ServiceQuota API")
 	assert.Equal(t, float64(1), counter.UsageAPIcalls, "should have 1 call to UsageAPIcalls API")
 	assert.Equal(t, float64(1), counter.CloudwatchAPICalls, "should have 1 call to CloudWatch API")
+	assert.Equal(t, float64(3), counter.PerformanceInsightsAPICalls, "should have 1 call to PerformanceInsights API")
 
 	// Get internal metrics
 	metrics := collector.GetMetrics()

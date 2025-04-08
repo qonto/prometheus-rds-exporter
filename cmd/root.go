@@ -11,6 +11,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
+	"github.com/aws/aws-sdk-go-v2/service/pi"
 	"github.com/aws/aws-sdk-go-v2/service/rds"
 	"github.com/aws/aws-sdk-go-v2/service/servicequotas"
 	"github.com/knadh/koanf/parsers/yaml"
@@ -39,23 +40,24 @@ var (
 )
 
 type exporterConfig struct {
-	Debug                  bool                `koanf:"debug"`
-	LogFormat              string              `koanf:"log-format"`
-	TLSCertPath            string              `koanf:"tls-cert-path"`
-	TLSKeyPath             string              `koanf:"tls-key-path"`
-	MetricPath             string              `koanf:"metrics-path"`
-	ListenAddress          string              `koanf:"listen-address"`
-	AWSAssumeRoleSession   string              `koanf:"aws-assume-role-session"`
-	AWSAssumeRoleArn       string              `koanf:"aws-assume-role-arn"`
-	CollectInstanceMetrics bool                `koanf:"collect-instance-metrics"`
-	CollectInstanceTags    bool                `koanf:"collect-instance-tags"`
-	CollectInstanceTypes   bool                `koanf:"collect-instance-types"`
-	CollectLogsSize        bool                `koanf:"collect-logs-size"`
-	CollectMaintenances    bool                `koanf:"collect-maintenances"`
-	CollectQuotas          bool                `koanf:"collect-quotas"`
-	CollectUsages          bool                `koanf:"collect-usages"`
-	OTELTracesEnabled      bool                `koanf:"enable-otel-traces"`
-	TagSelections          map[string][]string `koanf:"tag-selections"`
+	Debug                      bool                `koanf:"debug"`
+	LogFormat                  string              `koanf:"log-format"`
+	TLSCertPath                string              `koanf:"tls-cert-path"`
+	TLSKeyPath                 string              `koanf:"tls-key-path"`
+	MetricPath                 string              `koanf:"metrics-path"`
+	ListenAddress              string              `koanf:"listen-address"`
+	AWSAssumeRoleSession       string              `koanf:"aws-assume-role-session"`
+	AWSAssumeRoleArn           string              `koanf:"aws-assume-role-arn"`
+	CollectInstanceMetrics     bool                `koanf:"collect-instance-metrics"`
+	CollectInstanceTags        bool                `koanf:"collect-instance-tags"`
+	CollectInstanceTypes       bool                `koanf:"collect-instance-types"`
+	CollectLogsSize            bool                `koanf:"collect-logs-size"`
+	CollectMaintenances        bool                `koanf:"collect-maintenances"`
+	CollectQuotas              bool                `koanf:"collect-quotas"`
+	CollectUsages              bool                `koanf:"collect-usages"`
+	CollectPerformanceInsights bool                `koanf:"collect-performance-insights"`
+	OTELTracesEnabled          bool                `koanf:"enable-otel-traces"`
+	TagSelections              map[string][]string `koanf:"tag-selections"`
 }
 
 func run(configuration exporterConfig) {
@@ -90,19 +92,21 @@ func run(configuration exporterConfig) {
 	ec2Client := ec2.NewFromConfig(cfg)
 	cloudWatchClient := cloudwatch.NewFromConfig(cfg)
 	servicequotasClient := servicequotas.NewFromConfig(cfg)
+	piClient := pi.NewFromConfig(cfg)
 
 	collectorConfiguration := exporter.Configuration{
-		CollectInstanceMetrics: configuration.CollectInstanceMetrics,
-		CollectInstanceTypes:   configuration.CollectInstanceTypes,
-		CollectInstanceTags:    configuration.CollectInstanceTags,
-		CollectLogsSize:        configuration.CollectLogsSize,
-		CollectMaintenances:    configuration.CollectMaintenances,
-		CollectQuotas:          configuration.CollectQuotas,
-		CollectUsages:          configuration.CollectUsages,
-		TagSelections:          configuration.TagSelections,
+		CollectInstanceMetrics:     configuration.CollectInstanceMetrics,
+		CollectInstanceTypes:       configuration.CollectInstanceTypes,
+		CollectInstanceTags:        configuration.CollectInstanceTags,
+		CollectLogsSize:            configuration.CollectLogsSize,
+		CollectMaintenances:        configuration.CollectMaintenances,
+		CollectQuotas:              configuration.CollectQuotas,
+		CollectUsages:              configuration.CollectUsages,
+		CollectPerformanceInsights: configuration.CollectPerformanceInsights,
+		TagSelections:              configuration.TagSelections,
 	}
 
-	collector := exporter.NewCollector(*logger, collectorConfiguration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, tagClient)
+	collector := exporter.NewCollector(*logger, collectorConfiguration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, piClient, servicequotasClient, tagClient)
 
 	prometheus.MustRegister(collector)
 
@@ -167,6 +171,7 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().BoolP("collect-maintenances", "", true, "Collect AWS instances maintenances")
 	cmd.Flags().BoolP("collect-quotas", "", true, "Collect AWS RDS quotas")
 	cmd.Flags().BoolP("collect-usages", "", true, "Collect AWS RDS usages")
+	cmd.Flags().BoolP("collect-performance-insights", "", false, "Collect AWS DB Performance Insights usages")
 
 	return cmd, nil
 }
