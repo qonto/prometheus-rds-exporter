@@ -27,58 +27,103 @@ type CloudWatchMetrics struct {
 }
 
 type RdsMetrics struct {
+	BurstBalance              *float64
+	CheckpointLag             *float64
+	CPUCreditBalance          *float64
+	CPUCreditUsage            *float64
+	CPUSurplusCreditBalance   *float64
+	CPUSurplusCreditsCharged  *float64
 	CPUUtilization            *float64
 	DBLoad                    *float64
 	DBLoadCPU                 *float64
 	DBLoadNonCPU              *float64
 	DatabaseConnections       *float64
+	DiskQueueDepth            *float64
+	EBSByteBalance            *float64
+	EBSIOBalance              *float64
 	FreeStorageSpace          *float64
 	FreeableMemory            *float64
 	MaximumUsedTransactionIDs *float64
+	NetworkReceiveThroughput  *float64
+	NetworkTransmitThroughput *float64
+	OldestReplicationSlotLag  *float64
+	ReadLatency               *float64
 	ReadIOPS                  *float64
 	ReadThroughput            *float64
 	ReplicaLag                *float64
 	ReplicationSlotDiskUsage  *float64
 	SwapUsage                 *float64
 	TransactionLogsDiskUsage  *float64
+	TransactionLogsGeneration *float64
+	WriteLatency              *float64
 	WriteIOPS                 *float64
 	WriteThroughput           *float64
 }
 
 func (m *RdsMetrics) Update(field string, value float64) error {
 	switch field {
+	case "BurstBalance":
+		m.BurstBalance = &value
+	case "CheckpointLag":
+		m.CheckpointLag = &value
+	case "CPUCreditBalance":
+		m.CPUCreditBalance = &value
+	case "CPUCreditUsage":
+		m.CPUCreditUsage = &value
+	case "CPUSurplusCreditBalance":
+		m.CPUSurplusCreditBalance = &value
+	case "CPUSurplusCreditsCharged":
+		m.CPUSurplusCreditsCharged = &value
+	case "CPUUtilization":
+		m.CPUUtilization = &value
 	case "DBLoad":
 		m.DBLoad = &value
 	case "DBLoadCPU":
 		m.DBLoadCPU = &value
 	case "DBLoadNonCPU":
 		m.DBLoadNonCPU = &value
-	case "CPUUtilization":
-		m.CPUUtilization = &value
 	case "DatabaseConnections":
 		m.DatabaseConnections = &value
+	case "DiskQueueDepth":
+		m.DiskQueueDepth = &value
+	case "EBSByteBalance%":
+		m.EBSByteBalance = &value
+	case "EBSIOBalance%":
+		m.EBSIOBalance = &value
 	case "FreeStorageSpace":
 		m.FreeStorageSpace = &value
 	case "FreeableMemory":
 		m.FreeableMemory = &value
-	case "SwapUsage":
-		m.SwapUsage = &value
-	case "WriteIOPS":
-		m.WriteIOPS = &value
+	case "MaximumUsedTransactionIDs":
+		m.MaximumUsedTransactionIDs = &value
+	case "NetworkReceiveThroughput":
+		m.NetworkReceiveThroughput = &value
+	case "NetworkTransmitThroughput":
+		m.NetworkTransmitThroughput = &value
+	case "OldestReplicationSlotLag":
+		m.OldestReplicationSlotLag = &value
+	case "ReadLatency":
+		m.ReadLatency = &value
 	case "ReadIOPS":
 		m.ReadIOPS = &value
+	case "ReadThroughput":
+		m.ReadThroughput = &value
 	case "ReplicaLag":
 		m.ReplicaLag = &value
 	case "ReplicationSlotDiskUsage":
 		m.ReplicationSlotDiskUsage = &value
-	case "MaximumUsedTransactionIDs":
-		m.MaximumUsedTransactionIDs = &value
-	case "ReadThroughput":
-		m.ReadThroughput = &value
-	case "WriteThroughput":
-		m.WriteThroughput = &value
+	case "SwapUsage":
+		m.SwapUsage = &value
 	case "TransactionLogsDiskUsage":
 		m.TransactionLogsDiskUsage = &value
+	case "TransactionLogsGeneration":
+		m.TransactionLogsGeneration = &value
+	case "WriteLatency":
+		m.WriteLatency = &value
+	case "WriteIOPS":
+		m.WriteIOPS = &value
+	case "WriteThroughput":
+		m.WriteThroughput = &value
 	default:
 		return fmt.Errorf("can't process '%s' metrics: %w", field, errUnknownMetric)
 	}
@@ -87,23 +132,38 @@ func (m *RdsMetrics) Update(field string, value float64) error {
 }
 
 // getCloudWatchMetricsName returns names of Cloudwatch metrics to collect
-func getCloudWatchMetricsName() [16]string {
-	return [16]string{
+func getCloudWatchMetricsName() [31]string {
+	return [31]string{
+		"BurstBalance",
+		"CheckpointLag",
+		"CPUCreditBalance",
+		"CPUCreditUsage",
+		"CPUSurplusCreditBalance",
+		"CPUSurplusCreditsCharged",
 		"CPUUtilization",
 		"DBLoad",
 		"DBLoadCPU",
 		"DBLoadNonCPU",
 		"DatabaseConnections",
+		"DiskQueueDepth",
+		"EBSByteBalance%",
+		"EBSIOBalance%",
 		"FreeStorageSpace",
 		"FreeableMemory",
 		"MaximumUsedTransactionIDs",
+		"NetworkReceiveThroughput",
+		"NetworkTransmitThroughput",
+		"OldestReplicationSlotLag",
+		"ReadLatency",
 		"ReadIOPS",
 		"ReadThroughput",
 		"ReplicaLag",
 		"ReplicationSlotDiskUsage",
 		"SwapUsage",
 		"TransactionLogsDiskUsage",
+		"TransactionLogsGeneration",
 		"WriteIOPS",
+		"WriteLatency",
 		"WriteThroughput",
 	}
 }
