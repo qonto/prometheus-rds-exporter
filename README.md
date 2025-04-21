@@ -48,6 +48,7 @@ It collects key metrics about:
 | rds_backup_retention_period_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | Automatic DB snapshots retention period |
 | rds_burst_balance_percent | `"aws_account_id", "aws_region", "dbidentifier"` | Percent of General Purpose SSD (gp2) burst-bucket I/O credits available |
 | rds_ca_certificate_valid_until | `aws_account_id`, `aws_region`, `dbidentifier` | Timestamp of the expiration of the Instance certificate |
+| rds_checkpoint_lag_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | The amount of time since the most recent checkpoint |
 | rds_cpu_credit_balance_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of CPU credits available for the instance to burst beyond its base CPU utilization |
 | rds_cpu_credit_usage_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of CPU credits consumed by the instance |
 | rds_cpu_surplus_credit_balance_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of surplus CPU credits available for the instance to burst beyond its base CPU utilization |

@@ -334,7 +334,7 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		checkpointLag: prometheus.NewDesc("rds_checkpoint_lag_seconds",
-			"The amount of WAL data (in seconds) that needs to be applied to the database to reach consistency",
+			"The amount of time since the most recent checkpoint.",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		cpuCreditBalance: prometheus.NewDesc("rds_cpu_credit_balance_average",
