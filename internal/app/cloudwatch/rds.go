@@ -86,9 +86,9 @@ func (m *RdsMetrics) Update(field string, value float64) error {
 		m.DatabaseConnections = &value
 	case "DiskQueueDepth":
 		m.DiskQueueDepth = &value
-	case "EBSByteBalance%":
+	case "EBSByteBalance", "EBSByteBalance%":
 		m.EBSByteBalance = &value
-	case "EBSIOBalance%":
+	case "EBSIOBalance", "EBSIOBalance%":
 		m.EBSIOBalance = &value
 	case "FreeStorageSpace":
 		m.FreeStorageSpace = &value
@@ -170,6 +170,9 @@ func getCloudWatchMetricsName() [31]string {
 
 // generateCloudWatchQueryForInstance return the cloudwatch query for a specific instance's metric
 func generateCloudWatchQueryForInstance(queryID *string, metricName string, dbIdentifier string) CloudWatchMetricRequest {
+	// Remove the % symbol from the query ID because it is not allowed in the ID
+	*queryID = strings.ReplaceAll(*queryID, "%", "")
+
 	query := &aws_cloudwath_types.MetricDataQuery{
 		Id: queryID,
 		MetricStat: &aws_cloudwath_types.MetricStat{
@@ -203,7 +206,9 @@ func generateCloudWatchQueriesForInstances(dbIdentifiers []string) map[string]Cl
 
 	for i, dbIdentifier := range dbIdentifiers {
 		for _, metricName := range metrics {
-			queryID := aws.String(fmt.Sprintf("%s_%d", strings.ToLower(metricName), i))
+			// Remove the % symbol from the query ID because it is not allowed in the ID
+			metricNameForID := strings.ReplaceAll(metricName, "%", "")
+			queryID := aws.String(fmt.Sprintf("%s_%d", strings.ToLower(metricNameForID), i))
 
 			query := generateCloudWatchQueryForInstance(queryID, metricName, dbIdentifier)
 
