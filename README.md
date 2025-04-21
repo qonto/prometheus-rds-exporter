@@ -46,12 +46,20 @@ It collects key metrics about:
 | rds_allocated_storage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Allocated storage |
 | rds_api_call_total | `api`, `aws_account_id`, `aws_region` | Number of call to AWS API |
 | rds_backup_retention_period_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | Automatic DB snapshots retention period |
+| rds_burst_balance_percent | `"aws_account_id", "aws_region", "dbidentifier"` | Percent of General Purpose SSD (gp2) burst-bucket I/O credits available |
 | rds_ca_certificate_valid_until | `aws_account_id`, `aws_region`, `dbidentifier` | Timestamp of the expiration of the Instance certificate |
+| rds_cpu_credit_balance_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of CPU credits available for the instance to burst beyond its base CPU utilization |
+| rds_cpu_credit_usage_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of CPU credits consumed by the instance |
+| rds_cpu_surplus_credit_balance_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of surplus CPU credits available for the instance to burst beyond its base CPU utilization |
+| rds_cpu_surplus_credits_charged_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of surplus CPU credits charged when the instance exceeds its base CPU utilization |
 | rds_cpu_usage_percent_average | `aws_account_id`, `aws_region`, `dbidentifier` | Instance CPU used |
 | rds_database_connections_average | `aws_account_id`, `aws_region`, `dbidentifier` | The number of client network connections to the database instance |
 | rds_dbload_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of active sessions for the DB engine |
 | rds_dbload_cpu_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of active sessions where the wait event type is CPU |
 | rds_dbload_noncpu_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of active sessions where the wait event type is not CPU |
+| rds_disk_queue_depth_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of outstanding IOs (read/write requests) waiting to access the disk |
+| rds_ebs_byte_balance_percent | `aws_account_id`, `aws_region`, `dbidentifier` | Percent of burst-bucket bytes available for EBS volumes |
+| rds_ebs_iops_balance_percent | `aws_account_id`, `aws_region`, `dbidentifier` | Percent of burst-bucket IOPS available for EBS volumes |
 | rds_exporter_build_info | `build_date`, `commit_sha`, `version` | A metric with constant '1' value labeled by version from which exporter was built |
 | rds_exporter_errors_total | | Total number of errors encountered by the exporter |
 | rds_free_storage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Free storage on the instance |
@@ -71,19 +79,25 @@ It collects key metrics about:
 | rds_max_disk_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Max disk IOPS evaluated with disk IOPS and EC2 capacity |
 | rds_max_storage_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Max disk throughput evaluated with disk throughput and EC2 capacity |
 | rds_maximum_used_transaction_ids_average | `aws_account_id`, `aws_region`, `dbidentifier` | Maximum transaction IDs that have been used. Applies to only PostgreSQL |
+| rds_network_receive_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | The amount of network throughput received from the client by each instance in bytes per second |
+| rds_network_transmit_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | The amount of network throughput sent to the client by each instance in bytes per second |
+| rds_oldest_replication_slot_lag_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | The lag of the oldest replication slot in seconds |
 | rds_quota_max_dbinstances_average | `aws_account_id`, `aws_region` | Maximum number of RDS instances allowed in the AWS account |
 | rds_quota_maximum_db_instance_snapshots_average | `aws_account_id`, `aws_region` | Maximum number of manual DB instance snapshots |
 | rds_quota_total_storage_bytes | `aws_account_id`, `aws_region` | Maximum total storage for all DB instances |
 | rds_read_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of disk read I/O operations per second |
+| rds_read_latency_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | The average amount of time taken per disk I/O operation |
 | rds_read_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of bytes read from disk per second |
 | rds_replica_lag_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | For read replica configurations, the amount of time a read replica DB instance lags behind the source DB instance. Applies to MariaDB, Microsoft SQL Server, MySQL, Oracle, and PostgreSQL read replicas |
 | rds_replication_slot_disk_usage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Disk space used by replication slot files. Applies to PostgreSQL |
 | rds_swap_usage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Amount of swap space used on the DB instance. This metric is not available for SQL Server |
 | rds_transaction_logs_disk_usage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Disk space used by transaction logs (only on PostgreSQL) |
+| rds_transaction_logs_generation_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | The amount of transaction logs generated per second |
 | rds_usage_allocated_storage_bytes | `aws_account_id`, `aws_region` | Total storage used by AWS RDS instances |
 | rds_usage_db_instances_average | `aws_account_id`, `aws_region` | AWS RDS instance count |
 | rds_usage_manual_snapshots_average | `aws_account_id`, `aws_region` | Manual snapshots count |
 | rds_write_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of disk write I/O operations per second |
+| rds_write_latency_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | The average amount of time taken per disk I/O operation |
 | rds_write_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of bytes written to disk per second |
 | up | | Was the last scrape of RDS successful |
 
