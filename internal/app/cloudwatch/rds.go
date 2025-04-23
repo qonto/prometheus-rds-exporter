@@ -283,7 +283,7 @@ func (c *RdsFetcher) GetRDSInstanceMetrics(dbIdentifiers []string) (CloudWatchMe
 	metrics := make(map[string]*RdsMetrics)
 
 	cloudWatchQueries := generateCloudWatchQueriesForInstances(dbIdentifiers)
-	startTime := aws.Time(time.Now().Add(-3 * time.Minute)) // Start time - 1 hour ago
+	startTime := aws.Time(time.Now().Add(-5 * time.Minute)) // Start time - 5 minutes ago
 	endTime := aws.Time(time.Now())                         // End time - now
 	chunkSize := MaxQueriesPerCloudwatchRequest
 
