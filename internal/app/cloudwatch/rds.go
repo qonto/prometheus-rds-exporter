@@ -255,7 +255,7 @@ func (c *RdsFetcher) updateMetricsWithCloudWatchQueriesResult(metrics map[string
 	}
 
 	for _, m := range resp.MetricDataResults {
-		if m.Values == nil {
+		if len(m.Values) == 0 {
 			c.logger.Warn("cloudwatch value is empty", "metric", *m.Label)
 
 			continue
