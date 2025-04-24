@@ -279,12 +279,12 @@ func (c *RdsFetcher) updateMetricsWithCloudWatchQueriesResult(metrics map[string
 	return nil
 }
 
-func (c *RdsFetcher) GetRDSInstanceMetrics(dbIdentifiers []string) (CloudWatchMetrics, error) {
+func (c *RdsFetcher) GetRDSInstanceMetrics(dbIdentifiers []string, delay int) (CloudWatchMetrics, error) {
 	metrics := make(map[string]*RdsMetrics)
 
 	cloudWatchQueries := generateCloudWatchQueriesForInstances(dbIdentifiers)
-	startTime := aws.Time(time.Now().Add(-5 * time.Minute)) // Start time - 5 minutes ago
-	endTime := aws.Time(time.Now())                         // End time - now
+	startTime := aws.Time(time.Now().Add(-time.Duration(300+delay) * time.Second)) // Start time - 5 minutes ago + delay
+	endTime := aws.Time(time.Now().Add(-time.Duration(delay) * time.Second))       // End time - now + delay
 	chunkSize := MaxQueriesPerCloudwatchRequest
 
 	cloudWatchAPICalls := float64(0)
