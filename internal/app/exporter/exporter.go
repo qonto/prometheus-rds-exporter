@@ -30,14 +30,15 @@ const (
 var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/exporter")
 
 type Configuration struct {
-	CollectInstanceMetrics bool
-	CollectInstanceTags    bool
-	CollectInstanceTypes   bool
-	CollectLogsSize        bool
-	CollectMaintenances    bool
-	CollectQuotas          bool
-	CollectUsages          bool
-	TagSelections          map[string][]string
+	CollectInstanceMetrics      bool
+	CollectInstanceMetricsDelay int
+	CollectInstanceTags         bool
+	CollectInstanceTypes        bool
+	CollectLogsSize             bool
+	CollectMaintenances         bool
+	CollectQuotas               bool
+	CollectUsages               bool
+	TagSelections               map[string][]string
 }
 
 type counters struct {
@@ -119,6 +120,21 @@ type rdsCollector struct {
 	transactionLogsDiskUsage    *prometheus.Desc
 	certificateValidTill        *prometheus.Desc
 	age                         *prometheus.Desc
+	burstBalance                *prometheus.Desc
+	checkpointLag               *prometheus.Desc
+	cpuCreditBalance            *prometheus.Desc
+	cpuCreditUsage              *prometheus.Desc
+	cpuSurplusCreditBalance     *prometheus.Desc
+	cpuSurplusCreditsCharged    *prometheus.Desc
+	diskQueueDepth              *prometheus.Desc
+	ebsByteBalance              *prometheus.Desc
+	ebsIOBalance                *prometheus.Desc
+	networkReceiveThroughput    *prometheus.Desc
+	networkTransmitThroughput   *prometheus.Desc
+	oldestReplicationSlotLag    *prometheus.Desc
+	readLatency                 *prometheus.Desc
+	transactionLogsGeneration   *prometheus.Desc
+	writeLatency                *prometheus.Desc
 }
 
 func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient, tagClient resourcegroupstaggingapi.GetResourcesAPIClient) *rdsCollector {
@@ -314,6 +330,66 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			"Manual snapshots count",
 			[]string{"aws_account_id", "aws_region"}, nil,
 		),
+		burstBalance: prometheus.NewDesc("rds_burst_balance_percent",
+			"Percent of General Purpose SSD (gp2) burst-bucket I/O credits available",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		checkpointLag: prometheus.NewDesc("rds_checkpoint_lag_seconds",
+			"The amount of time since the most recent checkpoint.",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		cpuCreditBalance: prometheus.NewDesc("rds_cpu_credit_balance_average",
+			"Number of CPU credits available for the instance to burst beyond its base CPU utilization",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		cpuCreditUsage: prometheus.NewDesc("rds_cpu_credit_usage_average",
+			"Number of CPU credits consumed by the instance",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		cpuSurplusCreditBalance: prometheus.NewDesc("rds_cpu_surplus_credit_balance_average",
+			"Number of surplus CPU credits available for the instance to burst beyond its base CPU utilization",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		cpuSurplusCreditsCharged: prometheus.NewDesc("rds_cpu_surplus_credits_charged_average",
+			"Number of surplus CPU credits charged when the instance exceeds its base CPU utilization",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		diskQueueDepth: prometheus.NewDesc("rds_disk_queue_depth_average",
+			"Number of outstanding IOs (read/write requests) waiting to access the disk",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		ebsByteBalance: prometheus.NewDesc("rds_ebs_byte_balance_percent",
+			"Percent of burst-bucket bytes available for EBS volumes",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		ebsIOBalance: prometheus.NewDesc("rds_ebs_io_balance_percent",
+			"Percent of burst-bucket I/O credits available for EBS volumes",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		networkReceiveThroughput: prometheus.NewDesc("rds_network_receive_throughput_bytes",
+			"The amount of network throughput received from the client by each instance in bytes per second",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		networkTransmitThroughput: prometheus.NewDesc("rds_network_transmit_throughput_bytes",
+			"The amount of network throughput sent to the client by each instance in bytes per second",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		oldestReplicationSlotLag: prometheus.NewDesc("rds_oldest_replication_slot_lag_bytes",
+			"The lag of the oldest replication slot in bytes",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		readLatency: prometheus.NewDesc("rds_read_latency_seconds",
+			"The average amount of time taken per disk I/O operation",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		transactionLogsGeneration: prometheus.NewDesc("rds_transaction_logs_generation_bytes",
+			"The amount of transaction logs generated per second",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		writeLatency: prometheus.NewDesc("rds_write_latency_seconds",
+			"The average amount of time taken per disk I/O operation",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
 	}
 }
 
@@ -363,6 +439,21 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.usageManualSnapshots
 	ch <- c.writeIOPS
 	ch <- c.writeThroughput
+	ch <- c.burstBalance
+	ch <- c.checkpointLag
+	ch <- c.cpuCreditBalance
+	ch <- c.cpuCreditUsage
+	ch <- c.cpuSurplusCreditBalance
+	ch <- c.cpuSurplusCreditsCharged
+	ch <- c.diskQueueDepth
+	ch <- c.ebsByteBalance
+	ch <- c.ebsIOBalance
+	ch <- c.networkReceiveThroughput
+	ch <- c.networkTransmitThroughput
+	ch <- c.oldestReplicationSlotLag
+	ch <- c.readLatency
+	ch <- c.transactionLogsGeneration
+	ch <- c.writeLatency
 }
 
 // getMetrics collects and return all RDS metrics
@@ -430,7 +521,7 @@ func (c *rdsCollector) getCloudwatchMetrics(client cloudwatch.CloudWatchClient, 
 
 	fetcher := cloudwatch.NewRDSFetcher(client, c.logger)
 
-	metrics, err := fetcher.GetRDSInstanceMetrics(instanceIdentifiers)
+	metrics, err := fetcher.GetRDSInstanceMetrics(instanceIdentifiers, c.configuration.CollectInstanceMetricsDelay)
 	if err != nil {
 		c.counters.Errors++
 	}
@@ -696,6 +787,52 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 
 		if instance.DBLoadNonCPU != nil {
 			ch <- prometheus.MustNewConstMetric(c.dBLoadNonCPU, prometheus.GaugeValue, *instance.DBLoadNonCPU, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.BurstBalance != nil {
+			ch <- prometheus.MustNewConstMetric(c.burstBalance, prometheus.GaugeValue, *instance.BurstBalance, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+		if instance.CheckpointLag != nil {
+			ch <- prometheus.MustNewConstMetric(c.checkpointLag, prometheus.GaugeValue, *instance.CheckpointLag, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+		if instance.CPUCreditBalance != nil {
+			ch <- prometheus.MustNewConstMetric(c.cpuCreditBalance, prometheus.GaugeValue, *instance.CPUCreditBalance, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+		if instance.CPUCreditUsage != nil {
+			ch <- prometheus.MustNewConstMetric(c.cpuCreditUsage, prometheus.GaugeValue, *instance.CPUCreditUsage, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+		if instance.CPUSurplusCreditBalance != nil {
+			ch <- prometheus.MustNewConstMetric(c.cpuSurplusCreditBalance, prometheus.GaugeValue, *instance.CPUSurplusCreditBalance, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+		if instance.CPUSurplusCreditsCharged != nil {
+			ch <- prometheus.MustNewConstMetric(c.cpuSurplusCreditsCharged, prometheus.GaugeValue, *instance.CPUSurplusCreditsCharged, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+		if instance.DiskQueueDepth != nil {
+			ch <- prometheus.MustNewConstMetric(c.diskQueueDepth, prometheus.GaugeValue, *instance.DiskQueueDepth, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+		if instance.EBSByteBalance != nil {
+			ch <- prometheus.MustNewConstMetric(c.ebsByteBalance, prometheus.GaugeValue, *instance.EBSByteBalance, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+		if instance.EBSIOBalance != nil {
+			ch <- prometheus.MustNewConstMetric(c.ebsIOBalance, prometheus.GaugeValue, *instance.EBSIOBalance, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+		if instance.NetworkReceiveThroughput != nil {
+			ch <- prometheus.MustNewConstMetric(c.networkReceiveThroughput, prometheus.GaugeValue, *instance.NetworkReceiveThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+		if instance.NetworkTransmitThroughput != nil {
+			ch <- prometheus.MustNewConstMetric(c.networkTransmitThroughput, prometheus.GaugeValue, *instance.NetworkTransmitThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+		if instance.OldestReplicationSlotLag != nil {
+			ch <- prometheus.MustNewConstMetric(c.oldestReplicationSlotLag, prometheus.GaugeValue, *instance.OldestReplicationSlotLag, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+		if instance.ReadLatency != nil {
+			ch <- prometheus.MustNewConstMetric(c.readLatency, prometheus.GaugeValue, *instance.ReadLatency, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+		if instance.TransactionLogsGeneration != nil {
+			ch <- prometheus.MustNewConstMetric(c.transactionLogsGeneration, prometheus.GaugeValue, *instance.TransactionLogsGeneration, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+		if instance.WriteLatency != nil {
+			ch <- prometheus.MustNewConstMetric(c.writeLatency, prometheus.GaugeValue, *instance.WriteLatency, c.awsAccountID, c.awsRegion, dbidentifier)
 		}
 	}
 
