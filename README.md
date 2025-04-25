@@ -82,7 +82,7 @@ It collects key metrics about:
 | rds_maximum_used_transaction_ids_average | `aws_account_id`, `aws_region`, `dbidentifier` | Maximum transaction IDs that have been used. Applies to only PostgreSQL |
 | rds_network_receive_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | The amount of network throughput received from the client by each instance in bytes per second |
 | rds_network_transmit_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | The amount of network throughput sent to the client by each instance in bytes per second |
-| rds_oldest_replication_slot_lag_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | The lag of the oldest replication slot in seconds |
+| rds_oldest_replication_slot_lag_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | The lag of the oldest replication slot in bytes |
 | rds_quota_max_dbinstances_average | `aws_account_id`, `aws_region` | Maximum number of RDS instances allowed in the AWS account |
 | rds_quota_maximum_db_instance_snapshots_average | `aws_account_id`, `aws_region` | Maximum number of manual DB instance snapshots |
 | rds_quota_total_storage_bytes | `aws_account_id`, `aws_region` | Maximum total storage for all DB instances |
