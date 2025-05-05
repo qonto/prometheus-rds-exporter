@@ -43,6 +43,8 @@ We use:
 
 * [`helm unittest`](https://github.com/helm-unittest/helm-unittest) for Helm chart tests
 
+* [`distroless`](https://github.com/GoogleContainerTools/distroless) for running only application and its runtime dependencies in container (like [Kubernetes](https://github.com/GoogleContainerTools/distroless?tab=readme-ov-file#who-uses-distroless))
+
 ## Pull Request Checklist
 
 * Branch from the `main` branch and, if needed, rebase to the current main branch before submitting your pull request. If it doesn't merge cleanly with main you may be asked to rebase your changes.

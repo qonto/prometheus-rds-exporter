@@ -577,7 +577,7 @@ See the [Development environment](#development-environment) to start the Prometh
 1. Start application
 
     ```bash
-    docker run -p 9043:9043 -e AWS_PROFILE=${AWS_PROFILE} -v $HOME/.aws:/app/.aws public.ecr.aws/qonto/prometheus-rds-exporter:latest
+    docker run -p 9043:9043 -e AWS_PROFILE=${AWS_PROFILE} -v $HOME/.aws:/home/nonroot/.aws public.ecr.aws/qonto/prometheus-rds-exporter:latest
     ```
 
 ### Istio specific steps
