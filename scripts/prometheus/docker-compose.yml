@@ -1,6 +1,4 @@
 ---
-version: '3.1'
-
 volumes:
   prometheus_data: {}
   grafana_data: {}
@@ -57,7 +55,7 @@ services:
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY-}
       - PROMETHEUS_RDS_EXPORTER_LOG_FORMAT=text
     volumes:
-      - $HOME/.aws:/app/.aws:ro
+      - $HOME/.aws:/home/nonroot/.aws:ro
       - ./../../rds_exporter:/mnt/rds_exporprometheus-rds-exporterter
     command: ["./prometheus-rds-exporter", "--debug"]
     ports:
