@@ -54,6 +54,7 @@ type exporterConfig struct {
 	CollectMaintenances    bool                `koanf:"collect-maintenances"`
 	CollectQuotas          bool                `koanf:"collect-quotas"`
 	CollectUsages          bool                `koanf:"collect-usages"`
+	IncludeTagsInMetrics   bool                `koanf:"include-tags-in-metrics"`
 	OTELTracesEnabled      bool                `koanf:"enable-otel-traces"`
 	TagSelections          map[string][]string `koanf:"tag-selections"`
 }
@@ -99,6 +100,7 @@ func run(configuration exporterConfig) {
 		CollectMaintenances:    configuration.CollectMaintenances,
 		CollectQuotas:          configuration.CollectQuotas,
 		CollectUsages:          configuration.CollectUsages,
+		IncludeTagsInMetrics:   configuration.IncludeTagsInMetrics,
 		TagSelections:          configuration.TagSelections,
 	}
 
@@ -167,6 +169,7 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().BoolP("collect-maintenances", "", true, "Collect AWS instances maintenances")
 	cmd.Flags().BoolP("collect-quotas", "", true, "Collect AWS RDS quotas")
 	cmd.Flags().BoolP("collect-usages", "", true, "Collect AWS RDS usages")
+	cmd.Flags().BoolP("include-tags-in-metrics", "", false, "Include instance tags as labels in all metrics")
 
 	return cmd, nil
 }
