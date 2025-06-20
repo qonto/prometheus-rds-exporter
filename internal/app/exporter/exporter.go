@@ -37,6 +37,7 @@ type Configuration struct {
 	CollectMaintenances    bool
 	CollectQuotas          bool
 	CollectUsages          bool
+	IncludeTagsInMetrics   bool
 	TagSelections          map[string][]string
 }
 
@@ -501,26 +502,76 @@ func (c *rdsCollector) getQuotasMetrics(client servicequotas.ServiceQuotasClient
 	span.SetStatus(codes.Ok, "quota fetched")
 }
 
-func (c *rdsCollector) getInstanceTagLabels(dbidentifier string, instance rds.RdsInstanceMetrics) (keys []string, values []string) {
-	labels := map[string]string{
+// getBaseLabels returns the standard labels without tags as a map
+func (c *rdsCollector) getBaseLabels(dbidentifier string) map[string]string {
+	return map[string]string{
 		"aws_account_id": c.awsAccountID,
 		"aws_region":     c.awsRegion,
 		"dbidentifier":   dbidentifier,
 	}
+}
 
-	// Add instance tags to labels
-	// Prefix label containing instance's tags with "tag_" prefix to avoid conflict with other labels
-	for k, v := range instance.Tags {
-		labelName := fmt.Sprintf("tag_%s", clearPrometheusLabel(k))
-		labels[labelName] = v
+// getTagsLabels returns the instance tags as labels if a collection is enabled
+func (c *rdsCollector) getTagLabels(instance rds.RdsInstanceMetrics) (keys []string, values []string) {
+	if !c.configuration.CollectInstanceTags {
+		return nil, nil
 	}
 
+	// Create a map for deduplication
+	tagLabels := make(map[string]string)
+
+	for k, v := range instance.Tags {
+		// Skip empty keys or values
+		if k == "" || v == "" {
+			continue
+		}
+
+		// Normalize the key name for Prometheus
+		normalizedKey := clearPrometheusLabel(k)
+		if normalizedKey == "" {
+			continue
+		}
+
+		// Prefix tag keys with tag_ to avoid conflicts with base labels
+		labelName := fmt.Sprintf("tag_%s", normalizedKey)
+		tagLabels[labelName] = v
+	}
+
+	// Convert to slices
+	for k, v := range tagLabels {
+		keys = append(keys, k)
+		values = append(values, v)
+	}
+
+	return keys, values
+}
+
+// getInstanceTagLabels returns the base labels and optionally includes tags as labels
+func (c *rdsCollector) getInstanceTagLabels(dbidentifier string, instance rds.RdsInstanceMetrics) (keys []string, values []string) {
+	// Start with base labels
+	labels := c.getBaseLabels(dbidentifier)
+
+	// Add instance tags to labels only if collection is enabled and they should be included in metrics
+	if c.configuration.CollectInstanceTags && c.configuration.IncludeTagsInMetrics {
+		tagKeys, tagValues := c.getTagLabels(instance)
+		for i, key := range tagKeys {
+			labels[key] = tagValues[i]
+		}
+	}
+
+	// Convert map to slices
 	for k, v := range labels {
 		keys = append(keys, k)
 		values = append(values, v)
 	}
 
 	return keys, values
+}
+
+// createDynamicMetric creates a new metric with tags included as labels
+func (c *rdsCollector) createDynamicMetric(name, help string, instance rds.RdsInstanceMetrics, dbidentifier string) *prometheus.Desc {
+	keys, _ := c.getInstanceTagLabels(dbidentifier, instance)
+	return prometheus.NewDesc(name, help, keys, nil)
 }
 
 func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
@@ -554,45 +605,57 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.TagAPICalls, c.awsAccountID, c.awsRegion, "tag")
 
 	for dbidentifier, instance := range c.metrics.RDS.Instances {
+		// For each instance, create metrics with tags included
+		keys, values := c.getInstanceTagLabels(dbidentifier, instance)
+
+		// Create dynamic metric descriptors with tags as labels
+		allocatedStorageDesc := prometheus.NewDesc("rds_allocated_storage_bytes", "Allocated storage", keys, nil)
 		ch <- prometheus.MustNewConstMetric(
-			c.allocatedStorage,
+			allocatedStorageDesc,
 			prometheus.GaugeValue,
 			float64(instance.AllocatedStorage),
-			c.awsAccountID, c.awsRegion, dbidentifier,
+			values...,
 		)
+		// Combine the standard info labels with tag labels
+		infoKeys := append([]string{}, keys...)
+		infoValues := append([]string{}, values...)
+
+		// Add the remaining information fields that are specific to the info metric
+		infoKeys = append(infoKeys, "dbi_resource_id", "instance_class", "engine", "engine_version", "storage_type", "multi_az",
+			"deletion_protection", "role", "source_dbidentifier", "pending_modified_values", "pending_maintenance",
+			"performance_insights_enabled", "ca_certificate_identifier", "arn")
+
+		infoValues = append(infoValues, instance.DbiResourceID, instance.DBInstanceClass, instance.Engine, instance.EngineVersion,
+			instance.StorageType, strconv.FormatBool(instance.MultiAZ), strconv.FormatBool(instance.DeletionProtection),
+			instance.Role, instance.SourceDBInstanceIdentifier, strconv.FormatBool(instance.PendingModifiedValues),
+			instance.PendingMaintenanceAction, strconv.FormatBool(instance.PerformanceInsightsEnabled),
+			instance.CACertificateIdentifier, instance.Arn)
+
+		informationDesc := prometheus.NewDesc("rds_instance_info", "RDS instance information", infoKeys, nil)
 		ch <- prometheus.MustNewConstMetric(
-			c.information,
+			informationDesc,
 			prometheus.GaugeValue,
 			1,
-			c.awsAccountID,
-			c.awsRegion,
-			dbidentifier,
-			instance.DbiResourceID,
-			instance.DBInstanceClass,
-			instance.Engine,
-			instance.EngineVersion,
-			instance.StorageType,
-			strconv.FormatBool(instance.MultiAZ),
-			strconv.FormatBool(instance.DeletionProtection),
-			instance.Role,
-			instance.SourceDBInstanceIdentifier,
-			strconv.FormatBool(instance.PendingModifiedValues),
-			instance.PendingMaintenanceAction,
-			strconv.FormatBool(instance.PerformanceInsightsEnabled),
-			instance.CACertificateIdentifier,
-			instance.Arn,
+			infoValues...,
 		)
 		if instance.MaxAllocatedStorage > 0 {
-			ch <- prometheus.MustNewConstMetric(c.maxAllocatedStorage, prometheus.GaugeValue, float64(instance.MaxAllocatedStorage), c.awsAccountID, c.awsRegion, dbidentifier)
+			maxAllocatedStorageDesc := prometheus.NewDesc("rds_max_allocated_storage_bytes", "Upper limit in gibibytes to which Amazon RDS can automatically scale the storage of the DB instance", keys, nil)
+			ch <- prometheus.MustNewConstMetric(maxAllocatedStorageDesc, prometheus.GaugeValue, float64(instance.MaxAllocatedStorage), values...)
 		}
 		if instance.MaxIops > 0 {
-			ch <- prometheus.MustNewConstMetric(c.allocatedDiskIOPS, prometheus.GaugeValue, float64(instance.MaxIops), c.awsAccountID, c.awsRegion, dbidentifier)
+			allocatedDiskIOPSDesc := prometheus.NewDesc("rds_allocated_disk_iops_average", "Allocated disk IOPS", keys, nil)
+			ch <- prometheus.MustNewConstMetric(allocatedDiskIOPSDesc, prometheus.GaugeValue, float64(instance.MaxIops), values...)
 		}
 		if instance.StorageThroughput > 0 {
-			ch <- prometheus.MustNewConstMetric(c.allocatedDiskThroughput, prometheus.GaugeValue, float64(instance.StorageThroughput), c.awsAccountID, c.awsRegion, dbidentifier)
+			allocatedDiskThroughputDesc := prometheus.NewDesc("rds_allocated_disk_throughput_bytes", "Allocated disk throughput", keys, nil)
+			ch <- prometheus.MustNewConstMetric(allocatedDiskThroughputDesc, prometheus.GaugeValue, float64(instance.StorageThroughput), values...)
 		}
-		ch <- prometheus.MustNewConstMetric(c.status, prometheus.GaugeValue, float64(instance.Status), c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.backupRetentionPeriod, prometheus.GaugeValue, float64(instance.BackupRetentionPeriod), c.awsAccountID, c.awsRegion, dbidentifier)
+
+		statusDesc := prometheus.NewDesc("rds_instance_status", "Instance status (0 stopped or can't scrape) (1 ok | 2 backup | 3 startup | 4 modify | 5 monitoring config | 1X storage | 20 renaming) (-1 unknown | -2 stopping | -3 creating | -4 deleting | -5 rebooting | -6 failed | -7 full storage | -8 upgrading | -9 maintenance | -10 restore error)", keys, nil)
+		ch <- prometheus.MustNewConstMetric(statusDesc, prometheus.GaugeValue, float64(instance.Status), values...)
+
+		backupRetentionPeriodDesc := prometheus.NewDesc("rds_backup_retention_period_seconds", "Automatic DB snapshots retention period", keys, nil)
+		ch <- prometheus.MustNewConstMetric(backupRetentionPeriodDesc, prometheus.GaugeValue, float64(instance.BackupRetentionPeriod), values...)
 
 		maxIops := instance.MaxIops
 		storageThroughput := float64(instance.StorageThroughput)
@@ -604,98 +667,148 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		}
 
 		if maxIops > 0 {
-			ch <- prometheus.MustNewConstMetric(c.maxIops, prometheus.GaugeValue, float64(maxIops), c.awsAccountID, c.awsRegion, dbidentifier)
+			maxIopsDesc := prometheus.NewDesc("rds_max_disk_iops_average", "Max disk IOPS evaluated with disk IOPS and EC2 capacity", keys, nil)
+			ch <- prometheus.MustNewConstMetric(maxIopsDesc, prometheus.GaugeValue, float64(maxIops), values...)
 		}
 		if storageThroughput > 0 {
-			ch <- prometheus.MustNewConstMetric(c.storageThroughput, prometheus.GaugeValue, storageThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+			storageThroughputDesc := prometheus.NewDesc("rds_max_storage_throughput_bytes", "Max disk throughput evaluated with disk throughput and EC2 capacity", keys, nil)
+			ch <- prometheus.MustNewConstMetric(storageThroughputDesc, prometheus.GaugeValue, storageThroughput, values...)
 		}
 
+		// We still keep the instanceTags metric for backward compatibility
 		if c.configuration.CollectInstanceTags {
-			names, values := c.getInstanceTagLabels(dbidentifier, instance)
+			// For rds_instance_tags, always include tags regardless of IncludeTagsInMetrics setting
+			labels := c.getBaseLabels(dbidentifier)
+			tagKeys, tagValues := c.getTagLabels(instance)
 
-			c.instanceTags = prometheus.NewDesc("rds_instance_tags", "AWS tags attached to the instance", names, nil)
-			ch <- prometheus.MustNewConstMetric(c.instanceTags, prometheus.GaugeValue, 0, values...)
+			// Add tags to the labels map
+			for i, key := range tagKeys {
+				labels[key] = tagValues[i]
+			}
+
+			// Convert map to slices
+			var allKeys []string
+			var allValues []string
+			for k, v := range labels {
+				allKeys = append(allKeys, k)
+				allValues = append(allValues, v)
+			}
+
+			instanceTagsDesc := prometheus.NewDesc("rds_instance_tags", "AWS tags attached to the instance", allKeys, nil)
+			ch <- prometheus.MustNewConstMetric(instanceTagsDesc, prometheus.GaugeValue, 0, allValues...)
 		}
 
 		if instance.CertificateValidTill != nil {
-			ch <- prometheus.MustNewConstMetric(c.certificateValidTill, prometheus.GaugeValue, float64(instance.CertificateValidTill.Unix()), c.awsAccountID, c.awsRegion, dbidentifier)
+			certificateValidTillDesc := prometheus.NewDesc("rds_certificate_expiry_timestamp_seconds", "Timestamp of the expiration of the Instance certificate", keys, nil)
+			ch <- prometheus.MustNewConstMetric(certificateValidTillDesc, prometheus.GaugeValue, float64(instance.CertificateValidTill.Unix()), values...)
 		}
 
 		if instance.Age != nil {
-			ch <- prometheus.MustNewConstMetric(c.age, prometheus.GaugeValue, *instance.Age, c.awsAccountID, c.awsRegion, dbidentifier)
+			ageDesc := prometheus.NewDesc("rds_instance_age_seconds", "Time since instance creation", keys, nil)
+			ch <- prometheus.MustNewConstMetric(ageDesc, prometheus.GaugeValue, *instance.Age, values...)
 		}
 
 		if instance.LogFilesSize != nil {
-			ch <- prometheus.MustNewConstMetric(c.logFilesSize, prometheus.GaugeValue, float64(*instance.LogFilesSize), c.awsAccountID, c.awsRegion, dbidentifier)
+			logFilesSizeDesc := prometheus.NewDesc("rds_instance_log_files_size_bytes", "Total of log files on the instance", keys, nil)
+			ch <- prometheus.MustNewConstMetric(logFilesSizeDesc, prometheus.GaugeValue, float64(*instance.LogFilesSize), values...)
 		}
 	}
 
 	// Cloudwatch metrics
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.CloudwatchAPICalls, c.awsAccountID, c.awsRegion, "cloudwatch")
 
-	for dbidentifier, instance := range c.metrics.CloudwatchInstances.Instances {
-		if instance.DatabaseConnections != nil {
-			ch <- prometheus.MustNewConstMetric(c.databaseConnections, prometheus.GaugeValue, *instance.DatabaseConnections, c.awsAccountID, c.awsRegion, dbidentifier)
+	for dbidentifier, cloudwatchInstance := range c.metrics.CloudwatchInstances.Instances {
+		// For cloudwatch metrics, we need to get the instance tags from the RDS instances
+		rdsInstance, ok := c.metrics.RDS.Instances[dbidentifier]
+		if !ok {
+			// If we can't find the RDS instance, use the standard labels without tags
+			if cloudwatchInstance.DatabaseConnections != nil {
+				ch <- prometheus.MustNewConstMetric(c.databaseConnections, prometheus.GaugeValue, *cloudwatchInstance.DatabaseConnections, c.awsAccountID, c.awsRegion, dbidentifier)
+			}
+			continue
 		}
 
-		if instance.FreeStorageSpace != nil {
-			ch <- prometheus.MustNewConstMetric(c.freeStorageSpace, prometheus.GaugeValue, *instance.FreeStorageSpace, c.awsAccountID, c.awsRegion, dbidentifier)
+		// Get tags from the RDS instance
+		keys, values := c.getInstanceTagLabels(dbidentifier, rdsInstance)
+
+		if cloudwatchInstance.DatabaseConnections != nil {
+			databaseConnectionsDesc := prometheus.NewDesc("rds_database_connections_average", "The number of client network connections to the database instance", keys, nil)
+			ch <- prometheus.MustNewConstMetric(databaseConnectionsDesc, prometheus.GaugeValue, *cloudwatchInstance.DatabaseConnections, values...)
 		}
 
-		if instance.FreeableMemory != nil {
-			ch <- prometheus.MustNewConstMetric(c.freeableMemory, prometheus.GaugeValue, *instance.FreeableMemory, c.awsAccountID, c.awsRegion, dbidentifier)
+		if cloudwatchInstance.FreeStorageSpace != nil {
+			freeStorageSpaceDesc := prometheus.NewDesc("rds_free_storage_bytes", "Free storage on the instance", keys, nil)
+			ch <- prometheus.MustNewConstMetric(freeStorageSpaceDesc, prometheus.GaugeValue, *cloudwatchInstance.FreeStorageSpace, values...)
 		}
 
-		if instance.MaximumUsedTransactionIDs != nil {
-			ch <- prometheus.MustNewConstMetric(c.maximumUsedTransactionIDs, prometheus.GaugeValue, *instance.MaximumUsedTransactionIDs, c.awsAccountID, c.awsRegion, dbidentifier)
+		if cloudwatchInstance.FreeableMemory != nil {
+			freeableMemoryDesc := prometheus.NewDesc("rds_freeable_memory_bytes", "Amount of available random access memory", keys, nil)
+			ch <- prometheus.MustNewConstMetric(freeableMemoryDesc, prometheus.GaugeValue, *cloudwatchInstance.FreeableMemory, values...)
 		}
 
-		if instance.ReadThroughput != nil {
-			ch <- prometheus.MustNewConstMetric(c.readThroughput, prometheus.GaugeValue, *instance.ReadThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+		if cloudwatchInstance.MaximumUsedTransactionIDs != nil {
+			maximumUsedTransactionIDsDesc := prometheus.NewDesc("rds_maximum_used_transaction_ids_average", "Maximum transaction IDs that have been used. Applies to only PostgreSQL", keys, nil)
+			ch <- prometheus.MustNewConstMetric(maximumUsedTransactionIDsDesc, prometheus.GaugeValue, *cloudwatchInstance.MaximumUsedTransactionIDs, values...)
 		}
 
-		if instance.ReplicaLag != nil {
-			ch <- prometheus.MustNewConstMetric(c.replicaLag, prometheus.GaugeValue, *instance.ReplicaLag, c.awsAccountID, c.awsRegion, dbidentifier)
+		if cloudwatchInstance.ReadThroughput != nil {
+			readThroughputDesc := prometheus.NewDesc("rds_read_throughput_bytes", "Average number of bytes read from disk per second", keys, nil)
+			ch <- prometheus.MustNewConstMetric(readThroughputDesc, prometheus.GaugeValue, *cloudwatchInstance.ReadThroughput, values...)
 		}
 
-		if instance.ReplicationSlotDiskUsage != nil {
-			ch <- prometheus.MustNewConstMetric(c.replicationSlotDiskUsage, prometheus.GaugeValue, *instance.ReplicationSlotDiskUsage, c.awsAccountID, c.awsRegion, dbidentifier)
+		if cloudwatchInstance.ReplicaLag != nil {
+			replicaLagDesc := prometheus.NewDesc("rds_replica_lag_seconds", "For read replica configurations, the amount of time a read replica DB instance lags behind the source DB instance", keys, nil)
+			ch <- prometheus.MustNewConstMetric(replicaLagDesc, prometheus.GaugeValue, *cloudwatchInstance.ReplicaLag, values...)
 		}
 
-		if instance.SwapUsage != nil {
-			ch <- prometheus.MustNewConstMetric(c.swapUsage, prometheus.GaugeValue, *instance.SwapUsage, c.awsAccountID, c.awsRegion, dbidentifier)
+		if cloudwatchInstance.ReplicationSlotDiskUsage != nil {
+			replicationSlotDiskUsageDesc := prometheus.NewDesc("rds_replication_slot_disk_usage_bytes", "Disk space used by replication slot files. Applies to PostgreSQL", keys, nil)
+			ch <- prometheus.MustNewConstMetric(replicationSlotDiskUsageDesc, prometheus.GaugeValue, *cloudwatchInstance.ReplicationSlotDiskUsage, values...)
 		}
 
-		if instance.ReadIOPS != nil {
-			ch <- prometheus.MustNewConstMetric(c.readIOPS, prometheus.GaugeValue, *instance.ReadIOPS, c.awsAccountID, c.awsRegion, dbidentifier)
+		if cloudwatchInstance.SwapUsage != nil {
+			swapUsageDesc := prometheus.NewDesc("rds_swap_usage_bytes", "Amount of swap space used on the DB instance. This metric is not available for SQL Server", keys, nil)
+			ch <- prometheus.MustNewConstMetric(swapUsageDesc, prometheus.GaugeValue, *cloudwatchInstance.SwapUsage, values...)
 		}
 
-		if instance.WriteIOPS != nil {
-			ch <- prometheus.MustNewConstMetric(c.writeIOPS, prometheus.GaugeValue, *instance.WriteIOPS, c.awsAccountID, c.awsRegion, dbidentifier)
+		if cloudwatchInstance.ReadIOPS != nil {
+			readIOPSDesc := prometheus.NewDesc("rds_read_iops_average", "Average number of disk read I/O operations per second", keys, nil)
+			ch <- prometheus.MustNewConstMetric(readIOPSDesc, prometheus.GaugeValue, *cloudwatchInstance.ReadIOPS, values...)
 		}
 
-		if instance.WriteThroughput != nil {
-			ch <- prometheus.MustNewConstMetric(c.writeThroughput, prometheus.GaugeValue, *instance.WriteThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+		if cloudwatchInstance.WriteIOPS != nil {
+			writeIOPSDesc := prometheus.NewDesc("rds_write_iops_average", "Average number of disk write I/O operations per second", keys, nil)
+			ch <- prometheus.MustNewConstMetric(writeIOPSDesc, prometheus.GaugeValue, *cloudwatchInstance.WriteIOPS, values...)
 		}
 
-		if instance.TransactionLogsDiskUsage != nil {
-			ch <- prometheus.MustNewConstMetric(c.transactionLogsDiskUsage, prometheus.GaugeValue, *instance.TransactionLogsDiskUsage, c.awsAccountID, c.awsRegion, dbidentifier)
+		if cloudwatchInstance.WriteThroughput != nil {
+			writeThroughputDesc := prometheus.NewDesc("rds_write_throughput_bytes", "Average number of bytes written to disk per second", keys, nil)
+			ch <- prometheus.MustNewConstMetric(writeThroughputDesc, prometheus.GaugeValue, *cloudwatchInstance.WriteThroughput, values...)
 		}
 
-		if instance.DBLoad != nil {
-			ch <- prometheus.MustNewConstMetric(c.DBLoad, prometheus.GaugeValue, *instance.DBLoad, c.awsAccountID, c.awsRegion, dbidentifier)
+		if cloudwatchInstance.TransactionLogsDiskUsage != nil {
+			transactionLogsDiskUsageDesc := prometheus.NewDesc("rds_transaction_logs_disk_usage_bytes", "Disk space used by transaction logs (only on PostgreSQL)", keys, nil)
+			ch <- prometheus.MustNewConstMetric(transactionLogsDiskUsageDesc, prometheus.GaugeValue, *cloudwatchInstance.TransactionLogsDiskUsage, values...)
 		}
 
-		if instance.CPUUtilization != nil {
-			ch <- prometheus.MustNewConstMetric(c.cpuUtilisation, prometheus.GaugeValue, *instance.CPUUtilization, c.awsAccountID, c.awsRegion, dbidentifier)
+		if cloudwatchInstance.DBLoad != nil {
+			dbLoadDesc := prometheus.NewDesc("rds_dbload_average", "Number of active sessions for the DB engine", keys, nil)
+			ch <- prometheus.MustNewConstMetric(dbLoadDesc, prometheus.GaugeValue, *cloudwatchInstance.DBLoad, values...)
 		}
 
-		if instance.DBLoadCPU != nil {
-			ch <- prometheus.MustNewConstMetric(c.dBLoadCPU, prometheus.GaugeValue, *instance.DBLoadCPU, c.awsAccountID, c.awsRegion, dbidentifier)
+		if cloudwatchInstance.CPUUtilization != nil {
+			cpuUtilisationDesc := prometheus.NewDesc("rds_cpu_usage_percent_average", "Instance CPU used", keys, nil)
+			ch <- prometheus.MustNewConstMetric(cpuUtilisationDesc, prometheus.GaugeValue, *cloudwatchInstance.CPUUtilization, values...)
 		}
 
-		if instance.DBLoadNonCPU != nil {
-			ch <- prometheus.MustNewConstMetric(c.dBLoadNonCPU, prometheus.GaugeValue, *instance.DBLoadNonCPU, c.awsAccountID, c.awsRegion, dbidentifier)
+		if cloudwatchInstance.DBLoadCPU != nil {
+			dbLoadCPUDesc := prometheus.NewDesc("rds_dbload_cpu_average", "Number of active sessions where the wait event type is CPU", keys, nil)
+			ch <- prometheus.MustNewConstMetric(dbLoadCPUDesc, prometheus.GaugeValue, *cloudwatchInstance.DBLoadCPU, values...)
+		}
+
+		if cloudwatchInstance.DBLoadNonCPU != nil {
+			dbLoadNonCPUDesc := prometheus.NewDesc("rds_dbload_noncpu_average", "Number of active sessions where the wait event type is not CPU", keys, nil)
+			ch <- prometheus.MustNewConstMetric(dbLoadNonCPUDesc, prometheus.GaugeValue, *cloudwatchInstance.DBLoadNonCPU, values...)
 		}
 	}
 
@@ -710,12 +823,27 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 	// EC2 metrics
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.EC2APIcalls, c.awsAccountID, c.awsRegion, "ec2")
 	for instanceType, instance := range c.metrics.EC2.Instances {
-		ch <- prometheus.MustNewConstMetric(c.instanceBaselineIops, prometheus.GaugeValue, float64(instance.BaselineIOPS), c.awsAccountID, c.awsRegion, instanceType)
-		ch <- prometheus.MustNewConstMetric(c.instanceBaselineThroughput, prometheus.GaugeValue, instance.BaselineThroughput, c.awsAccountID, c.awsRegion, instanceType)
-		ch <- prometheus.MustNewConstMetric(c.instanceMaximumIops, prometheus.GaugeValue, float64(instance.MaximumIops), c.awsAccountID, c.awsRegion, instanceType)
-		ch <- prometheus.MustNewConstMetric(c.instanceMaximumThroughput, prometheus.GaugeValue, instance.MaximumThroughput, c.awsAccountID, c.awsRegion, instanceType)
-		ch <- prometheus.MustNewConstMetric(c.instanceMemory, prometheus.GaugeValue, float64(instance.Memory), c.awsAccountID, c.awsRegion, instanceType)
-		ch <- prometheus.MustNewConstMetric(c.instanceVCPU, prometheus.GaugeValue, float64(instance.Vcpu), c.awsAccountID, c.awsRegion, instanceType)
+		// For EC2 metrics, we don't have tags directly associated, but we can add standard labels
+		baseLabels := []string{"aws_account_id", "aws_region", "instance_class"}
+		baseValues := []string{c.awsAccountID, c.awsRegion, instanceType}
+
+		instanceBaselineIopsDesc := prometheus.NewDesc("rds_instance_baseline_iops_average", "Baseline IOPS of underlying EC2 instance class", baseLabels, nil)
+		ch <- prometheus.MustNewConstMetric(instanceBaselineIopsDesc, prometheus.GaugeValue, float64(instance.BaselineIOPS), baseValues...)
+
+		instanceBaselineThroughputDesc := prometheus.NewDesc("rds_instance_baseline_throughput_bytes", "Baseline throughput of underlying EC2 instance class", baseLabels, nil)
+		ch <- prometheus.MustNewConstMetric(instanceBaselineThroughputDesc, prometheus.GaugeValue, instance.BaselineThroughput, baseValues...)
+
+		instanceMaximumIopsDesc := prometheus.NewDesc("rds_instance_max_iops_average", "Maximum IOPS of underlying EC2 instance class", baseLabels, nil)
+		ch <- prometheus.MustNewConstMetric(instanceMaximumIopsDesc, prometheus.GaugeValue, float64(instance.MaximumIops), baseValues...)
+
+		instanceMaximumThroughputDesc := prometheus.NewDesc("rds_instance_max_throughput_bytes", "Maximum throughput of underlying EC2 instance class", baseLabels, nil)
+		ch <- prometheus.MustNewConstMetric(instanceMaximumThroughputDesc, prometheus.GaugeValue, instance.MaximumThroughput, baseValues...)
+
+		instanceMemoryDesc := prometheus.NewDesc("rds_instance_memory_bytes", "Instance class memory", baseLabels, nil)
+		ch <- prometheus.MustNewConstMetric(instanceMemoryDesc, prometheus.GaugeValue, float64(instance.Memory), baseValues...)
+
+		instanceVCPUDesc := prometheus.NewDesc("rds_instance_vcpu_average", "Total vCPU for this instance class", baseLabels, nil)
+		ch <- prometheus.MustNewConstMetric(instanceVCPUDesc, prometheus.GaugeValue, float64(instance.Vcpu), baseValues...)
 	}
 
 	// serviceQuotas metrics
