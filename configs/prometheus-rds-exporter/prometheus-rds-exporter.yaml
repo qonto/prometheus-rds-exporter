@@ -44,6 +44,9 @@
 # Collect AWS instance tags (AWS RDS API)
 # collect-instance-tags: true
 
+# Include tags in all metrics
+# include-tags-in-metrics: true
+
 # Collect AWS instance types information (AWS EC2 API)
 # collect-instance-types: true
 
