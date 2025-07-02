@@ -1,9 +1,11 @@
 FROM golang:1.22 AS builder
+ARG GOPROXY=direct
 
 WORKDIR /build
 
 COPY go.mod go.sum ./
 
+RUN go env -w GOPROXY=$GOPROXY
 RUN go mod download
 
 COPY . .
@@ -11,7 +13,6 @@ COPY . .
 HEALTHCHECK NONE
 
 RUN make build
-
 
 FROM alpine:3.20
 
