@@ -36,7 +36,7 @@ func TestGetMetrics(t *testing.T) {
 	// Check RDS instance
 	m := metrics.Instances[*rdsInstance.DBInstanceIdentifier]
 	assert.Equal(t, rds.InstanceStatusAvailable, m.Status, "Instance is available")
-	assert.Equal(t, "primary", m.Role, "Should be primary node")
+	assert.Equal(t, rds.RolePrimary, m.Role, "Should be primary node")
 	assert.Equal(t, emptyInt64, m.LogFilesSize, "Log file size mismatch")
 	assert.Equal(t, fmt.Sprintf("arn:aws:rds:eu-west-3:123456789012:db:%s", *rdsInstance.DBInstanceIdentifier), m.Arn, "ARN mismatch")
 	assert.Equal(t, converter.GigaBytesToBytes(int64(*rdsInstance.AllocatedStorage)), m.AllocatedStorage, "Allocated storage mismatch")
@@ -244,7 +244,7 @@ func TestReplicaNode(t *testing.T) {
 	metrics, err := fetcher.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
-	assert.Equal(t, "replica", metrics.Instances[*rdsInstance.DBInstanceIdentifier].Role, "Should be replica")
+	assert.Equal(t, rds.RoleReplica, metrics.Instances[*rdsInstance.DBInstanceIdentifier].Role, "Should be replica")
 	assert.Equal(t, primaryInstance, metrics.Instances[*rdsInstance.DBInstanceIdentifier].SourceDBInstanceIdentifier, "Should be replica")
 }
 
@@ -369,5 +369,100 @@ func TestMultiAZCluster(t *testing.T) {
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
 
 	result := metrics.Clusters[*rdsCluster.DBClusterIdentifier]
-	assert.Equal(t, 3, result.MembersCount, "DBInstanceIdentifier mismatch")
+	assert.Equal(t, 3, len(result.Members), "DBInstanceIdentifier mismatch")
+}
+
+func TestDBInstanceRole(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.TODO()
+	standaloneInstance := mock.NewRdsInstance()
+	client := mock.NewRDSClient().WithDBInstances(*standaloneInstance)
+	configuration := rds.Configuration{}
+	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
+
+	metrics, err := fetcher.GetInstancesMetrics()
+
+	require.NoError(t, err, "expected no error from GetInstancesMetrics")
+
+	instanceID := *standaloneInstance.DBInstanceIdentifier
+	actualRole := metrics.Instances[instanceID].Role
+	assert.Equal(t, rds.RolePrimary, actualRole, "unexpected role for standalone instance")
+}
+
+func TestDBInstanceWithReplicaRole(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.TODO()
+	primary := mock.NewRdsInstance()
+	replica := mock.NewRdsInstance()
+	replica.ReadReplicaSourceDBInstanceIdentifier = primary.DBInstanceIdentifier
+	client := mock.NewRDSClient().WithDBInstances(*primary, *replica)
+	configuration := rds.Configuration{}
+	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
+
+	metrics, err := fetcher.GetInstancesMetrics()
+
+	require.NoError(t, err, "expected no error from GetInstancesMetrics")
+
+	primaryID := *primary.DBInstanceIdentifier
+	replicaID := *replica.DBInstanceIdentifier
+
+	assert.Equal(t, rds.RolePrimary, metrics.Instances[primaryID].Role, "unexpected role for primary instance")
+	assert.Equal(t, rds.RoleReplica, metrics.Instances[replicaID].Role, "unexpected role for replica instance")
+}
+func TestDBClusterRole(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.TODO()
+	cluster := mock.NewRdsCluster()
+	writer := mock.NewRdsInstance()
+	reader1 := mock.NewRdsInstance()
+	reader2 := mock.NewRdsInstance()
+
+	// Attach cluster to each instance
+	for _, inst := range []*aws_rds_types.DBInstance{writer, reader1, reader2} {
+		inst.DBClusterIdentifier = cluster.DBClusterIdentifier
+	}
+
+	// Attach each instance to the cluster
+	cluster.DBClusterMembers = []aws_rds_types.DBClusterMember{
+		{
+			DBInstanceIdentifier:          aws.String(*writer.DBInstanceIdentifier),
+			IsClusterWriter:               aws.Bool(true),
+			DBClusterParameterGroupStatus: aws.String("in-sync"),
+			PromotionTier:                 aws.Int32(1),
+		},
+		{
+			DBInstanceIdentifier:          aws.String(*reader1.DBInstanceIdentifier),
+			IsClusterWriter:               aws.Bool(false),
+			DBClusterParameterGroupStatus: aws.String("in-sync"),
+			PromotionTier:                 aws.Int32(1),
+		},
+		{
+			DBInstanceIdentifier:          aws.String(*reader2.DBInstanceIdentifier),
+			IsClusterWriter:               aws.Bool(false),
+			DBClusterParameterGroupStatus: aws.String("in-sync"),
+			PromotionTier:                 aws.Int32(1),
+		},
+	}
+
+	client := mock.NewRDSClient().
+		WithDBInstances(*writer, *reader1, *reader2).
+		WithDBClusters(*cluster)
+
+	config := rds.Configuration{}
+	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, config)
+
+	metrics, err := fetcher.GetInstancesMetrics()
+
+	require.NoError(t, err, "expected no error from GetInstancesMetrics")
+
+	writerID := *writer.DBInstanceIdentifier
+	reader1ID := *reader1.DBInstanceIdentifier
+	reader2ID := *reader2.DBInstanceIdentifier
+
+	assert.Equal(t, rds.RoleWriter, metrics.Instances[writerID].Role, "unexpected role for writer")
+	assert.Equal(t, rds.RoleReader, metrics.Instances[reader1ID].Role, "unexpected role for reader1")
+	assert.Equal(t, rds.RoleReader, metrics.Instances[reader2ID].Role, "unexpected role for reader2")
 }

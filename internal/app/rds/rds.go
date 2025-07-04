@@ -64,8 +64,11 @@ type ClusterMetrics struct {
 	// the KMS key for the DB cluster is accessed.
 	DbClusterResourceId string
 
-	// Number of members in the cluster, including writer and readers.
-	MembersCount int
+	// Members
+	Members map[string]DBRole
+
+	// dbidentifier of the write node
+	WriterDBInstanceIdentifier string
 
 	// AWS tags on the cluster.
 	Tags map[string]string
@@ -134,7 +137,7 @@ type RdsInstanceMetrics struct {
 	PubliclyAccessible bool
 
 	// Role of Instance primary or replica
-	Role string
+	Role DBRole
 
 	// If db instance is a replica, specify the identifier of the source
 	SourceDBInstanceIdentifier string
@@ -150,6 +153,13 @@ type RdsInstanceMetrics struct {
 
 	// AWS tags on the cluster.
 	Tags map[string]string
+}
+
+// DBRole defines the type for database instance roles such as primary, replica, writer or reader.
+type DBRole string
+
+func (r DBRole) String() string {
+	return string(r)
 }
 
 const (
@@ -193,8 +203,10 @@ const (
 	io2StorageMinThroughput                     int64   = 256  // 1000 IOPS * 0.256 MiB/s per provisioned IOPS
 	io2StorageMaxThroughput                     int64   = 4000 // AWS EBS limit
 	io2StorageThroughputPerIOPS                 float64 = 0.256
-	primaryRole                                 string  = "primary"
-	replicaRole                                 string  = "replica"
+	RolePrimary                                 DBRole  = "primary"
+	RoleReplica                                 DBRole  = "replica"
+	RoleWriter                                  DBRole  = "writer"
+	RoleReader                                  DBRole  = "reader"
 )
 
 var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/rds")
@@ -321,16 +333,32 @@ func (r *RDSFetcher) getClusters(ctx context.Context, filters []aws_rds_types.Fi
 		span.SetAttributes(attribute.Int("qonto.prometheus_rds_exporter.cluster_count", len(output.DBClusters)))
 
 		for _, dbCluster := range output.DBClusters {
+
+			var writerDBInstanceIdentifier string
+			members := make(map[string]DBRole)
+
+			for _, member := range dbCluster.DBClusterMembers {
+				instanceID := aws.ToString(member.DBInstanceIdentifier)
+
+				if aws.ToBool(member.IsClusterWriter) {
+					members[instanceID] = RoleWriter
+					writerDBInstanceIdentifier = instanceID
+				} else {
+					members[instanceID] = RoleReader
+				}
+			}
+
 			clusterMetrics[*dbCluster.DBClusterIdentifier] = ClusterMetrics{
-				Arn:                 *dbCluster.DBClusterArn,
-				Engine:              *dbCluster.Engine,
-				EngineVersion:       *dbCluster.EngineVersion,
-				AllocatedStorage:    converter.GigaBytesToBytes(int64(*dbCluster.AllocatedStorage)),
-				DBClusterIdentifier: *dbCluster.DBClusterIdentifier,
-				MembersCount:        len(dbCluster.DBClusterMembers),
-				DbClusterResourceId: *dbCluster.DbClusterResourceId,
-				Age:                 time.Since(*dbCluster.ClusterCreateTime).Seconds(),
-				Tags:                ConvertRDSTagsToMap(dbCluster.TagList),
+				Arn:                        *dbCluster.DBClusterArn,
+				Engine:                     *dbCluster.Engine,
+				EngineVersion:              *dbCluster.EngineVersion,
+				AllocatedStorage:           converter.GigaBytesToBytes(int64(*dbCluster.AllocatedStorage)),
+				DBClusterIdentifier:        *dbCluster.DBClusterIdentifier,
+				Members:                    members,
+				WriterDBInstanceIdentifier: writerDBInstanceIdentifier,
+				DbClusterResourceId:        *dbCluster.DbClusterResourceId,
+				Age:                        time.Since(*dbCluster.ClusterCreateTime).Seconds(),
+				Tags:                       ConvertRDSTagsToMap(dbCluster.TagList),
 			}
 		}
 	}
@@ -387,7 +415,7 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 		for _, dbInstance := range output.DBInstances {
 			dbIdentifier := dbInstance.DBInstanceIdentifier
 
-			instanceMetrics, err := r.computeInstanceMetrics(instanceCtx, dbInstance, instanceMaintenances)
+			instanceMetrics, err := r.computeInstanceMetrics(instanceCtx, dbInstance, instanceMaintenances, &clusterMetrics)
 			if err != nil {
 				span.SetStatus(codes.Error, "can't compute instance metrics")
 				span.RecordError(err)
@@ -462,7 +490,7 @@ func (r *RDSFetcher) getDBInstanceFilters(ctx context.Context) ([]aws_rds_types.
 }
 
 // computeInstanceMetrics returns metrics about the specified instance
-func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_rds_types.DBInstance, instanceMaintenances map[string]string) (RdsInstanceMetrics, error) {
+func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_rds_types.DBInstance, instanceMaintenances map[string]string, clusterMetrics *map[string]ClusterMetrics) (RdsInstanceMetrics, error) {
 	dbIdentifier := dbInstance.DBInstanceIdentifier
 
 	var iops int64
@@ -516,7 +544,14 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 		}
 	}
 
-	role, sourceDBInstanceIdentifier := getRoleInCluster(&dbInstance)
+	var clusterDetails ClusterMetrics
+
+	if dbInstance.DBClusterIdentifier != nil {
+		if details, exists := (*clusterMetrics)[*dbInstance.DBClusterIdentifier]; exists {
+			clusterDetails = details
+		}
+	}
+	role, sourceDBInstanceIdentifier := GetInstanceRole(&dbInstance, clusterDetails)
 
 	var age *float64
 

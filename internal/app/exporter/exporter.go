@@ -598,7 +598,7 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 			instance.StorageType,
 			strconv.FormatBool(instance.MultiAZ),
 			strconv.FormatBool(instance.DeletionProtection),
-			instance.Role,
+			instance.Role.String(),
 			instance.SourceDBInstanceIdentifier,
 			strconv.FormatBool(instance.PendingModifiedValues),
 			instance.PendingMaintenanceAction,

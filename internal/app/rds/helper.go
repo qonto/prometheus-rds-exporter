@@ -107,21 +107,30 @@ func getStorageMetrics(storageType string, allocatedStorage int64, rawIops int64
 	return iops, storageThroughput
 }
 
-// getRoleInCluster returns role and source of the specified instance in the the cluster
-func getRoleInCluster(instance *aws_rds_types.DBInstance) (string, string) {
-	var (
-		role   string
-		source string
-	)
-
-	if instance.ReadReplicaSourceDBInstanceIdentifier != nil {
-		source = *instance.ReadReplicaSourceDBInstanceIdentifier
-		role = replicaRole
-	} else {
-		role = primaryRole
+// GetInstanceRole determines the role of the specified DB instance within its cluster context.
+// It returns the role (e.g., primary, reader, replica) and the source instance identifier if applicable.
+func GetInstanceRole(instance *aws_rds_types.DBInstance, cluster ClusterMetrics) (DBRole, string) {
+	if instance == nil {
+		return "", ""
 	}
 
-	return role, source
+	// Handle DB cluster
+	if instance.DBClusterIdentifier != nil && cluster.DBClusterIdentifier == *instance.DBClusterIdentifier {
+		if role, exists := cluster.Members[*instance.DBInstanceIdentifier]; exists {
+			if role == RoleWriter {
+				return RoleWriter, ""
+			}
+			return RoleReader, cluster.WriterDBInstanceIdentifier
+		}
+	}
+
+	// Handle traditional replica
+	if instance.ReadReplicaSourceDBInstanceIdentifier != nil {
+		return RoleReplica, *instance.ReadReplicaSourceDBInstanceIdentifier
+	}
+
+	// Fallback role
+	return RolePrimary, ""
 }
 
 // ConvertRDSTagsToMap safely converts a slice of RDS tags into a map[string]string.
