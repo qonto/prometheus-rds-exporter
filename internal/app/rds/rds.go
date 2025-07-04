@@ -38,7 +38,7 @@ type Statistics struct {
 }
 
 type ClusterMetrics struct {
-	// Seconds since cluster creation date
+	// Seconds since cluster creation date.
 	Age float64
 
 	// The Amazon Resource Name (ARN) for the DB cluster.
@@ -72,32 +72,84 @@ type ClusterMetrics struct {
 }
 
 type RdsInstanceMetrics struct {
-	Arn                              string
-	Engine                           string
-	EngineVersion                    string
-	DBInstanceClass                  string
-	DbiResourceID                    string
-	StorageType                      string
-	AllocatedStorage                 int64
-	StorageThroughput                int64
-	MaxAllocatedStorage              int64
-	MaxIops                          int64
-	LogFilesSize                     *int64
-	PendingMaintenanceAction         string
-	PendingModifiedValues            bool
-	BackupRetentionPeriod            int32
-	Status                           int
-	DeletionProtection               bool
-	PubliclyAccessible               bool
-	PerformanceInsightsEnabled       bool
-	MultiAZ                          bool
+	// Seconds since instance creation date.
+	Age *float64
+
+	// The Amazon Resource Name (ARN) for the DB instance.
+	Arn string
+
+	// The version of the database engine.
+	AllocatedStorage int64
+
+	// The number of days for which automatic DB snapshots are retained.
+	BackupRetentionPeriod int32
+
+	// The identifier of the CA certificate for this DB instance.
+	CACertificateIdentifier string
+
+	// Certificate expiration date
+	CertificateValidTill *time.Time
+
+	// The name of the compute and memory capacity class of the DB instance.
+	DBInstanceClass string
+
+	// The Amazon Web Services Region-unique, immutable identifier for the DB
+	DbiResourceID string
+
+	// Indicates whether the DB instance has deletion protection enabled. The database
+	DeletionProtection bool
+
+	// The database engine used for this instance.
+	Engine string
+
+	// The version of the database engine.
+	EngineVersion string
+
+	// Indicates whether mapping of Amazon Web Services Identity and Access Management
+	// (IAM) accounts to database accounts is enabled for the DB instance.
 	IAMDatabaseAuthenticationEnabled bool
-	Role                             string
-	SourceDBInstanceIdentifier       string
-	CACertificateIdentifier          string
-	CertificateValidTill             *time.Time
-	Age                              *float64
-	Tags                             map[string]string
+
+	// Total amount of log files (GiB)
+	LogFilesSize *int64
+
+	// The upper limit in gibibytes (GiB) to which Amazon RDS can automatically scale
+	MaxAllocatedStorage int64
+
+	// Maximum provisioned IOPS per GiB for a DB instance.
+	MaxIops int64
+
+	// Indicates whether the Single-AZ DB instance will change to a Multi-AZ deployment.
+	MultiAZ bool
+
+	// Pending maintenance action
+	PendingMaintenanceAction string
+
+	// Define if instance is pending for modification
+	PendingModifiedValues bool
+
+	// Indicates whether Performance Insights is enabled for the DB cluster.
+	PerformanceInsightsEnabled bool
+
+	// Indicates whether the DB instance is publicly accessible.
+	PubliclyAccessible bool
+
+	// Role of Instance primary or replica
+	Role string
+
+	// If db instance is a replica, specify the identifier of the source
+	SourceDBInstanceIdentifier string
+
+	// Code representing instance status
+	Status int
+
+	// The storage throughput for the DB instance.
+	StorageThroughput int64
+
+	// The storage type associated with the DB instance.
+	StorageType string
+
+	// AWS tags on the cluster.
+	Tags map[string]string
 }
 
 const (
