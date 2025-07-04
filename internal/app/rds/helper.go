@@ -123,3 +123,14 @@ func getRoleInCluster(instance *aws_rds_types.DBInstance) (string, string) {
 
 	return role, source
 }
+
+// ConvertRDSTagsToMap safely converts a slice of RDS tags into a map[string]string.
+func ConvertRDSTagsToMap(tags []aws_rds_types.Tag) map[string]string {
+	tagMap := make(map[string]string, len(tags))
+	for _, tag := range tags {
+		if tag.Key != nil && tag.Value != nil {
+			tagMap[*tag.Key] = *tag.Value
+		}
+	}
+	return tagMap
+}

@@ -397,12 +397,6 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 		certificateValidTill = dbInstance.CertificateDetails.ValidTill
 	}
 
-	tags := make(map[string]string)
-
-	for _, tag := range dbInstance.TagList {
-		tags[*tag.Key] = *tag.Value
-	}
-
 	metrics := RdsInstanceMetrics{
 		Arn:                        *dbInstance.DBInstanceArn,
 		AllocatedStorage:           converter.GigaBytesToBytes(int64(*dbInstance.AllocatedStorage)),
@@ -428,7 +422,7 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 		CACertificateIdentifier:    aws.ToString(dbInstance.CACertificateIdentifier),
 		CertificateValidTill:       certificateValidTill,
 		Age:                        age,
-		Tags:                       tags,
+		Tags:                       ConvertRDSTagsToMap(dbInstance.TagList),
 	}
 
 	return metrics, nil
