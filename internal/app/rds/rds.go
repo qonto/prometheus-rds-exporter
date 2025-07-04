@@ -16,6 +16,7 @@ import (
 	tag_types "github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi/types"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
@@ -28,11 +29,46 @@ type Configuration struct {
 
 type Metrics struct {
 	Instances map[string]RdsInstanceMetrics
+	Clusters  map[string]ClusterMetrics
 }
 
 type Statistics struct {
 	RdsAPICall float64
 	TagAPICall float64
+}
+
+type ClusterMetrics struct {
+	// Seconds since cluster creation date
+	Age float64
+
+	// The Amazon Resource Name (ARN) for the DB cluster.
+	Arn string
+
+	// The database engine used for this DB cluster.
+	Engine string
+
+	EngineVersion string
+
+	// For all database engines except Amazon Aurora, AllocatedStorage specifies the
+	// allocated storage size in gibibytes (GiB). For Aurora, AllocatedStorage always
+	// returns 1, because Aurora DB cluster storage size isn't fixed, but instead
+	// automatically adjusts as needed.
+	AllocatedStorage int64
+
+	// The user-supplied identifier for the DB cluster. This identifier is the unique
+	// key that identifies a DB cluster.
+	DBClusterIdentifier string
+
+	// The Amazon Web Services Region-unique, immutable identifier for the DB cluster.
+	// This identifier is found in Amazon Web Services CloudTrail log entries whenever
+	// the KMS key for the DB cluster is accessed.
+	DbClusterResourceId string
+
+	// Number of members in the cluster, including writer and readers.
+	MembersCount int
+
+	// AWS tags on the cluster.
+	Tags map[string]string
 }
 
 type RdsInstanceMetrics struct {
@@ -135,6 +171,7 @@ var instanceStatuses = map[string]int{ // retrieved from https://docs.aws.amazon
 
 type RDSClient interface {
 	DescribeDBInstances(ctx context.Context, params *aws_rds.DescribeDBInstancesInput, optFns ...func(*aws_rds.Options)) (*aws_rds.DescribeDBInstancesOutput, error)
+	DescribeDBClusters(ctx context.Context, params *aws_rds.DescribeDBClustersInput, optFns ...func(*aws_rds.Options)) (*aws_rds.DescribeDBClustersOutput, error)
 	DescribePendingMaintenanceActions(context.Context, *aws_rds.DescribePendingMaintenanceActionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribePendingMaintenanceActionsOutput, error)
 	DescribeDBLogFiles(context.Context, *aws_rds.DescribeDBLogFilesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBLogFilesOutput, error)
 }
@@ -208,6 +245,47 @@ func (r *RDSFetcher) getPendingMaintenances(ctx context.Context) (map[string]str
 	return instances, nil
 }
 
+func (r *RDSFetcher) getClusters(ctx context.Context, filters []aws_rds_types.Filter) (map[string]ClusterMetrics, error) {
+	clusterMetrics := make(map[string]ClusterMetrics)
+
+	inputCluster := &aws_rds.DescribeDBClustersInput{Filters: filters}
+
+	paginatorCluster := aws_rds.NewDescribeDBClustersPaginator(r.client, inputCluster)
+	for paginatorCluster.HasMorePages() {
+		_, span := tracer.Start(ctx, "describe-rds-clusters")
+		defer span.End()
+
+		r.statistics.RdsAPICall++
+
+		output, err := paginatorCluster.NextPage(context.TODO())
+		if err != nil {
+			span.SetStatus(codes.Error, "can't describe RDS clusters")
+			span.RecordError(err)
+
+			return clusterMetrics, fmt.Errorf("can't describe RDS clusters: %w", err)
+		}
+
+		span.SetStatus(codes.Ok, "metrics fetched")
+		span.SetAttributes(attribute.Int("qonto.prometheus_rds_exporter.cluster_count", len(output.DBClusters)))
+
+		for _, dbCluster := range output.DBClusters {
+			clusterMetrics[*dbCluster.DBClusterIdentifier] = ClusterMetrics{
+				Arn:                 *dbCluster.DBClusterArn,
+				Engine:              *dbCluster.Engine,
+				EngineVersion:       *dbCluster.EngineVersion,
+				AllocatedStorage:    converter.GigaBytesToBytes(int64(*dbCluster.AllocatedStorage)),
+				DBClusterIdentifier: *dbCluster.DBClusterIdentifier,
+				MembersCount:        len(dbCluster.DBClusterMembers),
+				DbClusterResourceId: *dbCluster.DbClusterResourceId,
+				Age:                 time.Since(*dbCluster.ClusterCreateTime).Seconds(),
+				Tags:                ConvertRDSTagsToMap(dbCluster.TagList),
+			}
+		}
+	}
+
+	return clusterMetrics, nil
+}
+
 func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 	ctx, span := tracer.Start(r.ctx, "collect-instance-metrics")
 	defer span.End()
@@ -233,8 +311,12 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 		return Metrics{}, err
 	}
 
-	input := &aws_rds.DescribeDBInstancesInput{Filters: filters}
+	clusterMetrics, err := r.getClusters(ctx, filters)
+	if err != nil {
+		return Metrics{}, fmt.Errorf("can't get cluster metrics: %w", err)
+	}
 
+	input := &aws_rds.DescribeDBInstancesInput{Filters: filters}
 	paginator := aws_rds.NewDescribeDBInstancesPaginator(r.client, input)
 	for paginator.HasMorePages() {
 		instanceCtx, instanceSpan := tracer.Start(ctx, "collect-rds-instances")
@@ -269,7 +351,7 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 
 	span.SetStatus(codes.Ok, "metrics fetched")
 
-	return Metrics{Instances: metrics}, nil
+	return Metrics{Instances: metrics, Clusters: clusterMetrics}, nil
 }
 
 func (r *RDSFetcher) getDBInstanceFilters(ctx context.Context) ([]aws_rds_types.Filter, error) {
