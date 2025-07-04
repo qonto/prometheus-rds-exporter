@@ -82,6 +82,7 @@ type rdsCollector struct {
 	allocatedDiskIOPS           *prometheus.Desc
 	allocatedDiskThroughput     *prometheus.Desc
 	information                 *prometheus.Desc
+	clusterInformation          *prometheus.Desc
 	instanceBaselineIops        *prometheus.Desc
 	instanceMaximumIops         *prometheus.Desc
 	instanceBaselineThroughput  *prometheus.Desc
@@ -157,6 +158,10 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 		information: prometheus.NewDesc("rds_instance_info",
 			"RDS instance information",
 			[]string{"aws_account_id", "aws_region", "dbidentifier", "dbi_resource_id", "instance_class", "engine", "engine_version", "storage_type", "multi_az", "deletion_protection", "role", "source_dbidentifier", "pending_modified_values", "pending_maintenance", "performance_insights_enabled", "ca_certificate_identifier", "arn"}, nil,
+		),
+		clusterInformation: prometheus.NewDesc("rds_cluster_info",
+			"RDS cluster information",
+			[]string{"aws_account_id", "aws_region", "cluster_identifier", "cluster_resource_id", "engine", "engine_version", "arn"}, nil,
 		),
 		age: prometheus.NewDesc("rds_instance_age_seconds",
 			"Time since instance creation",
@@ -336,6 +341,7 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.freeStorageSpace
 	ch <- c.freeableMemory
 	ch <- c.information
+	ch <- c.clusterInformation
 	ch <- c.instanceBaselineIops
 	ch <- c.instanceMaximumIops
 	ch <- c.instanceBaselineThroughput
@@ -549,10 +555,28 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 
 	ch <- prometheus.MustNewConstMetric(c.up, prometheus.CounterValue, exporterUpStatusCode)
 
-	// RDS metrics
+	// API metrics
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.RDSAPIcalls, c.awsAccountID, c.awsRegion, "rds")
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.TagAPICalls, c.awsAccountID, c.awsRegion, "tag")
 
+	// Cluster metrics
+	for clusterIdentifier, cluster := range c.metrics.RDS.Clusters {
+		ch <- prometheus.MustNewConstMetric(
+			c.clusterInformation,
+			prometheus.GaugeValue,
+			1,
+			c.awsAccountID,
+			c.awsRegion,
+			clusterIdentifier,
+			cluster.DbClusterResourceId,
+			cluster.Engine,
+			cluster.EngineVersion,
+			cluster.Arn,
+		)
+
+	}
+
+	// Instance metrics
 	for dbidentifier, instance := range c.metrics.RDS.Instances {
 		ch <- prometheus.MustNewConstMetric(
 			c.allocatedStorage,

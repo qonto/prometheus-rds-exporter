@@ -11,6 +11,7 @@ import (
 
 type rdsClient interface {
 	DescribeDBInstances(context.Context, *aws_rds.DescribeDBInstancesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBInstancesOutput, error)
+	DescribeDBClusters(context.Context, *aws_rds.DescribeDBClustersInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBClustersOutput, error)
 	DescribePendingMaintenanceActions(context.Context, *aws_rds.DescribePendingMaintenanceActionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribePendingMaintenanceActionsOutput, error)
 	DescribeDBLogFiles(context.Context, *aws_rds.DescribeDBLogFilesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBLogFilesOutput, error)
 }
