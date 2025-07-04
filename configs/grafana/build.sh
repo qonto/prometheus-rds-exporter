@@ -12,7 +12,10 @@ build_dashboard() {
     INPUT_FILE=dashboards/${DASHBOARD_NAME}.jsonnet
     OUTPUT_FILE=public/${DASHBOARD_NAME}.json
 
-    jsonnet -J vendor ${INPUT_FILE} > ${OUTPUT_FILE}
+    if ! jsonnet -J vendor ${INPUT_FILE} > ${OUTPUT_FILE}; then
+        echo "Error: Failed to build dashboard ${DASHBOARD_NAME}" >&2
+        exit 1
+    fi
 
     echo ${OUTPUT_FILE}
 }
