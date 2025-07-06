@@ -203,6 +203,13 @@ Prometheus RDS exporter</br>
 RDS clusters</br>
 <a href="configs/grafana/public/rds-clusters.json">JSON</a>
 </td>
+<td>
+
+![RDS cluster details](docs/screenshots/rds-cluster.png)
+RDS cluster details</br>
+<a href="configs/grafana/public/rds-cluster.json">JSON</a>
+
+</td>
 </tr>
 </table>
 

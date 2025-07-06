@@ -1,0 +1,554 @@
+{
+   "description": "RDS cluster details",
+   "editable": true,
+   "graphTooltip": 1,
+   "links": [
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "server"
+         ],
+         "title": "Server",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "database"
+         ],
+         "title": "Database",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "table"
+         ],
+         "title": "Table",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "misc"
+         ],
+         "title": "More",
+         "type": "dashboards"
+      }
+   ],
+   "panels": [
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 0,
+            "y": 0
+         },
+         "id": 1,
+         "title": "Overview",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Engine",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 4,
+            "x": 0,
+            "y": 1
+         },
+         "id": 2,
+         "options": {
+            "graphMode": "none",
+            "reduceOptions": {
+               "fields": "engine"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_cluster_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",cluster_identifier=\"$cluster_identifier\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Engine",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Cluster engine version",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 4,
+            "y": 1
+         },
+         "id": 3,
+         "options": {
+            "graphMode": "none",
+            "reduceOptions": {
+               "fields": "engine_version"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_cluster_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",cluster_identifier=\"$cluster_identifier\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Engine Version",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of instances in the cluster",
+         "fieldConfig": {
+            "defaults": {
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 7,
+            "y": 1
+         },
+         "id": 4,
+         "options": {
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",cluster_identifier=~\"$cluster_identifier\"})\n"
+            }
+         ],
+         "title": "Instances",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of instances by instance class type",
+         "gridPos": {
+            "h": 3,
+            "w": 14,
+            "x": 10,
+            "y": 1
+         },
+         "id": 5,
+         "options": {
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",cluster_identifier=~\"$cluster_identifier\"}) by (instance_class)\n",
+               "instant": true,
+               "legendFormat": "{{ instance_class }}"
+            }
+         ],
+         "title": "Instances class",
+         "type": "stat"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 24,
+            "y": 4
+         },
+         "id": 6,
+         "title": "Inventory",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "List of RDS instances in the clusters",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "displayMode": "color-text"
+               },
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "dbidentifier"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/a7049b32-6be3-42e5-aa9a-2879a14f46dd/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-dbidentifier=${__data.fields.dbidentifier}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "multi_az"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 },
+                                 "true": {
+                                    "color": "green",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "deletion_protection"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 },
+                                 "true": {
+                                    "color": "green",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "pending_modified_values"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "green",
+                                    "index": 0
+                                 },
+                                 "true": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "performance_insights_enabled"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "false": {
+                                    "color": "yellow",
+                                    "index": 1
+                                 },
+                                 "true": {
+                                    "color": "green",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "pending_maintenance"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "auto-applied": {
+                                    "color": "orange",
+                                    "index": 0
+                                 },
+                                 "forced": {
+                                    "color": "red",
+                                    "index": 1
+                                 },
+                                 "no": {
+                                    "color": "green",
+                                    "index": 0
+                                 },
+                                 "pending": {
+                                    "color": "yellow",
+                                    "index": 0
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 5
+         },
+         "id": 7,
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",cluster_identifier=~\"$cluster_identifier\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Instances",
+         "transformations": [
+            {
+               "id": "organize",
+               "options": {
+                  "excludeByName": {
+                     "Time": true,
+                     "Value": true,
+                     "__name__": true,
+                     "cluster_identifier": true,
+                     "container": true,
+                     "context": true,
+                     "endpoint": true,
+                     "engine": true,
+                     "environment": true,
+                     "instance": true,
+                     "job": true,
+                     "kubernetes_cluster": true,
+                     "namespace": true,
+                     "pod": true,
+                     "prometheus": true,
+                     "service": true
+                  },
+                  "indexByName": {
+                     "arn": 17,
+                     "aws_account_id": 0,
+                     "aws_region": 1,
+                     "ca_certificate_identifier": 15,
+                     "dbi_resource_id": 16,
+                     "dbidentifier": 3,
+                     "deletion_protection": 13,
+                     "engine": 5,
+                     "engine_version": 6,
+                     "instance": 7,
+                     "instance_class": 8,
+                     "multi_az": 9,
+                     "pending_maintenance": 11,
+                     "pending_modified_values": 10,
+                     "performance_insights_enabled": 12,
+                     "role": 4,
+                     "storage_type": 14
+                  }
+               }
+            }
+         ],
+         "type": "table"
+      }
+   ],
+   "schemaVersion": 36,
+   "tags": [
+      "dmf",
+      "server"
+   ],
+   "templating": {
+      "list": [
+         {
+            "description": "Prometheus data source",
+            "label": "Data source",
+            "name": "datasource",
+            "query": "prometheus",
+            "type": "datasource"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "description": "AWS Account ID",
+            "includeAll": true,
+            "label": "Account",
+            "multi": true,
+            "name": "aws_account_id",
+            "query": "label_values(rds_instance_info, aws_account_id)",
+            "refresh": 2,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "description": "AWS region",
+            "includeAll": true,
+            "label": "Region",
+            "multi": true,
+            "name": "aws_region",
+            "query": "label_values(rds_instance_info{aws_account_id=~\"$aws_account_id\"}, aws_region)",
+            "refresh": 2,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "description": "AWS RDS instance",
+            "label": "Cluster",
+            "name": "cluster_identifier",
+            "query": "label_values(rds_cluster_info{aws_account_id=~\"$aws_account_id\", aws_region=~\"$aws_region\"}, cluster_identifier)",
+            "refresh": 2,
+            "type": "query"
+         }
+      ]
+   },
+   "time": {
+      "from": "now-6h",
+      "to": "now"
+   },
+   "timezone": "utc",
+   "title": "RDS cluster details",
+   "uid": "0197d764-40cc-7042-a4df-f2e3146275a6"
+}
