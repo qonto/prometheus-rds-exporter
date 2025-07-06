@@ -77,6 +77,15 @@ local colors = common.colors;
             },
           ])
         ),
+        fieldOverride.byName.new('cluster_identifier')
+        + table.standardOptions.override.byType.withPropertiesFromOptions(
+          table.standardOptions.withLinks([
+            {
+              title: '',
+              url: '/d/' + common.uuids.rdsCluster + '/?${datasource:queryparam}&${__url_time_range}&var-' + variables.aws_account_id.name + '=${__data.fields.aws_account_id}&var-' + variables.aws_region.name + '=${__data.fields.aws_region}&var-' + variables.cluster_identifier.name + '=${__data.fields.cluster_identifier}',
+            },
+          ])
+        ),
         fieldOverride.byName.new('Value')
         + table.standardOptions.override.byType.withPropertiesFromOptions(
           table.standardOptions.withUnit('bytes')

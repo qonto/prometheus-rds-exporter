@@ -298,6 +298,23 @@
                {
                   "matcher": {
                      "id": "byName",
+                     "options": "cluster_identifier"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/0197d764-40cc-7042-a4df-f2e3146275a6/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-cluster_identifier=${__data.fields.cluster_identifier}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
                      "options": "Value"
                   },
                   "properties": [
@@ -545,6 +562,23 @@
                            {
                               "title": "",
                               "url": "/d/a7049b32-6be3-42e5-aa9a-2879a14f46dd/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-dbidentifier=${__data.fields.dbidentifier}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "cluster_identifier"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/0197d764-40cc-7042-a4df-f2e3146275a6/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-cluster_identifier=${__data.fields.cluster_identifier}"
                            }
                         ]
                      }
@@ -812,6 +846,23 @@
                            {
                               "title": "",
                               "url": "/d/a7049b32-6be3-42e5-aa9a-2879a14f46dd/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-dbidentifier=${__data.fields.dbidentifier}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "cluster_identifier"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/0197d764-40cc-7042-a4df-f2e3146275a6/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-cluster_identifier=${__data.fields.cluster_identifier}"
                            }
                         ]
                      }
