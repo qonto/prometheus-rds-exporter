@@ -7,6 +7,7 @@ local options = link.dashboards.options;
     rdsInstance: 'a7049b32-6be3-42e5-aa9a-2879a14f46dd',
     rdsInstances: 'efa71e45-3356-4206-b61f-1e2a3e4e2185',
     prometheusRDSExporter: 'f65d785e-d8c2-49b5-8314-388f30483f57',
+    rdsClusters: '0197d748-1b13-7538-9ae9-ab0653d38940',
   },
   colors: {
     transparent: 'transparent',

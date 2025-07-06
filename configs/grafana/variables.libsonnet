@@ -57,6 +57,17 @@ local RefreshOnTime = 2;
     )
     + var.query.withRefresh(RefreshOnTime),
 
+  cluster_identifier:
+    var.query.new('cluster_identifier')
+    + var.datasource.generalOptions.withLabel('Cluster')
+    + var.custom.generalOptions.withDescription('AWS RDS instance')
+    + var.query.withDatasourceFromVariable(self.datasource)
+    + var.query.queryTypes.withLabelValues(
+      'cluster_identifier',
+      'rds_cluster_info{aws_account_id=~"$aws_account_id", aws_region=~"$aws_region"}',
+    )
+    + var.query.withRefresh(RefreshOnTime),
+
   exporter:
     var.query.new('instance')
     + var.datasource.generalOptions.withLabel('Instance')
