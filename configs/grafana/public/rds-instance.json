@@ -502,7 +502,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Instance role (primary or replica)",
+         "description": "If instance is part of a DB cluster (Aurora or RDS Multi-AZ DB cluster): `writer` or `reader`. Otherwise role is `primary` for standalone DB instance and `replica` for an instance configured as replica.",
          "fieldConfig": {
             "defaults": {
                "noValue": "n/a",
