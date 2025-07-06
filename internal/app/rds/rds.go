@@ -96,6 +96,9 @@ type RdsInstanceMetrics struct {
 	// The name of the compute and memory capacity class of the DB instance.
 	DBInstanceClass string
 
+	// The name of the cluster identifier if this instance is part of a cluster
+	DBClusterIdentifier string
+
 	// The Amazon Web Services Region-unique, immutable identifier for the DB
 	DbiResourceID string
 
@@ -545,11 +548,15 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 	}
 
 	var clusterDetails ClusterMetrics
+	var dbClusterIdentifier string
 
 	if dbInstance.DBClusterIdentifier != nil {
+		dbClusterIdentifier = *dbInstance.DBClusterIdentifier
 		if details, exists := (*clusterMetrics)[*dbInstance.DBClusterIdentifier]; exists {
 			clusterDetails = details
 		}
+	} else {
+		dbClusterIdentifier = ""
 	}
 	role, sourceDBInstanceIdentifier := GetInstanceRole(&dbInstance, clusterDetails)
 
@@ -572,6 +579,7 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 		BackupRetentionPeriod:      converter.DaystoSeconds(*dbInstance.BackupRetentionPeriod),
 		DBInstanceClass:            *dbInstance.DBInstanceClass,
 		DbiResourceID:              *dbInstance.DbiResourceId,
+		DBClusterIdentifier:        dbClusterIdentifier,
 		DeletionProtection:         aws.ToBool(dbInstance.DeletionProtection),
 		Engine:                     *dbInstance.Engine,
 		EngineVersion:              *dbInstance.EngineVersion,

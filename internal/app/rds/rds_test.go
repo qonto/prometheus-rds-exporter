@@ -55,6 +55,7 @@ func TestGetMetrics(t *testing.T) {
 	assert.Equal(t, *rdsInstance.CertificateDetails.ValidTill, *m.CertificateValidTill, "CertificateValidTill mismatch")
 	assert.Equal(t, "unittest", m.Tags["Environment"], "Environment tag mismatch")
 	assert.Equal(t, "sre", m.Tags["Team"], "Team tag mismatch")
+	assert.Equal(t, m.DBClusterIdentifier, "", "unexpected cluster identifier")
 
 	// Check cluster
 	result := metrics.Clusters[*rdsCluster.DBClusterIdentifier]
@@ -465,4 +466,10 @@ func TestDBClusterRole(t *testing.T) {
 	assert.Equal(t, rds.RoleWriter, metrics.Instances[writerID].Role, "unexpected role for writer")
 	assert.Equal(t, rds.RoleReader, metrics.Instances[reader1ID].Role, "unexpected role for reader1")
 	assert.Equal(t, rds.RoleReader, metrics.Instances[reader2ID].Role, "unexpected role for reader2")
+
+	clusterIdentifier := cluster.DBClusterIdentifier
+
+	assert.Equal(t, *clusterIdentifier, metrics.Instances[writerID].DBClusterIdentifier, "unexpected cluster identifier for writer")
+	assert.Equal(t, *clusterIdentifier, metrics.Instances[reader1ID].DBClusterIdentifier, "unexpected cluster identifier for reader1")
+	assert.Equal(t, *clusterIdentifier, metrics.Instances[reader2ID].DBClusterIdentifier, "unexpected cluster identifier for reader2")
 }
