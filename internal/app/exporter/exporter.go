@@ -83,6 +83,8 @@ type rdsCollector struct {
 	allocatedDiskThroughput     *prometheus.Desc
 	information                 *prometheus.Desc
 	clusterInformation          *prometheus.Desc
+	clusterServerLessMaxACU     *prometheus.Desc
+	clusterServerLessMinACU     *prometheus.Desc
 	instanceBaselineIops        *prometheus.Desc
 	instanceMaximumIops         *prometheus.Desc
 	instanceBaselineThroughput  *prometheus.Desc
@@ -162,6 +164,14 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 		clusterInformation: prometheus.NewDesc("rds_cluster_info",
 			"RDS cluster information",
 			[]string{"aws_account_id", "aws_region", "cluster_identifier", "cluster_resource_id", "engine", "engine_version", "arn"}, nil,
+		),
+		clusterServerLessMaxACU: prometheus.NewDesc("rds_cluster_acu_max_average",
+			"Maximum number of ACU",
+			[]string{"aws_account_id", "aws_region", "cluster_identifier"}, nil,
+		),
+		clusterServerLessMinACU: prometheus.NewDesc("rds_cluster_acu_min_average",
+			"Minimum number of ACU",
+			[]string{"aws_account_id", "aws_region", "cluster_identifier"}, nil,
 		),
 		age: prometheus.NewDesc("rds_instance_age_seconds",
 			"Time since instance creation",
@@ -573,7 +583,8 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 			cluster.EngineVersion,
 			cluster.Arn,
 		)
-
+		ch <- prometheus.MustNewConstMetric(c.clusterServerLessMaxACU, prometheus.GaugeValue, cluster.ServerLessMaxACU, c.awsAccountID, c.awsRegion, clusterIdentifier)
+		ch <- prometheus.MustNewConstMetric(c.clusterServerLessMinACU, prometheus.GaugeValue, cluster.ServerLessMinACU, c.awsAccountID, c.awsRegion, clusterIdentifier)
 	}
 
 	// Instance metrics

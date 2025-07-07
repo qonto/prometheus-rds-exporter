@@ -191,6 +191,10 @@ func NewAuroraServerlessCluster() *aws_rds_types.DBCluster {
 	cluster := NewRdsCluster()
 	cluster.AllocatedStorage = aws.Int32(1) // AllocatedStorage always returns 1, because Aurora DB cluster storage size isn't fixed, but instead automatically adjusts as needed.
 	cluster.StorageType = aws.String("aurora-iopt1")
+	cluster.ServerlessV2ScalingConfiguration = &aws_rds_types.ServerlessV2ScalingConfigurationInfo{
+		MinCapacity: aws.Float64(0.5),
+		MaxCapacity: aws.Float64(12.5),
+	}
 
 	return cluster
 }

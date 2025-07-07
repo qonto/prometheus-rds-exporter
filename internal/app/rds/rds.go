@@ -70,6 +70,12 @@ type ClusterMetrics struct {
 	// dbidentifier of the write node
 	WriterDBInstanceIdentifier string
 
+	// Minimum number of Aurora capacity units (ACUs) for a DB instance in an Aurora Serverless v2 cluster.
+	ServerLessMinACU float64
+
+	// Maximum number of Aurora capacity units (ACUs) for a DB instance in an Aurora Serverless v2 cluster.
+	ServerLessMaxACU float64
+
 	// AWS tags on the cluster.
 	Tags map[string]string
 }
@@ -351,6 +357,16 @@ func (r *RDSFetcher) getClusters(ctx context.Context, filters []aws_rds_types.Fi
 				}
 			}
 
+			var maxACU, minACU float64
+			if dbCluster.ServerlessV2ScalingConfiguration != nil {
+				if dbCluster.ServerlessV2ScalingConfiguration.MaxCapacity != nil {
+					maxACU = *dbCluster.ServerlessV2ScalingConfiguration.MaxCapacity
+				}
+				if dbCluster.ServerlessV2ScalingConfiguration.MinCapacity != nil {
+					minACU = *dbCluster.ServerlessV2ScalingConfiguration.MinCapacity
+				}
+			}
+
 			clusterMetrics[*dbCluster.DBClusterIdentifier] = ClusterMetrics{
 				Arn:                        *dbCluster.DBClusterArn,
 				Engine:                     *dbCluster.Engine,
@@ -362,6 +378,8 @@ func (r *RDSFetcher) getClusters(ctx context.Context, filters []aws_rds_types.Fi
 				DbClusterResourceId:        *dbCluster.DbClusterResourceId,
 				Age:                        time.Since(*dbCluster.ClusterCreateTime).Seconds(),
 				Tags:                       ConvertRDSTagsToMap(dbCluster.TagList),
+				ServerLessMaxACU:           maxACU,
+				ServerLessMinACU:           minACU,
 			}
 		}
 	}

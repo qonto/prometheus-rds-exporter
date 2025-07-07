@@ -473,3 +473,21 @@ func TestDBClusterRole(t *testing.T) {
 	assert.Equal(t, *clusterIdentifier, metrics.Instances[reader1ID].DBClusterIdentifier, "unexpected cluster identifier for reader1")
 	assert.Equal(t, *clusterIdentifier, metrics.Instances[reader2ID].DBClusterIdentifier, "unexpected cluster identifier for reader2")
 }
+
+func TestServerlessMetrics(t *testing.T) {
+	cluster := mock.NewAuroraServerlessCluster()
+
+	ctx := context.TODO()
+	client := mock.NewRDSClient().WithDBClusters(*cluster)
+
+	configuration := rds.Configuration{CollectLogsSize: true}
+	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
+	metrics, err := fetcher.GetInstancesMetrics()
+
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+
+	clusterIdentifier := cluster.DBClusterIdentifier
+
+	assert.Equal(t, *cluster.ServerlessV2ScalingConfiguration.MaxCapacity, metrics.Clusters[*clusterIdentifier].ServerLessMaxACU, "unexpected max ACU value")
+	assert.Equal(t, *cluster.ServerlessV2ScalingConfiguration.MinCapacity, metrics.Clusters[*clusterIdentifier].ServerLessMinACU, "unexpected min ACU value")
+}
