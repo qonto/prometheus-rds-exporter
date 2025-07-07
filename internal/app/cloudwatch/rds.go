@@ -27,22 +27,23 @@ type CloudWatchMetrics struct {
 }
 
 type RdsMetrics struct {
-	CPUUtilization            *float64
-	DBLoad                    *float64
-	DBLoadCPU                 *float64
-	DBLoadNonCPU              *float64
-	DatabaseConnections       *float64
-	FreeStorageSpace          *float64
-	FreeableMemory            *float64
-	MaximumUsedTransactionIDs *float64
-	ReadIOPS                  *float64
-	ReadThroughput            *float64
-	ReplicaLag                *float64
-	ReplicationSlotDiskUsage  *float64
-	SwapUsage                 *float64
-	TransactionLogsDiskUsage  *float64
-	WriteIOPS                 *float64
-	WriteThroughput           *float64
+	CPUUtilization             *float64
+	DBLoad                     *float64
+	DBLoadCPU                  *float64
+	DBLoadNonCPU               *float64
+	DatabaseConnections        *float64
+	FreeStorageSpace           *float64
+	FreeableMemory             *float64
+	MaximumUsedTransactionIDs  *float64
+	ReadIOPS                   *float64
+	ReadThroughput             *float64
+	ReplicaLag                 *float64
+	ReplicationSlotDiskUsage   *float64
+	SwapUsage                  *float64
+	TransactionLogsDiskUsage   *float64
+	ServerlessDatabaseCapacity *float64
+	WriteIOPS                  *float64
+	WriteThroughput            *float64
 }
 
 func (m *RdsMetrics) Update(field string, value float64) error {
@@ -79,6 +80,8 @@ func (m *RdsMetrics) Update(field string, value float64) error {
 		m.WriteThroughput = &value
 	case "TransactionLogsDiskUsage":
 		m.TransactionLogsDiskUsage = &value
+	case "ServerlessDatabaseCapacity":
+		m.ServerlessDatabaseCapacity = &value
 	default:
 		return fmt.Errorf("can't process '%s' metrics: %w", field, errUnknownMetric)
 	}
@@ -87,8 +90,8 @@ func (m *RdsMetrics) Update(field string, value float64) error {
 }
 
 // getCloudWatchMetricsName returns names of Cloudwatch metrics to collect
-func getCloudWatchMetricsName() [16]string {
-	return [16]string{
+func getCloudWatchMetricsName() [17]string {
+	return [17]string{
 		"CPUUtilization",
 		"DBLoad",
 		"DBLoadCPU",
@@ -102,6 +105,7 @@ func getCloudWatchMetricsName() [16]string {
 		"ReplicaLag",
 		"ReplicationSlotDiskUsage",
 		"SwapUsage",
+		"ServerlessDatabaseCapacity",
 		"TransactionLogsDiskUsage",
 		"WriteIOPS",
 		"WriteThroughput",

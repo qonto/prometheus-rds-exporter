@@ -8,6 +8,9 @@ local colors = common.colors;
 {
   stat: {
     local stat = generic.stat,
+    local standardOptions = g.panel.stat.standardOptions,
+    local thresholds = g.panel.stat.standardOptions.thresholds,
+    local step = standardOptions.threshold.step,
 
     instances:
       stat.graph('Instances', 'Number of instances in the cluster', [queries.instances.count])
@@ -20,7 +23,20 @@ local colors = common.colors;
       stat.field('Engine Version', 'Cluster engine version', queries.cluster.info, 'engine_version'),
 
     byClassType:
-      stat.graph('Instances class', 'Number of instances by instance class type', [queries.instances.byClassType]),
+      stat.graph('Instances class', 'Number of instances by instance class type', [queries.instances.byClassType])
+      + thresholds.withMode('absolute')
+      + thresholds.withSteps([
+        step.withValue(0) + step.withColor('white'),
+      ]),
+
+    serverLessConfiguration:
+      stat.graph('Serverless configuration', 'Minimum/Maximum number of Aurora capacity units (ACUs) for a DB instance in an Aurora Serverless v2 cluster.', [queries.cluster.serverless.minACU, queries.cluster.serverless.maxACU])
+      + standardOptions.withDecimals(1)
+      + thresholds.withMode('absolute')
+      + thresholds.withSteps([
+        step.withValue(0) + step.withColor('white'),
+      ]),
+
   },
   table: {
     local t = generic.table,

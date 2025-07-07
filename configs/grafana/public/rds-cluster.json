@@ -178,7 +178,7 @@
          },
          "gridPos": {
             "h": 3,
-            "w": 3,
+            "w": 4,
             "x": 7,
             "y": 1
          },
@@ -205,10 +205,23 @@
             "uid": "-- Mixed --"
          },
          "description": "Number of instances by instance class type",
+         "fieldConfig": {
+            "defaults": {
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
          "gridPos": {
             "h": 3,
-            "w": 14,
-            "x": 10,
+            "w": 13,
+            "x": 11,
             "y": 1
          },
          "id": 5,
@@ -231,14 +244,66 @@
          "type": "stat"
       },
       {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Minimum/Maximum number of Aurora capacity units (ACUs) for a DB instance in an Aurora Serverless v2 cluster.",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 1,
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 11,
+            "x": 0,
+            "y": 4
+         },
+         "id": 6,
+         "options": {
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_cluster_acu_min_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",cluster_identifier=\"$cluster_identifier\"}\n",
+               "legendFormat": "Min ACU"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_cluster_acu_max_average{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",cluster_identifier=\"$cluster_identifier\"}\n",
+               "legendFormat": "Max ACU"
+            }
+         ],
+         "title": "Serverless configuration",
+         "type": "stat"
+      },
+      {
          "collapsed": false,
          "gridPos": {
             "h": 1,
             "w": 0,
-            "x": 24,
-            "y": 4
+            "x": 11,
+            "y": 7
          },
-         "id": 6,
+         "id": 7,
          "title": "Inventory",
          "type": "row"
       },
@@ -425,9 +490,9 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 5
+            "y": 8
          },
-         "id": 7,
+         "id": 8,
          "pluginVersion": "v10.2.0",
          "targets": [
             {

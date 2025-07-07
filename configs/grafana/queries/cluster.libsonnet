@@ -13,6 +13,27 @@ local variables = import '../variables.libsonnet';
       )
       + prometheusQuery.withFormat('table')
       + prometheusQuery.withInstant(true),
+
+    serverless: {
+      maxACU:
+        prometheusQuery.new(
+          '$' + variables.datasource.name,
+          |||
+            rds_cluster_acu_max_average{aws_account_id="$aws_account_id",aws_region="$aws_region",cluster_identifier="$cluster_identifier"}
+          |||
+        )
+        //        + prometheusQuery.withFormat('table')
+        + prometheusQuery.withLegendFormat('Max ACU'),
+      minACU:
+        prometheusQuery.new(
+          '$' + variables.datasource.name,
+          |||
+            rds_cluster_acu_min_average{aws_account_id="$aws_account_id",aws_region="$aws_region",cluster_identifier="$cluster_identifier"}
+          |||
+        )
+        //        + prometheusQuery.withFormat('table')
+        + prometheusQuery.withLegendFormat('Min ACU'),
+    },
   },
 
   instances: {

@@ -118,6 +118,7 @@ type rdsCollector struct {
 	usageAllocatedStorage       *prometheus.Desc
 	usageDBInstances            *prometheus.Desc
 	usageManualSnapshots        *prometheus.Desc
+	serverlessDatabaseCapacity  *prometheus.Desc
 	exporterBuildInformation    *prometheus.Desc
 	transactionLogsDiskUsage    *prometheus.Desc
 	certificateValidTill        *prometheus.Desc
@@ -329,6 +330,10 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			"Manual snapshots count",
 			[]string{"aws_account_id", "aws_region"}, nil,
 		),
+		serverlessDatabaseCapacity: prometheus.NewDesc("rds_serverless_instance_acu_average",
+			"Current ACU of the Aurora Serverless instance",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
 	}
 }
 
@@ -377,6 +382,7 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.usageAllocatedStorage
 	ch <- c.usageDBInstances
 	ch <- c.usageManualSnapshots
+	ch <- c.serverlessDatabaseCapacity
 	ch <- c.writeIOPS
 	ch <- c.writeThroughput
 }
@@ -732,6 +738,10 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 
 		if instance.DBLoadNonCPU != nil {
 			ch <- prometheus.MustNewConstMetric(c.dBLoadNonCPU, prometheus.GaugeValue, *instance.DBLoadNonCPU, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.ServerlessDatabaseCapacity != nil {
+			ch <- prometheus.MustNewConstMetric(c.serverlessDatabaseCapacity, prometheus.GaugeValue, *instance.ServerlessDatabaseCapacity, c.awsAccountID, c.awsRegion, dbidentifier)
 		}
 	}
 
