@@ -7,10 +7,12 @@ local colors = common.colors;
 
 {
   stat: {
+    local s = g.panel.stat,
     local stat = generic.stat,
     local standardOptions = g.panel.stat.standardOptions,
     local thresholds = g.panel.stat.standardOptions.thresholds,
     local step = standardOptions.threshold.step,
+    local options = stat.options,
 
     instances:
       stat.graph('Instances', 'Number of instances in the cluster', [queries.instances.count])
@@ -23,19 +25,30 @@ local colors = common.colors;
       stat.field('Engine Version', 'Cluster engine version', queries.cluster.info, 'engine_version'),
 
     byClassType:
-      stat.graph('Instances class', 'Number of instances by instance class type', [queries.instances.byClassType])
+      stat.graph('Instance classes', 'Number of instances by instance class type', [queries.instances.byClassType])
+      + thresholds.withMode('absolute')
+      + s.options.withTextMode('value_and_name')
+      + thresholds.withSteps([
+        step.withValue(0) + step.withColor('white'),
+      ]),
+
+    currentACU:
+      stat.graph('ACU', 'Number of current Aurora Capacity Units used by this cluster', [queries.cluster.serverless.currentACU])
+      + standardOptions.withDecimals(1)
       + thresholds.withMode('absolute')
       + thresholds.withSteps([
         step.withValue(0) + step.withColor('white'),
       ]),
 
     serverLessConfiguration:
-      stat.graph('Serverless configuration', 'Minimum/Maximum number of Aurora capacity units (ACUs) for a DB instance in an Aurora Serverless v2 cluster.', [queries.cluster.serverless.minACU, queries.cluster.serverless.maxACU])
+      stat.graph('Configuration', 'Minimum/Maximum number of Aurora capacity units (ACUs) for a DB instance in an Aurora Serverless v2 cluster.', [queries.cluster.serverless.minACU, queries.cluster.serverless.maxACU])
+      + s.options.withGraphMode('none')
       + standardOptions.withDecimals(1)
       + thresholds.withMode('absolute')
       + thresholds.withSteps([
         step.withValue(0) + step.withColor('white'),
       ]),
+
 
   },
   table: {
@@ -157,5 +170,25 @@ local colors = common.colors;
 
     instances:
       self.__table('Instances', 'List of RDS instances in the clusters', [queries.instances.all]),
+  },
+  timeSeries: {
+    local ts = generic.timeSeries,
+    local timeSeries = g.panel.timeSeries,
+    local fieldOverride = g.panel.timeSeries.fieldOverride,
+    local options = timeSeries.options,
+    local custom = timeSeries.fieldConfig.defaults.custom,
+    local standardOptions = timeSeries.standardOptions,
+    local color = standardOptions.color,
+
+    ACUperInstance:
+      ts.base('ACU per instance', 'TODO', [queries.cluster.serverless.ACUperInstance])
+      + standardOptions.withDecimals(1)
+      + custom.stacking.withMode('normal'),
+
+    ACUUsedPercentage:
+      ts.percent('Autoscaling ACU usage', '', [queries.cluster.serverless.ACUUsedPercentage])
+      + ts.singleMetric
+      + standardOptions.withNoValue('Disabled'),
+
   },
 }

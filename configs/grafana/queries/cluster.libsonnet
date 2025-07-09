@@ -23,7 +23,7 @@ local variables = import '../variables.libsonnet';
           |||
         )
         //        + prometheusQuery.withFormat('table')
-        + prometheusQuery.withLegendFormat('Max ACU'),
+        + prometheusQuery.withLegendFormat('Max ACU/instance'),
       minACU:
         prometheusQuery.new(
           '$' + variables.datasource.name,
@@ -32,7 +32,51 @@ local variables = import '../variables.libsonnet';
           |||
         )
         //        + prometheusQuery.withFormat('table')
-        + prometheusQuery.withLegendFormat('Min ACU'),
+        + prometheusQuery.withLegendFormat('Min ACU/instance'),
+
+      currentACU:
+        prometheusQuery.new(
+          '$' + variables.datasource.name,
+          |||
+            sum by (cluster_identifier) (
+              rds_serverless_instance_acu_average
+                * on(dbidentifier)
+                  group_left(cluster_identifier)
+                  (rds_instance_info{aws_account_id="$aws_account_id",aws_region="$aws_region",cluster_identifier="$cluster_identifier"})
+            )
+          |||
+        )
+        + prometheusQuery.withLegendFormat('Current ACU'),
+
+      ACUperInstance:
+        prometheusQuery.new(
+          '$' + variables.datasource.name,
+          |||
+            rds_serverless_instance_acu_average
+                * on(dbidentifier)
+                  group_left(cluster_identifier)
+                  (rds_instance_info{aws_account_id="$aws_account_id",aws_region="$aws_region",cluster_identifier="$cluster_identifier"})
+          |||
+        )
+        + prometheusQuery.withLegendFormat('{{dbidentifier}}'),
+
+      ACUUsedPercentage:
+        prometheusQuery.new(
+          '$' + variables.datasource.name,
+          |||
+            max by (cluster_identifier) (
+              rds_serverless_instance_acu_average
+                * on(dbidentifier)
+                  group_left(cluster_identifier)
+                  (rds_instance_info{aws_account_id="$aws_account_id", aws_region="$aws_region", cluster_identifier="$cluster_identifier"})
+            )
+            * 100
+            / 
+            max by (cluster_identifier) (rds_cluster_acu_max_average{aws_account_id="$aws_account_id", aws_region="$aws_region", cluster_identifier="$cluster_identifier"})
+          |||
+        )
+        + prometheusQuery.withLegendFormat('{{cluster_identifier}}'),
+
     },
   },
 

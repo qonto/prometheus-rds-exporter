@@ -28,12 +28,17 @@ dashboard.new(title)
       g.panel.row.new('Overview'),
       p.stat.engine { gridPos+: { w: 4, h: 3 } },
       p.stat.engineVersion { gridPos+: { w: 3, h: 3 } },
-      p.stat.instances { gridPos+: { w: 4, h: 3 } },
-      p.stat.byClassType { gridPos+: { w: 13, h: 3 } },
-      p.stat.serverLessConfiguration { gridPos+: { w: 11, h: 3 } },
+      p.stat.currentACU { gridPos+: { w: 3, h: 3 } },
+      p.stat.instances { gridPos+: { w: 3, h: 3 } },
+      p.stat.byClassType { gridPos+: { w: 11, h: 3 } },
 
       g.panel.row.new('Inventory'),
       p.table.instances { gridPos+: { w: 24, h: 7 } },
+
+      g.panel.row.new('Serverless'),
+      p.stat.serverLessConfiguration { gridPos+: { w: 2, h: 5 } },
+      p.timeSeries.ACUUsedPercentage { gridPos+: { w: 22, h: 5 } },
+      p.timeSeries.ACUperInstance { gridPos+: { w: 24, h: 7 } },
     ]
   )
 )
