@@ -345,8 +345,8 @@ func (r *RDSFetcher) getClusters(ctx context.Context, filters []aws_rds_types.Fi
 		span.SetAttributes(attribute.Int("qonto.prometheus_rds_exporter.cluster_count", len(output.DBClusters)))
 
 		for _, dbCluster := range output.DBClusters {
-
 			var writerDBInstanceIdentifier string
+
 			members := make(map[string]DBRole)
 
 			for _, member := range dbCluster.DBClusterMembers {
@@ -361,10 +361,12 @@ func (r *RDSFetcher) getClusters(ctx context.Context, filters []aws_rds_types.Fi
 			}
 
 			var maxACU, minACU float64
+
 			if dbCluster.ServerlessV2ScalingConfiguration != nil {
 				if dbCluster.ServerlessV2ScalingConfiguration.MaxCapacity != nil {
 					maxACU = *dbCluster.ServerlessV2ScalingConfiguration.MaxCapacity
 				}
+
 				if dbCluster.ServerlessV2ScalingConfiguration.MinCapacity != nil {
 					minACU = *dbCluster.ServerlessV2ScalingConfiguration.MinCapacity
 				}
@@ -421,6 +423,7 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 	}
 
 	input := &aws_rds.DescribeDBInstancesInput{Filters: filters}
+
 	paginator := aws_rds.NewDescribeDBInstancesPaginator(r.client, input)
 	for paginator.HasMorePages() {
 		instanceCtx, instanceSpan := tracer.Start(ctx, "collect-rds-instances")
@@ -460,6 +463,7 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 
 func (r *RDSFetcher) getDBInstanceFilters(ctx context.Context) ([]aws_rds_types.Filter, error) {
 	var filters []aws_rds_types.Filter
+
 	if r.configuration.TagSelections == nil {
 		return filters, nil
 	}
@@ -560,26 +564,32 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 	var logFilesSize *int64
 
 	isServerless := *dbInstance.DBInstanceClass == ServerlessClassType
+
 	shouldCollectLogs := (r.configuration.CollectLogsSize && !isServerless) || (r.configuration.CollectServerlessLogsSize && isServerless)
 	if shouldCollectLogs {
 		var err error
+
 		logFilesSize, err = r.getLogFilesSize(ctx, *dbIdentifier)
+
 		if err != nil {
 			return RdsInstanceMetrics{}, fmt.Errorf("can't get log files size for %s: %w", *dbIdentifier, err)
 		}
 	}
 
 	var clusterDetails ClusterMetrics
+
 	var dbClusterIdentifier string
 
 	if dbInstance.DBClusterIdentifier != nil {
 		dbClusterIdentifier = *dbInstance.DBClusterIdentifier
+
 		if details, exists := (*clusterMetrics)[*dbInstance.DBClusterIdentifier]; exists {
 			clusterDetails = details
 		}
 	} else {
 		dbClusterIdentifier = ""
 	}
+
 	role, sourceDBInstanceIdentifier := GetInstanceRole(&dbInstance, clusterDetails)
 
 	var age *float64
@@ -675,6 +685,7 @@ func (r *RDSFetcher) isRecoverableLogError(err error, dbidentifier string) bool 
 	var apiErr smithy.APIError
 	if errors.As(err, &apiErr) && apiErr.ErrorCode() == "DBInstanceNotReady" {
 		r.logger.Warn("Instance is not ready for log collect, skipping", "dbidentifier", dbidentifier)
+
 		return true
 	}
 

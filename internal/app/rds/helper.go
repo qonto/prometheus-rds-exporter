@@ -121,6 +121,7 @@ func GetInstanceRole(instance *aws_rds_types.DBInstance, cluster ClusterMetrics)
 			if role == RoleWriter {
 				return RoleWriter, ""
 			}
+
 			return RoleReader, cluster.WriterDBInstanceIdentifier
 		}
 	}
@@ -141,6 +142,7 @@ func ConvertRDSTagsToMap(tags []aws_rds_types.Tag) map[string]string {
 	for _, tag := range tags {
 		key := aws.ToString(tag.Key)
 		value := aws.ToString(tag.Value)
+
 		if key != "" {
 			tagMap[key] = value
 		}
