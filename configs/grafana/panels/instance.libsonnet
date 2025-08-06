@@ -463,6 +463,7 @@ local colors = common.colors;
 
     storagePercent:
       ts.percent('Used storage', 'Ratio of free disk space', [queries.instance.storage.usagePercent])
+      + standardOptions.withDecimals(null)
       + ts.singleMetric,
 
     status:
