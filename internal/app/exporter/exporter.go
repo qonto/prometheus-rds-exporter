@@ -643,8 +643,17 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 
 		// RDS disk performance are limited by the EBS volume attached the RDS instance
 		if ec2Metrics, ok := c.metrics.EC2.Instances[instance.DBInstanceClass]; ok {
-			maxIops = min(instance.MaxIops, int64(ec2Metrics.BaselineIOPS))
-			storageThroughput = min(float64(instance.StorageThroughput), ec2Metrics.BaselineThroughput)
+			if instance.MaxIops > 0 {
+				maxIops = min(instance.MaxIops, int64(ec2Metrics.BaselineIOPS))
+			} else {
+				maxIops = int64(ec2Metrics.BaselineIOPS)
+			}
+
+			if instance.StorageThroughput > 0 {
+				storageThroughput = min(float64(instance.StorageThroughput), ec2Metrics.BaselineThroughput)
+			} else {
+				storageThroughput = ec2Metrics.BaselineThroughput
+			}
 		}
 
 		if maxIops > 0 {
