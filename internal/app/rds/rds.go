@@ -14,6 +14,7 @@ import (
 	aws_rds_types "github.com/aws/aws-sdk-go-v2/service/rds/types"
 	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
 	tag_types "github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi/types"
+	"github.com/aws/smithy-go"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -641,13 +642,12 @@ func (r *RDSFetcher) getLogFilesSize(ctx context.Context, dbidentifier string) (
 
 	result, err := r.client.DescribeDBLogFiles(context.TODO(), input)
 	if err != nil {
-		var notFoundError *aws_rds_types.DBInstanceNotFoundFault
-		if errors.As(err, &notFoundError) { // Replica in "creating" status may return notFoundError exception
-			return filesSize, nil
-		}
-
 		span.SetStatus(codes.Error, "can't describe db logs files")
 		span.RecordError(err)
+
+		if r.isRecoverableLogError(err, dbidentifier) {
+			return filesSize, nil
+		}
 
 		return filesSize, fmt.Errorf("can't describe db logs files for %s: %w", dbidentifier, err)
 	}
@@ -663,4 +663,20 @@ func (r *RDSFetcher) getLogFilesSize(ctx context.Context, dbidentifier string) (
 	}
 
 	return filesSize, nil
+}
+
+// isRecoverableLogError checks if the error is recoverable and logs should be skipped
+func (r *RDSFetcher) isRecoverableLogError(err error, dbidentifier string) bool {
+	var notFoundError *aws_rds_types.DBInstanceNotFoundFault
+	if errors.As(err, &notFoundError) {
+		return true // Replica in "creating" status may return notFoundError exception
+	}
+
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) && apiErr.ErrorCode() == "DBInstanceNotReady" {
+		r.logger.Warn("Instance is not ready for log collect, skipping", "dbidentifier", dbidentifier)
+		return true
+	}
+
+	return false
 }
