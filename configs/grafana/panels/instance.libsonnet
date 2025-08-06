@@ -487,9 +487,10 @@ local colors = common.colors;
           '3': { index: 13, color: colors.ok, text: 'Starting' },
           '4': { index: 14, color: colors.info, text: 'Modifying' },
           '5': { index: 15, color: colors.info, text: 'Configuring enhanced monitoring' },
-          '10': { index: 16, colors: colors.info, text: 'Storage initialization' },
-          '11': { index: 17, colors: colors.notice, text: 'Storage optimization' },
-          '20': { index: 18, colors: colors.notice, text: 'Renaming' },
+          '6': { index: 16, color: colors.info, text: 'Configuring log exports' },
+          '10': { index: 17, colors: colors.info, text: 'Storage initialization' },
+          '11': { index: 18, colors: colors.notice, text: 'Storage optimization' },
+          '20': { index: 19, colors: colors.notice, text: 'Renaming' },
         }),
       ])
       + standardOptions.withMin(null)
