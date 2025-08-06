@@ -22,9 +22,10 @@ import (
 )
 
 type Configuration struct {
-	CollectLogsSize     bool
-	CollectMaintenances bool
-	TagSelections       map[string][]string
+	CollectLogsSize           bool
+	CollectServerlessLogsSize bool
+	CollectMaintenances       bool
+	TagSelections             map[string][]string
 }
 
 type Metrics struct {
@@ -216,6 +217,7 @@ const (
 	RoleReplica                                 DBRole  = "replica"
 	RoleWriter                                  DBRole  = "writer"
 	RoleReader                                  DBRole  = "reader"
+	ServerlessClassType                         string  = "db.serverless"
 )
 
 var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/rds")
@@ -556,12 +558,13 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 
 	var logFilesSize *int64
 
-	if r.configuration.CollectLogsSize {
+	isServerless := *dbInstance.DBInstanceClass == ServerlessClassType
+	shouldCollectLogs := (r.configuration.CollectLogsSize && !isServerless) || (r.configuration.CollectServerlessLogsSize && isServerless)
+	if shouldCollectLogs {
 		var err error
-
 		logFilesSize, err = r.getLogFilesSize(ctx, *dbIdentifier)
 		if err != nil {
-			return RdsInstanceMetrics{}, fmt.Errorf("can't get log files size for %d: %w", dbIdentifier, err)
+			return RdsInstanceMetrics{}, fmt.Errorf("can't get log files size for %s: %w", *dbIdentifier, err)
 		}
 	}
 
