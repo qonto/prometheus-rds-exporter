@@ -79,4 +79,7 @@ local RefreshOnTime = 2;
       'rds_exporter_build_info{}',
     )
     + var.query.withRefresh(RefreshOnTime),
+
+  // Maximum Aurora storage capacity is 256 TB.
+  aurora_storage_limits_bytes: 281474976710656,
 }
