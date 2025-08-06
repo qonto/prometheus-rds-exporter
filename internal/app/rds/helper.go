@@ -3,6 +3,7 @@ package rds
 import (
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_rds_types "github.com/aws/aws-sdk-go-v2/service/rds/types"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 )
@@ -136,10 +137,14 @@ func GetInstanceRole(instance *aws_rds_types.DBInstance, cluster ClusterMetrics)
 // ConvertRDSTagsToMap safely converts a slice of RDS tags into a map[string]string.
 func ConvertRDSTagsToMap(tags []aws_rds_types.Tag) map[string]string {
 	tagMap := make(map[string]string, len(tags))
+
 	for _, tag := range tags {
-		if tag.Key != nil && tag.Value != nil {
-			tagMap[*tag.Key] = *tag.Value
+		key := aws.ToString(tag.Key)
+		value := aws.ToString(tag.Value)
+		if key != "" {
+			tagMap[key] = value
 		}
 	}
+
 	return tagMap
 }
