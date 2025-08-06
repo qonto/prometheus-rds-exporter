@@ -179,6 +179,7 @@ const (
 	InstanceStatusStarting                      int     = 3
 	InstanceStatusModifying                     int     = 4
 	InstanceStatusConfiguringEnhancedMonitoring int     = 5
+	InstanceStatusConfiguringLogExports         int     = 6
 	InstanceStatusStorageInitialization         int     = 10
 	InstanceStatusStorageOptimization           int     = 11
 	InstanceStatusRenaming                      int     = 20
@@ -227,6 +228,7 @@ var instanceStatuses = map[string]int{ // retrieved from https://docs.aws.amazon
 	"available":                       InstanceStatusAvailable,
 	"backing-up":                      InstanceStatusBackingUp,
 	"configuring-enhanced-monitoring": InstanceStatusConfiguringEnhancedMonitoring,
+	"configuring-log-exports":         InstanceStatusConfiguringLogExports,
 	"creating":                        InstanceStatusCreating,
 	"deleting":                        InstanceStatusDeleting,
 	"failed":                          InstanceStatusFailed,
