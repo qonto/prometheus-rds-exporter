@@ -1,6 +1,6 @@
 ---
 name: unittest
-on:  # yamllint disable-line rule:truthy
+on: # yamllint disable-line rule:truthy
   push:
     branches:
       - "*"
@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: "1.22"
       - name: Install dependencies
         run: |
           go get .
@@ -38,7 +38,7 @@ jobs:
           hide_complexity: true
           indicators: true
           output: both
-          thresholds: '60 80'
+          thresholds: "60 80"
       - uses: jwalton/gh-find-current-pr@v1
         id: finder
       - name: Add Coverage PR Comment
@@ -102,8 +102,8 @@ jobs:
 
   checkcov:
     permissions:
-      security-events: write  # for github/codeql-action/upload-sarif to upload SARIF results
-      actions: read  # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
+      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
 
     runs-on: ubuntu-latest
     steps:
