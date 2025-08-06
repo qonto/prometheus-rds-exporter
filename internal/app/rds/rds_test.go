@@ -69,7 +69,7 @@ func checkRDSCluster(t *testing.T, cluster *aws_rds_types.DBCluster, result rds.
 	assert.Equal(t, fmt.Sprintf("arn:aws:rds:eu-west-3:123456789012:db:%s", *cluster.DBClusterIdentifier), result.Arn, "ARN mismatch")
 	assert.Equal(t, converter.GigaBytesToBytes(int64(*cluster.AllocatedStorage)), result.AllocatedStorage, "Allocated storage mismatch")
 	assert.Equal(t, *cluster.DBClusterIdentifier, result.DBClusterIdentifier, "DBClusterIdentifier mismatch")
-	assert.Equal(t, *cluster.DbClusterResourceId, result.DbClusterResourceId, "DbClusterResourceId mismatch")
+	assert.Equal(t, *cluster.DbClusterResourceId, result.DBClusterResourceID, "DBClusterResourceID mismatch")
 	assert.Equal(t, *cluster.Engine, result.Engine, "Engine mismatch")
 	assert.Equal(t, *cluster.EngineVersion, result.EngineVersion, "Engine version mismatch")
 	assert.Equal(t, int(time.Since(*cluster.ClusterCreateTime).Seconds()), int(result.Age), "Age should match expected age")

@@ -152,7 +152,7 @@ func NewRdsCluster() *aws_rds_types.DBCluster {
 	awsRegion := "eu-west-3"
 	awsAccountID := "123456789012"
 	DBClusterIdentifier := RandomString(10)
-	DbClusterResourceID := RandomString(10)
+	DBClusterResourceID := RandomString(10)
 	arn := fmt.Sprintf("arn:aws:rds:%s:%s:db:%s", awsRegion, awsAccountID, DBClusterIdentifier)
 
 	now := time.Now()
@@ -163,7 +163,7 @@ func NewRdsCluster() *aws_rds_types.DBCluster {
 		DBClusterArn:               aws.String(arn),
 		DBClusterInstanceClass:     aws.String("t3.large"),
 		DBClusterIdentifier:        aws.String(DBClusterIdentifier),
-		DbClusterResourceId:        aws.String(DbClusterResourceID),
+		DbClusterResourceId:        aws.String(DBClusterResourceID),
 		Status:                     aws.String("available"),
 		DeletionProtection:         aws.Bool(true),
 		Engine:                     aws.String("postgres"),

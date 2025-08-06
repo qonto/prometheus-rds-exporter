@@ -586,7 +586,7 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 			c.awsAccountID,
 			c.awsRegion,
 			clusterIdentifier,
-			cluster.DbClusterResourceId,
+			cluster.DBClusterResourceID,
 			cluster.Engine,
 			cluster.EngineVersion,
 			cluster.Arn,

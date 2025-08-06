@@ -64,7 +64,7 @@ type ClusterMetrics struct {
 	// The Amazon Web Services Region-unique, immutable identifier for the DB cluster.
 	// This identifier is found in Amazon Web Services CloudTrail log entries whenever
 	// the KMS key for the DB cluster is accessed.
-	DbClusterResourceId string
+	DBClusterResourceID string
 
 	// Members
 	Members map[string]DBRole
@@ -380,7 +380,7 @@ func (r *RDSFetcher) getClusters(ctx context.Context, filters []aws_rds_types.Fi
 				DBClusterIdentifier:        *dbCluster.DBClusterIdentifier,
 				Members:                    members,
 				WriterDBInstanceIdentifier: writerDBInstanceIdentifier,
-				DbClusterResourceId:        *dbCluster.DbClusterResourceId,
+				DBClusterResourceID:        *dbCluster.DbClusterResourceId,
 				Age:                        time.Since(*dbCluster.ClusterCreateTime).Seconds(),
 				Tags:                       ConvertRDSTagsToMap(dbCluster.TagList),
 				ServerLessMaxACU:           maxACU,
