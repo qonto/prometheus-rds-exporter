@@ -19,3 +19,15 @@ func addDBPrefix(instance string) string {
 func removeDBPrefix(instance string) string {
 	return strings.Trim(instance, "db.")
 }
+
+// overrideInvalidInstanceTypes normalizes EC2 instance type names to handle
+// inconsistencies between RDS and EC2 services.
+// x2g RDS instances which are memory-optimized instance classes with AWS Graviton2 processors
+// are referenced as x2gd in EC2 API
+// See: https://github.com/qonto/prometheus-rds-exporter/issues/258
+func overrideInvalidInstanceTypes(instanceType string) string {
+	if strings.HasPrefix(instanceType, "x2g.") {
+		return strings.Replace(instanceType, "x2g.", "x2gd.", 1)
+	}
+	return instanceType
+}
