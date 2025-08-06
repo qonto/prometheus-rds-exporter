@@ -2398,12 +2398,12 @@
                         },
                         "10": {
                            "colors": "blue",
-                           "index": 16,
+                           "index": 17,
                            "text": "Storage initialization"
                         },
                         "11": {
                            "colors": "yellow",
-                           "index": 17,
+                           "index": 18,
                            "text": "Storage optimization"
                         },
                         "2": {
@@ -2413,7 +2413,7 @@
                         },
                         "20": {
                            "colors": "yellow",
-                           "index": 18,
+                           "index": 19,
                            "text": "Renaming"
                         },
                         "3": {
@@ -2430,6 +2430,11 @@
                            "color": "blue",
                            "index": 15,
                            "text": "Configuring enhanced monitoring"
+                        },
+                        "6": {
+                           "color": "blue",
+                           "index": 16,
+                           "text": "Configuring log exports"
                         }
                      },
                      "type": "value"
