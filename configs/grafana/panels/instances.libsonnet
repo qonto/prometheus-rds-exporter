@@ -77,6 +77,15 @@ local colors = common.colors;
             },
           ])
         ),
+        fieldOverride.byName.new('cluster_identifier')
+        + table.standardOptions.override.byType.withPropertiesFromOptions(
+          table.standardOptions.withLinks([
+            {
+              title: '',
+              url: '/d/' + common.uuids.rdsCluster + '/?${datasource:queryparam}&${__url_time_range}&var-' + variables.aws_account_id.name + '=${__data.fields.aws_account_id}&var-' + variables.aws_region.name + '=${__data.fields.aws_region}&var-' + variables.cluster_identifier.name + '=${__data.fields.cluster_identifier}',
+            },
+          ])
+        ),
         fieldOverride.byName.new('Value')
         + table.standardOptions.override.byType.withPropertiesFromOptions(
           table.standardOptions.withUnit('bytes')
@@ -120,24 +129,25 @@ local colors = common.colors;
             },
             indexByName: {
               Time: 2,
-              Value: 17,
+              Value: 19,
               aws_account_id: 0,
               aws_region: 1,
-              ca_certificate_identifier: 15,
+              ca_certificate_identifier: 16,
               dbi_resource_id: 18,
-              dbidentifier: 3,
-              deletion_protection: 11,
-              engine: 4,
-              engine_version: 6,
-              instance: 7,
-              instance_class: 8,
-              job: 9,
-              multi_az: 10,
-              pending_maintenance: 12,
-              pending_modified_values: 13,
-              performance_insights_enabled: 14,
-              role: 5,
-              storage_type: 16,
+              dbidentifier: 4,
+              cluster_identifier: 3,
+              deletion_protection: 12,
+              engine: 5,
+              engine_version: 7,
+              instance: 8,
+              instance_class: 9,
+              job: 10,
+              multi_az: 11,
+              pending_maintenance: 13,
+              pending_modified_values: 14,
+              performance_insights_enabled: 15,
+              role: 6,
+              storage_type: 17,
             },
           },
         },

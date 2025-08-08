@@ -82,7 +82,7 @@ local colors = common.colors;
       s.base('Replicas', 'Number of RDS instances replicating this instance', [queries.instance.replicas.count]),
 
     role:
-      s.field('Role', 'Instance role (primary or replica)', queries.instance.info, 'role'),
+      s.field('Role', 'If instance is part of a DB cluster (Aurora or RDS Multi-AZ DB cluster): `writer` or `reader`. Otherwise role is `primary` for standalone DB instance and `replica` for an instance configured as replica.', queries.instance.info, 'role'),
 
     lag:
       s.lag('Replication lag', 'Replication lag for replica RDS instance', queries.instance.replicas.lag),
@@ -463,6 +463,7 @@ local colors = common.colors;
 
     storagePercent:
       ts.percent('Used storage', 'Ratio of free disk space', [queries.instance.storage.usagePercent])
+      + standardOptions.withDecimals(null)
       + ts.singleMetric,
 
     status:

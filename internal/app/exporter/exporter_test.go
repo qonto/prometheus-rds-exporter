@@ -3,13 +3,11 @@ package exporter_test
 import (
 	"testing"
 
-	aws_rds "github.com/aws/aws-sdk-go-v2/service/rds"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/exporter"
 	"github.com/qonto/prometheus-rds-exporter/internal/infra/logger"
 	"github.com/stretchr/testify/assert"
 
-	aws_rds_types "github.com/aws/aws-sdk-go-v2/service/rds/types"
 	cloudwatch_mock "github.com/qonto/prometheus-rds-exporter/internal/app/cloudwatch/mock"
 	ec2_mock "github.com/qonto/prometheus-rds-exporter/internal/app/ec2/mock"
 	rds_mock "github.com/qonto/prometheus-rds-exporter/internal/app/rds/mock"
@@ -22,10 +20,9 @@ func TestWithAllDisabledCollectors(t *testing.T) {
 	awsRegion := "eu-west-3"
 
 	rdsInstance := rds_mock.NewRdsInstance()
-	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
 	logger, _ := logger.New(true, "text")
-	rdsClient := rds_mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	rdsClient := rds_mock.NewRDSClient().WithDBInstances(*rdsInstance)
 	ec2Client := ec2_mock.EC2Client{}
 	cloudWatchClient := cloudwatch_mock.CloudwatchClient{}
 	servicequotasClient := servicequotas_mock.ServiceQuotasClient{}
@@ -46,7 +43,7 @@ func TestWithAllDisabledCollectors(t *testing.T) {
 
 	counter := collector.GetStatistics()
 	assert.Equal(t, float64(0), counter.Errors, "should not have any error")
-	assert.Equal(t, float64(1), counter.RDSAPIcalls, "should have 1 call to RDS API")
+	assert.Equal(t, float64(2), counter.RDSAPIcalls, "should have 2 call to RDS API (1 for clusters and another for instances)")
 	assert.Equal(t, float64(0), counter.EC2APIcalls, "should not have any call")
 	assert.Equal(t, float64(0), counter.ServiceQuotasAPICalls, "should not have any call")
 	assert.Equal(t, float64(0), counter.UsageAPIcalls, "should not have any call")
@@ -57,11 +54,10 @@ func TestCollector(t *testing.T) {
 	awsAccountID := "123456789012"
 	awsRegion := "eu-west-3"
 
-	rdsInstance := rds_mock.NewRdsInstance()
-	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
+	instance := rds_mock.NewRdsInstance()
 
 	logger, _ := logger.New(true, "text")
-	rdsClient := rds_mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	rdsClient := rds_mock.NewRDSClient().WithDBInstances(*instance)
 	ec2Client := ec2_mock.EC2Client{}
 	cloudWatchClient := cloudwatch_mock.CloudwatchClient{}
 	servicequotasClient := servicequotas_mock.ServiceQuotasClient{}
@@ -83,7 +79,7 @@ func TestCollector(t *testing.T) {
 	// Check API calls
 	counter := collector.GetStatistics()
 	assert.Equal(t, float64(0), counter.Errors, "should not have any error")
-	assert.Equal(t, float64(3), counter.RDSAPIcalls, "should have 1 call to RDS API")
+	assert.Equal(t, float64(4), counter.RDSAPIcalls, "should have 4 call to RDS API")
 	assert.Equal(t, float64(1), counter.EC2APIcalls, "should have 1 call to EC2 API")
 	assert.Equal(t, float64(3), counter.ServiceQuotasAPICalls, "should have 1 call to ServiceQuota API")
 	assert.Equal(t, float64(1), counter.UsageAPIcalls, "should have 1 call to UsageAPIcalls API")
@@ -93,7 +89,7 @@ func TestCollector(t *testing.T) {
 	metrics := collector.GetMetrics()
 
 	// Check instance details
-	instanceName := rdsInstance.DBInstanceIdentifier
+	instanceName := instance.DBInstanceIdentifier
 	assert.Equal(t, "postgres", metrics.RDS.Instances[*instanceName].Engine, "Engine should match")
 	assert.Equal(t, "14.9", metrics.RDS.Instances[*instanceName].EngineVersion, "Version should match")
 

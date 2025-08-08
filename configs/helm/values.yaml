@@ -6,12 +6,13 @@ replicaCount: 1
 image:
   repository: public.ecr.aws/qonto/prometheus-rds-exporter
   pullPolicy: IfNotPresent
-  tag: ""  # Defined by chart appVersion parameter
+  tag: "" # Defined by chart appVersion parameter
 
 # Define environment variables
 env: {}
 
-# Application configuration. If set a configmap will be created. For example values see https://github.com/qonto/prometheus-rds-exporter/blob/main/configs/prometheus-rds-exporter/prometheus-rds-exporter.yaml
+# Application configuration. If set a configmap will be created.
+# For example values see https://github.com/qonto/prometheus-rds-exporter/blob/main/configs/prometheus-rds-exporter/prometheus-rds-exporter.yaml
 config: {}
 
 # Name of the secret containing AWS credentials
@@ -72,10 +73,10 @@ serviceMonitor:
   enabled: true
   interval: 60s
   # scrapeTimeout: 30s
-  additionalLabels: {}  # The labels to add on ServiceMonitor CRD
-  relabelings: []  # RelabelConfigs to apply to samples before scraping
-  metricRelabelings: []  # MetricRelabelConfigs to apply to samples before ingestion
-  sampleLimit: 0  # SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
+  additionalLabels: {} # The labels to add on ServiceMonitor CRD
+  relabelings: [] # RelabelConfigs to apply to samples before scraping
+  metricRelabelings: [] # MetricRelabelConfigs to apply to samples before ingestion
+  sampleLimit: 0 # SampleLimit defines per-scrape limit on number of scraped samples that will be accepted.
 resources:
   limits:
     # cpu: 100m
@@ -91,8 +92,8 @@ tolerations: []
 affinity: {}
 
 dashboards:
-  enabled: false  # enabled GrafanaDashboard CRD import
-  allowCrossNamespaceImport: true  # define if Grafana operator can loads dashboards when stored in a different namespace
-  resyncPeriod: 24h  # how often the dashboard is refreshed
-  instanceSelector: grafana  # selects Grafana for import
-  folderName:  # folder assignment for dashboard
+  enabled: false # enabled GrafanaDashboard CRD import
+  allowCrossNamespaceImport: true # define if Grafana operator can loads dashboards when stored in a different namespace
+  resyncPeriod: 24h # how often the dashboard is refreshed
+  instanceSelector: grafana # selects Grafana for import
+  folderName: # folder assignment for dashboard

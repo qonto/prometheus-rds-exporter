@@ -43,6 +43,8 @@ We use:
 
 * [`helm unittest`](https://github.com/helm-unittest/helm-unittest) for Helm chart tests
 
+* [Jsonnet](https://jsonnet.org/) and [Grafonnet](https://github.com/grafana/grafonnet) to manage dashboards as code. See [Grafana dashboards README](configs/grafana/README.md)
+
 ## Pull Request Checklist
 
 * Branch from the `main` branch and, if needed, rebase to the current main branch before submitting your pull request. If it doesn't merge cleanly with main you may be asked to rebase your changes.

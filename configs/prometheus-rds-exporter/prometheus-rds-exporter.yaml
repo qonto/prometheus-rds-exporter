@@ -47,8 +47,12 @@
 # Collect AWS instance types information (AWS EC2 API)
 # collect-instance-types: true
 
-# Collect AWS instances logs size (AWS RDS API)
+# Collect AWS instances logs size for non serverless instances (AWS RDS API)
 # collect-logs-size: true
+
+# Collect AWS instances logs size for Serverless db instances (AWS RDS API)
+# Note: Enabling this parameter prevents RDS Serverless DB instances from going to zero, as the instance must remain active to collect the log file size.
+# collect-serverless-logs-size: false
 
 # Collect AWS instances maintenances (AWS RDS API)
 # collect-maintenances: true

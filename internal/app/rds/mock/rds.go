@@ -13,11 +13,65 @@ import (
 )
 
 type RDSClient struct {
+	DescribeDBClustersOutput                *aws_rds.DescribeDBClustersOutput
 	DescribeDBInstancesOutput               *aws_rds.DescribeDBInstancesOutput
-	DescribePendingMaintenanceActionsOutput *aws_rds.DescribePendingMaintenanceActionsOutput
 	DescribeDBLogFilesOutput                *aws_rds.DescribeDBLogFilesOutput
 	DescribeDBLogFilesOutputError           error
+	DescribePendingMaintenanceActionsOutput *aws_rds.DescribePendingMaintenanceActionsOutput
 	Error                                   error
+}
+
+func NewRDSClient() *RDSClient {
+	client := &RDSClient{
+		DescribeDBClustersOutput: &aws_rds.DescribeDBClustersOutput{
+			DBClusters: []aws_rds_types.DBCluster{},
+		},
+		DescribeDBInstancesOutput: &aws_rds.DescribeDBInstancesOutput{
+			DBInstances: []aws_rds_types.DBInstance{},
+		},
+		DescribeDBLogFilesOutput: &aws_rds.DescribeDBLogFilesOutput{
+			DescribeDBLogFiles: []aws_rds_types.DescribeDBLogFilesDetails{},
+		},
+		DescribePendingMaintenanceActionsOutput: &aws_rds.DescribePendingMaintenanceActionsOutput{
+			PendingMaintenanceActions: []aws_rds_types.ResourcePendingMaintenanceActions{},
+		},
+	}
+
+	return client
+}
+
+func (m *RDSClient) WithDBInstances(instances ...aws_rds_types.DBInstance) *RDSClient {
+	m.DescribeDBInstancesOutput = &aws_rds.DescribeDBInstancesOutput{
+		DBInstances: instances,
+	}
+
+	return m
+}
+
+func (m *RDSClient) WithDBClusters(clusters ...aws_rds_types.DBCluster) *RDSClient {
+	m.DescribeDBClustersOutput = &aws_rds.DescribeDBClustersOutput{
+		DBClusters: clusters,
+	}
+
+	return m
+}
+
+func (m *RDSClient) WithLogFiles(files []aws_rds_types.DescribeDBLogFilesDetails) *RDSClient {
+	m.DescribeDBLogFilesOutput = &aws_rds.DescribeDBLogFilesOutput{
+		DescribeDBLogFiles: files,
+	}
+
+	return m
+}
+
+func (m *RDSClient) WithLogFilesOutputError(output error) *RDSClient {
+	m.DescribeDBLogFilesOutputError = output
+
+	return m
+}
+
+func (m RDSClient) DescribeDBClusters(ctx context.Context, params *aws_rds.DescribeDBClustersInput, optFns ...func(*aws_rds.Options)) (*aws_rds.DescribeDBClustersOutput, error) {
+	return m.DescribeDBClustersOutput, nil
 }
 
 func (m RDSClient) DescribeDBInstancesPages(input *aws_rds.DescribeDBInstancesInput, fn func(*aws_rds.DescribeDBInstancesOutput, bool) bool) error {
@@ -91,4 +145,82 @@ func NewRdsInstance() *aws_rds_types.DBInstance {
 		InstanceCreateTime:         &now,
 		TagList:                    []aws_rds_types.Tag{{Key: aws.String("Environment"), Value: aws.String("unittest")}, {Key: aws.String("Team"), Value: aws.String("sre")}},
 	}
+}
+
+//nolint:golint,mnd
+func NewRdsCluster() *aws_rds_types.DBCluster {
+	awsRegion := "eu-west-3"
+	awsAccountID := "123456789012"
+	DBClusterIdentifier := RandomString(10)
+	DBClusterResourceID := RandomString(10)
+	arn := fmt.Sprintf("arn:aws:rds:%s:%s:db:%s", awsRegion, awsAccountID, DBClusterIdentifier)
+
+	now := time.Now()
+
+	return &aws_rds_types.DBCluster{
+		AllocatedStorage:           aws.Int32(5),
+		BackupRetentionPeriod:      aws.Int32(7),
+		DBClusterArn:               aws.String(arn),
+		DBClusterInstanceClass:     aws.String("t3.large"),
+		DBClusterIdentifier:        aws.String(DBClusterIdentifier),
+		DbClusterResourceId:        aws.String(DBClusterResourceID),
+		Status:                     aws.String("available"),
+		DeletionProtection:         aws.Bool(true),
+		Engine:                     aws.String("postgres"),
+		EngineVersion:              aws.String("14.9"),
+		Iops:                       aws.Int32(3000),
+		MultiAZ:                    aws.Bool(true),
+		PerformanceInsightsEnabled: aws.Bool(true),
+		PubliclyAccessible:         aws.Bool(true),
+		StorageType:                aws.String("gp3"),
+		CertificateDetails:         newRdsCertificateDetails(),
+		ClusterCreateTime:          &now,
+		TagList:                    []aws_rds_types.Tag{{Key: aws.String("Environment"), Value: aws.String("unittest")}, {Key: aws.String("Team"), Value: aws.String("sre")}},
+	}
+}
+
+func NewAuroraCluster() *aws_rds_types.DBCluster {
+	cluster := NewRdsCluster()
+	cluster.AllocatedStorage = aws.Int32(1) // AllocatedStorage always returns 1, because Aurora DB cluster storage size isn't fixed, but instead automatically adjusts as needed.
+	cluster.StorageType = aws.String("gp3")
+
+	return cluster
+}
+
+func NewAuroraServerlessCluster() *aws_rds_types.DBCluster {
+	cluster := NewRdsCluster()
+	cluster.AllocatedStorage = aws.Int32(1) // AllocatedStorage always returns 1, because Aurora DB cluster storage size isn't fixed, but instead automatically adjusts as needed.
+	cluster.StorageType = aws.String("aurora-iopt1")
+	cluster.ServerlessV2ScalingConfiguration = &aws_rds_types.ServerlessV2ScalingConfigurationInfo{
+		MinCapacity: aws.Float64(0.5),
+		MaxCapacity: aws.Float64(12.5),
+	}
+
+	return cluster
+}
+
+func NewMultiAZCluster() *aws_rds_types.DBCluster {
+	cluster := NewRdsCluster()
+	cluster.DBClusterMembers = []aws_rds_types.DBClusterMember{
+		{
+			DBClusterParameterGroupStatus: aws.String("in-sync"),
+			DBInstanceIdentifier:          aws.String(*cluster.DBClusterIdentifier + "-instance-1"),
+			IsClusterWriter:               aws.Bool(true),
+			PromotionTier:                 aws.Int32(1),
+		},
+		{
+			DBClusterParameterGroupStatus: aws.String("in-sync"),
+			DBInstanceIdentifier:          aws.String(*cluster.DBClusterIdentifier + "-instance-2"),
+			IsClusterWriter:               aws.Bool(false),
+			PromotionTier:                 aws.Int32(1),
+		},
+		{
+			DBClusterParameterGroupStatus: aws.String("in-sync"),
+			DBInstanceIdentifier:          aws.String(*cluster.DBClusterIdentifier + "-instance-3"),
+			IsClusterWriter:               aws.Bool(false),
+			PromotionTier:                 aws.Int32(1),
+		},
+	}
+
+	return cluster
 }

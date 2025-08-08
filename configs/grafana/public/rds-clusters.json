@@ -1,0 +1,304 @@
+{
+   "description": "RDS clusters inventory",
+   "editable": true,
+   "graphTooltip": 1,
+   "links": [
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "server"
+         ],
+         "title": "Server",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "database"
+         ],
+         "title": "Database",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "table"
+         ],
+         "title": "Table",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "misc"
+         ],
+         "title": "More",
+         "type": "dashboards"
+      }
+   ],
+   "panels": [
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 0,
+            "y": 0
+         },
+         "id": 1,
+         "title": "Overview",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of AWS RDS clusters (Amazon Aurora or RDS Multi-AZ DB clusters) in selected AWS account(s) and region(s)",
+         "fieldConfig": {
+            "defaults": {
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 5,
+            "w": 3,
+            "x": 0,
+            "y": 1
+         },
+         "id": 2,
+         "options": {
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(rds_cluster_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n"
+            }
+         ],
+         "title": "Clusters",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Total number of cluster per engines in selected AWS account(s) and region(s)",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0
+            }
+         },
+         "gridPos": {
+            "h": 5,
+            "w": 8,
+            "x": 3,
+            "y": 1
+         },
+         "id": 3,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "Percent",
+                  "Value"
+               ],
+               "displayMode": "table",
+               "placement": "right",
+               "values": [
+                  "percent",
+                  "value"
+               ]
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(rds_cluster_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"}) by (engine)\n",
+               "instant": true,
+               "legendFormat": "{{ engine }}"
+            }
+         ],
+         "title": "Clusters by engine",
+         "type": "piechart"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 11,
+            "y": 6
+         },
+         "id": 4,
+         "title": "Inventory",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "List of RDS clusters (Amazon Aurora or RDS Multi-AZ DB clusters) in selected AWS account(s) and region(s)",
+         "fieldConfig": {
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "cluster_identifier"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/0197d764-40cc-7042-a4df-f2e3146275a6/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-cluster_identifier=${__data.fields.cluster_identifier}"
+                           }
+                        ]
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 7
+         },
+         "id": 5,
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_cluster_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "RDS clusters",
+         "transformations": [
+            {
+               "id": "organize",
+               "options": {
+                  "excludeByName": {
+                     "Time": true,
+                     "Value": true,
+                     "__name__": true,
+                     "container": true,
+                     "context": true,
+                     "endpoint": true,
+                     "environment": true,
+                     "instance": true,
+                     "job": true,
+                     "kubernetes_cluster": true,
+                     "namespace": true,
+                     "pod": true,
+                     "prometheus": true,
+                     "service": true
+                  },
+                  "indexByName": {
+                     "Time": 2,
+                     "Value": 17,
+                     "aws_account_id": 0,
+                     "aws_region": 1,
+                     "ca_certificate_identifier": 15,
+                     "cluster_identifier": 3,
+                     "dbi_resource_id": 18,
+                     "deletion_protection": 11,
+                     "engine": 4,
+                     "engine_version": 6,
+                     "instance": 7,
+                     "instance_class": 8,
+                     "job": 9
+                  }
+               }
+            }
+         ],
+         "type": "table"
+      }
+   ],
+   "schemaVersion": 36,
+   "tags": [
+      "dmf",
+      "server"
+   ],
+   "templating": {
+      "list": [
+         {
+            "description": "Prometheus data source",
+            "label": "Data source",
+            "name": "datasource",
+            "query": "prometheus",
+            "type": "datasource"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "description": "AWS Account ID",
+            "includeAll": true,
+            "label": "Account",
+            "multi": true,
+            "name": "aws_account_id",
+            "query": "label_values(rds_instance_info, aws_account_id)",
+            "refresh": 2,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "description": "AWS region",
+            "includeAll": true,
+            "label": "Region",
+            "multi": true,
+            "name": "aws_region",
+            "query": "label_values(rds_instance_info{aws_account_id=~\"$aws_account_id\"}, aws_region)",
+            "refresh": 2,
+            "type": "query"
+         }
+      ]
+   },
+   "time": {
+      "from": "now-6h",
+      "to": "now"
+   },
+   "timezone": "utc",
+   "title": "RDS clusters",
+   "uid": "0197d748-1b13-7538-9ae9-ab0653d38940"
+}

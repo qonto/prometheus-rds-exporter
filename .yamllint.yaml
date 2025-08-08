@@ -10,3 +10,4 @@ ignore:
   - dist/
   - prometheus-rds-exporter.yaml
   - configs/helm/templates/*.yaml  # Helm templates are invalid due to Go template language
+  - configs/grafana/vendor/  # Grafonnet dependencies to build dashboards

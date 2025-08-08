@@ -298,6 +298,23 @@
                {
                   "matcher": {
                      "id": "byName",
+                     "options": "cluster_identifier"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/0197d764-40cc-7042-a4df-f2e3146275a6/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-cluster_identifier=${__data.fields.cluster_identifier}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
                      "options": "Value"
                   },
                   "properties": [
@@ -545,6 +562,23 @@
                            {
                               "title": "",
                               "url": "/d/a7049b32-6be3-42e5-aa9a-2879a14f46dd/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-dbidentifier=${__data.fields.dbidentifier}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "cluster_identifier"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/0197d764-40cc-7042-a4df-f2e3146275a6/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-cluster_identifier=${__data.fields.cluster_identifier}"
                            }
                         ]
                      }
@@ -820,6 +854,23 @@
                {
                   "matcher": {
                      "id": "byName",
+                     "options": "cluster_identifier"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/0197d764-40cc-7042-a4df-f2e3146275a6/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-cluster_identifier=${__data.fields.cluster_identifier}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
                      "options": "Value"
                   },
                   "properties": [
@@ -1011,24 +1062,25 @@
                   },
                   "indexByName": {
                      "Time": 2,
-                     "Value": 17,
+                     "Value": 18,
                      "aws_account_id": 0,
                      "aws_region": 1,
-                     "ca_certificate_identifier": 15,
+                     "ca_certificate_identifier": 16,
+                     "cluster_identifier": 3,
                      "dbi_resource_id": 18,
-                     "dbidentifier": 3,
-                     "deletion_protection": 11,
-                     "engine": 4,
-                     "engine_version": 6,
-                     "instance": 7,
-                     "instance_class": 8,
-                     "job": 9,
-                     "multi_az": 10,
-                     "pending_maintenance": 12,
-                     "pending_modified_values": 13,
-                     "performance_insights_enabled": 14,
-                     "role": 5,
-                     "storage_type": 16
+                     "dbidentifier": 4,
+                     "deletion_protection": 12,
+                     "engine": 5,
+                     "engine_version": 7,
+                     "instance": 8,
+                     "instance_class": 9,
+                     "job": 10,
+                     "multi_az": 11,
+                     "pending_maintenance": 13,
+                     "pending_modified_values": 14,
+                     "performance_insights_enabled": 15,
+                     "role": 6,
+                     "storage_type": 17
                   }
                }
             }

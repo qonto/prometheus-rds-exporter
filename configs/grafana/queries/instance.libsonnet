@@ -139,13 +139,15 @@ local variables = import '../variables.libsonnet';
       usagePercent:
         prometheusQuery.new(
           '$' + variables.datasource.name,
-          |||
-            100 - max(
-              rds_free_storage_bytes{aws_account_id="$aws_account_id",aws_region="$aws_region",dbidentifier="$dbidentifier"}
-              * 100
-              / rds_allocated_storage_bytes{aws_account_id="$aws_account_id",aws_region="$aws_region",dbidentifier="$dbidentifier"}
-            )
-          |||
+          '(\n' +
+          '  100 -(\n' +
+          '    rds_free_storage_bytes{aws_account_id="$aws_account_id", aws_region="$aws_region", dbidentifier="$dbidentifier"} * 100\n' +
+          '  ) / rds_allocated_storage_bytes{aws_account_id="$aws_account_id", aws_region="$aws_region", dbidentifier="$dbidentifier"}\n' +
+          ') or on(aws_account_id, aws_region, dbidentifier) (\n' +
+          '  max by (aws_account_id, aws_region, dbidentifier) (\n' +
+          '    rds_allocated_storage_bytes{aws_account_id="$aws_account_id", aws_region="$aws_region", dbidentifier="$dbidentifier"}\n' +
+          '  ) * 100 / (' + variables.aurora_storage_limits_bytes + ')\n' +
+          ')'
         )
         + prometheusQuery.withLegendFormat('{{dbidentifier}}'),
     },
