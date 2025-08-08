@@ -75,7 +75,7 @@ func (e *EC2Fetcher) GetDBInstanceTypeInformation(instanceTypes []string) (Metri
 		// Remove "db." prefix from instance types
 		instanceTypesToFetch := make([]aws_ec2_types.InstanceType, len(instances))
 		for i, instance := range instances {
-			instanceTypesToFetch[i] = (aws_ec2_types.InstanceType)(removeDBPrefix(instance))
+			instanceTypesToFetch[i] = (aws_ec2_types.InstanceType)(overrideInvalidInstanceTypes(removeDBPrefix(instance)))
 		}
 
 		input := &aws_ec2.DescribeInstanceTypesInput{InstanceTypes: instanceTypesToFetch}
