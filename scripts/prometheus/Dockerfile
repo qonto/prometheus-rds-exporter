@@ -1,4 +1,7 @@
-FROM golang:1.22 AS builder
+ARG GO_VERSION="1.23"
+ARG DISTROLESS_VERSION="static-debian12:nonroot" # or "static-debian12:debug-nonroot"
+
+FROM golang:${GO_VERSION} AS builder
 
 WORKDIR /build
 
@@ -13,25 +16,10 @@ HEALTHCHECK NONE
 RUN make build
 
 
-FROM alpine:3.20
+FROM gcr.io/distroless/${DISTROLESS_VERSION}
 
-RUN apk add aws-cli curl
+COPY --from=builder /build/prometheus-rds-exporter /home/nonroot/prometheus-rds-exporter
 
-ARG USER=exporter
-ARG HOME=/app
+HEALTHCHECK NONE
 
-RUN addgroup -g 1001 -S exporter \
-    && adduser --home /app -u 1001 -S exporter -G exporter \
-    && mkdir -p /app \
-    && chown exporter:exporter -R /app
-
-WORKDIR $HOME
-USER $USER
-
-COPY --from=builder /build/prometheus-rds-exporter $HOME/prometheus-rds-exporter
-
-EXPOSE 9043
-
-HEALTHCHECK CMD curl --fail http://localhost:3000 || exit 1
-
-ENTRYPOINT [ "/app/prometheus-rds-exporter" ]
+ENTRYPOINT ["/home/nonroot/prometheus-rds-exporter"]
