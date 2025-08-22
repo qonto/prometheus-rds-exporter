@@ -27,58 +27,103 @@ type CloudWatchMetrics struct {
 }
 
 type RdsMetrics struct {
+	BurstBalance              *float64
+	CheckpointLag             *float64
+	CPUCreditBalance          *float64
+	CPUCreditUsage            *float64
+	CPUSurplusCreditBalance   *float64
+	CPUSurplusCreditsCharged  *float64
 	CPUUtilization            *float64
 	DBLoad                    *float64
 	DBLoadCPU                 *float64
 	DBLoadNonCPU              *float64
 	DatabaseConnections       *float64
+	DiskQueueDepth            *float64
+	EBSByteBalance            *float64
+	EBSIOBalance              *float64
 	FreeStorageSpace          *float64
 	FreeableMemory            *float64
 	MaximumUsedTransactionIDs *float64
+	NetworkReceiveThroughput  *float64
+	NetworkTransmitThroughput *float64
+	OldestReplicationSlotLag  *float64
+	ReadLatency               *float64
 	ReadIOPS                  *float64
 	ReadThroughput            *float64
 	ReplicaLag                *float64
 	ReplicationSlotDiskUsage  *float64
 	SwapUsage                 *float64
 	TransactionLogsDiskUsage  *float64
+	TransactionLogsGeneration *float64
+	WriteLatency              *float64
 	WriteIOPS                 *float64
 	WriteThroughput           *float64
 }
 
 func (m *RdsMetrics) Update(field string, value float64) error {
 	switch field {
+	case "BurstBalance":
+		m.BurstBalance = &value
+	case "CheckpointLag":
+		m.CheckpointLag = &value
+	case "CPUCreditBalance":
+		m.CPUCreditBalance = &value
+	case "CPUCreditUsage":
+		m.CPUCreditUsage = &value
+	case "CPUSurplusCreditBalance":
+		m.CPUSurplusCreditBalance = &value
+	case "CPUSurplusCreditsCharged":
+		m.CPUSurplusCreditsCharged = &value
+	case "CPUUtilization":
+		m.CPUUtilization = &value
 	case "DBLoad":
 		m.DBLoad = &value
 	case "DBLoadCPU":
 		m.DBLoadCPU = &value
 	case "DBLoadNonCPU":
 		m.DBLoadNonCPU = &value
-	case "CPUUtilization":
-		m.CPUUtilization = &value
 	case "DatabaseConnections":
 		m.DatabaseConnections = &value
+	case "DiskQueueDepth":
+		m.DiskQueueDepth = &value
+	case "EBSByteBalance", "EBSByteBalance%":
+		m.EBSByteBalance = &value
+	case "EBSIOBalance", "EBSIOBalance%":
+		m.EBSIOBalance = &value
 	case "FreeStorageSpace":
 		m.FreeStorageSpace = &value
 	case "FreeableMemory":
 		m.FreeableMemory = &value
-	case "SwapUsage":
-		m.SwapUsage = &value
-	case "WriteIOPS":
-		m.WriteIOPS = &value
+	case "MaximumUsedTransactionIDs":
+		m.MaximumUsedTransactionIDs = &value
+	case "NetworkReceiveThroughput":
+		m.NetworkReceiveThroughput = &value
+	case "NetworkTransmitThroughput":
+		m.NetworkTransmitThroughput = &value
+	case "OldestReplicationSlotLag":
+		m.OldestReplicationSlotLag = &value
+	case "ReadLatency":
+		m.ReadLatency = &value
 	case "ReadIOPS":
 		m.ReadIOPS = &value
+	case "ReadThroughput":
+		m.ReadThroughput = &value
 	case "ReplicaLag":
 		m.ReplicaLag = &value
 	case "ReplicationSlotDiskUsage":
 		m.ReplicationSlotDiskUsage = &value
-	case "MaximumUsedTransactionIDs":
-		m.MaximumUsedTransactionIDs = &value
-	case "ReadThroughput":
-		m.ReadThroughput = &value
-	case "WriteThroughput":
-		m.WriteThroughput = &value
+	case "SwapUsage":
+		m.SwapUsage = &value
 	case "TransactionLogsDiskUsage":
 		m.TransactionLogsDiskUsage = &value
+	case "TransactionLogsGeneration":
+		m.TransactionLogsGeneration = &value
+	case "WriteLatency":
+		m.WriteLatency = &value
+	case "WriteIOPS":
+		m.WriteIOPS = &value
+	case "WriteThroughput":
+		m.WriteThroughput = &value
 	default:
 		return fmt.Errorf("can't process '%s' metrics: %w", field, errUnknownMetric)
 	}
@@ -87,29 +132,47 @@ func (m *RdsMetrics) Update(field string, value float64) error {
 }
 
 // getCloudWatchMetricsName returns names of Cloudwatch metrics to collect
-func getCloudWatchMetricsName() [16]string {
-	return [16]string{
+func getCloudWatchMetricsName() [31]string {
+	return [31]string{
+		"BurstBalance",
+		"CheckpointLag",
+		"CPUCreditBalance",
+		"CPUCreditUsage",
+		"CPUSurplusCreditBalance",
+		"CPUSurplusCreditsCharged",
 		"CPUUtilization",
 		"DBLoad",
 		"DBLoadCPU",
 		"DBLoadNonCPU",
 		"DatabaseConnections",
+		"DiskQueueDepth",
+		"EBSByteBalance%",
+		"EBSIOBalance%",
 		"FreeStorageSpace",
 		"FreeableMemory",
 		"MaximumUsedTransactionIDs",
+		"NetworkReceiveThroughput",
+		"NetworkTransmitThroughput",
+		"OldestReplicationSlotLag",
+		"ReadLatency",
 		"ReadIOPS",
 		"ReadThroughput",
 		"ReplicaLag",
 		"ReplicationSlotDiskUsage",
 		"SwapUsage",
 		"TransactionLogsDiskUsage",
+		"TransactionLogsGeneration",
 		"WriteIOPS",
+		"WriteLatency",
 		"WriteThroughput",
 	}
 }
 
 // generateCloudWatchQueryForInstance return the cloudwatch query for a specific instance's metric
 func generateCloudWatchQueryForInstance(queryID *string, metricName string, dbIdentifier string) CloudWatchMetricRequest {
+	// Remove the % symbol from the query ID because it is not allowed in the ID
+	*queryID = strings.ReplaceAll(*queryID, "%", "")
+
 	query := &aws_cloudwath_types.MetricDataQuery{
 		Id: queryID,
 		MetricStat: &aws_cloudwath_types.MetricStat{
@@ -143,7 +206,9 @@ func generateCloudWatchQueriesForInstances(dbIdentifiers []string) map[string]Cl
 
 	for i, dbIdentifier := range dbIdentifiers {
 		for _, metricName := range metrics {
-			queryID := aws.String(fmt.Sprintf("%s_%d", strings.ToLower(metricName), i))
+			// Remove the % symbol from the query ID because it is not allowed in the ID
+			metricNameForID := strings.ReplaceAll(metricName, "%", "")
+			queryID := aws.String(fmt.Sprintf("%s_%d", strings.ToLower(metricNameForID), i))
 
 			query := generateCloudWatchQueryForInstance(queryID, metricName, dbIdentifier)
 
@@ -190,7 +255,7 @@ func (c *RdsFetcher) updateMetricsWithCloudWatchQueriesResult(metrics map[string
 	}
 
 	for _, m := range resp.MetricDataResults {
-		if m.Values == nil {
+		if len(m.Values) == 0 {
 			c.logger.Warn("cloudwatch value is empty", "metric", *m.Label)
 
 			continue
@@ -214,12 +279,12 @@ func (c *RdsFetcher) updateMetricsWithCloudWatchQueriesResult(metrics map[string
 	return nil
 }
 
-func (c *RdsFetcher) GetRDSInstanceMetrics(dbIdentifiers []string) (CloudWatchMetrics, error) {
+func (c *RdsFetcher) GetRDSInstanceMetrics(dbIdentifiers []string, delay int) (CloudWatchMetrics, error) {
 	metrics := make(map[string]*RdsMetrics)
 
 	cloudWatchQueries := generateCloudWatchQueriesForInstances(dbIdentifiers)
-	startTime := aws.Time(time.Now().Add(-3 * time.Minute)) // Start time - 1 hour ago
-	endTime := aws.Time(time.Now())                         // End time - now
+	startTime := aws.Time(time.Now().Add(-time.Duration(300+delay) * time.Second)) // Start time - 5 minutes ago + delay
+	endTime := aws.Time(time.Now().Add(-time.Duration(delay) * time.Second))       // End time - now + delay
 	chunkSize := MaxQueriesPerCloudwatchRequest
 
 	cloudWatchAPICalls := float64(0)

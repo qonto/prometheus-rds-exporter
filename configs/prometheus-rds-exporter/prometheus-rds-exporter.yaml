@@ -41,6 +41,9 @@
 # Collect AWS instances metrics (AWS Cloudwatch API)
 # collect-instance-metrics: true
 
+# Delay in seconds before collecting instance metrics (default: 0)
+# collect-instance-metrics-delay: 60
+
 # Collect AWS instance tags (AWS RDS API)
 # collect-instance-tags: true
 

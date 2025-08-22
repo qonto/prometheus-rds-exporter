@@ -31,13 +31,14 @@ func TestWithAllDisabledCollectors(t *testing.T) {
 	servicequotasClient := servicequotas_mock.ServiceQuotasClient{}
 
 	configuration := exporter.Configuration{
-		CollectInstanceMetrics: false,
-		CollectInstanceTypes:   false,
-		CollectInstanceTags:    false,
-		CollectLogsSize:        false,
-		CollectMaintenances:    false,
-		CollectQuotas:          false,
-		CollectUsages:          false,
+		CollectInstanceMetrics:      false,
+		CollectInstanceMetricsDelay: 0,
+		CollectInstanceTypes:        false,
+		CollectInstanceTags:         false,
+		CollectLogsSize:             false,
+		CollectMaintenances:         false,
+		CollectQuotas:               false,
+		CollectUsages:               false,
 	}
 
 	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
@@ -67,13 +68,14 @@ func TestCollector(t *testing.T) {
 	servicequotasClient := servicequotas_mock.ServiceQuotasClient{}
 
 	configuration := exporter.Configuration{
-		CollectInstanceMetrics: true,
-		CollectInstanceTypes:   true,
-		CollectInstanceTags:    false,
-		CollectLogsSize:        true,
-		CollectMaintenances:    true,
-		CollectQuotas:          true,
-		CollectUsages:          true,
+		CollectInstanceMetrics:      true,
+		CollectInstanceMetricsDelay: 60,
+		CollectInstanceTypes:        true,
+		CollectInstanceTags:         false,
+		CollectLogsSize:             true,
+		CollectMaintenances:         true,
+		CollectQuotas:               true,
+		CollectUsages:               true,
 	}
 
 	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
