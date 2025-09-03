@@ -47,6 +47,10 @@ It collects key metrics about:
 | rds_api_call_total | `api`, `aws_account_id`, `aws_region` | Number of call to AWS API |
 | rds_backup_retention_period_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | Automatic DB snapshots retention period |
 | rds_ca_certificate_valid_until | `aws_account_id`, `aws_region`, `dbidentifier` | Timestamp of the expiration of the Instance certificate |
+| rds_cluster_info | `aws_account_id`, `aws_region`, `cluster_identifier`, `cluster_resource_id`, `engine`, `engine_version`, `arn` | RDS cluster information |
+| rds_cluster_acu_max_average | `aws_account_id`, `aws_region`, `cluster_identifier` | Maximum number of ACU |
+| rds_cluster_acu_min_average | `aws_account_id`, `aws_region`, `cluster_identifier` | Minimum number of ACU |
+| rds_cluster_info | `aws_account_id`, `aws_region`, `cluster_identifier`, `cluster_resource_id`, `engine`, `engine_version`, `arn` | RDS cluster information |
 | rds_cpu_usage_percent_average | `aws_account_id`, `aws_region`, `dbidentifier` | Instance CPU used |
 | rds_database_connections_average | `aws_account_id`, `aws_region`, `dbidentifier` | The number of client network connections to the database instance |
 | rds_dbload_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of active sessions for the DB engine |
@@ -59,7 +63,7 @@ It collects key metrics about:
 | rds_instance_age_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | Time since instance creation |
 | rds_instance_baseline_iops_average | `aws_account_id`, `aws_region`, `instance_class` | Baseline IOPS of underlying EC2 instance class |
 | rds_instance_baseline_throughput_bytes | `aws_account_id`, `aws_region`, `instance_class` | Baseline throughput of underlying EC2 instance class |
-| rds_instance_info | `arn`, `aws_account_id`, `aws_region`, `dbi_resource_id`, `dbidentifier`, `deletion_protection`, `engine`, `engine_version`, `instance_class`, `multi_az`, `performance_insights_enabled`, `pending_maintenance`, `pending_modified_values`, `role`, `source_dbidentifier`, `storage_type`, `ca_certificate_identifier` | RDS instance information |
+| rds_instance_info | `arn`, `aws_account_id`, `aws_region`, `dbi_resource_id`, `dbidentifier`, `cluster_identifier`, `deletion_protection`, `engine`, `engine_version`, `instance_class`, `multi_az`, `performance_insights_enabled`, `pending_maintenance`, `pending_modified_values`, `role`, `source_dbidentifier`, `storage_type`, `ca_certificate_identifier` | RDS instance information |
 | rds_instance_log_files_size_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Total of log files on the instance |
 | rds_instance_max_iops_average | `aws_account_id`, `aws_region`, `instance_class` | Maximum IOPS of underlying EC2 instance class |
 | rds_instance_max_throughput_bytes | `aws_account_id`, `aws_region`, `instance_class` | Maximum throughput of underlying EC2 instance class |
@@ -78,6 +82,7 @@ It collects key metrics about:
 | rds_read_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of bytes read from disk per second |
 | rds_replica_lag_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | For read replica configurations, the amount of time a read replica DB instance lags behind the source DB instance. Applies to MariaDB, Microsoft SQL Server, MySQL, Oracle, and PostgreSQL read replicas |
 | rds_replication_slot_disk_usage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Disk space used by replication slot files. Applies to PostgreSQL |
+| rds_serverless_instance_acu_average | `aws_account_id`, `aws_region`, `dbidentifier` | Current ACU of the Aurora Serverless instance |
 | rds_swap_usage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Amount of swap space used on the DB instance. This metric is not available for SQL Server |
 | rds_transaction_logs_disk_usage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Disk space used by transaction logs (only on PostgreSQL) |
 | rds_usage_allocated_storage_bytes | `aws_account_id`, `aws_region` | Total storage used by AWS RDS instances |
@@ -194,31 +199,48 @@ Prometheus RDS exporter</br>
 <a href="configs/grafana/public/prometheus-rds-exporter.json">JSON</a> or <a href="https://grafana.com/grafana/dashboards/19679/">19679</a>
 </td>
 </tr>
+
+<tr>
+<td>
+
+![RDS clusters](docs/screenshots/rds-clusters.png)
+RDS clusters</br>
+<a href="configs/grafana/public/rds-clusters.json">JSON</a>
+</td>
+<td>
+
+![RDS cluster details](docs/screenshots/rds-cluster.png)
+RDS cluster details</br>
+<a href="configs/grafana/public/rds-cluster.json">JSON</a>
+
+</td>
+</tr>
 </table>
 
 ## Configuration
 
 Configuration could be defined in [prometheus-rds-exporter.yaml](https://github.com/qonto/prometheus-rds-exporter/blob/main/configs/prometheus-rds-exporter/prometheus-rds-exporter.yaml) or environment variables (format `PROMETHEUS_RDS_EXPORTER_<PARAMETER_NAME>`).
 
-|Parameter                | Description                                                                                                                | Default                 |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| aws-assume-role-arn      | AWS IAM ARN role to assume to fetch metrics                                                                                |                         |
-| aws-assume-role-session  | AWS assume role session name                                                                                               | prometheus-rds-exporter |
-| collect-instance-metrics | Collect AWS instances metrics (AWS Cloudwatch API)                                                                         | true                    |
-| collect-instance-tags    | Collect AWS RDS tags                                                                                                       | true                    |
-| collect-instance-types   | Collect AWS instance types information (AWS EC2 API)                                                                       | true                    |
-| collect-logs-size        | Collect AWS instances logs size (AWS RDS API)                                                                              | true                    |
-| collect-maintenances     | Collect AWS instances maintenances (AWS RDS API)                                                                           | true                    |
-| collect-quotas           | Collect AWS RDS quotas (AWS quotas API)                                                                                    | true                    |
-| collect-usages           | Collect AWS RDS usages (AWS Cloudwatch API)                                                                                | true                    |
-| tag-selections           | Tags to select database instances with. Refer to [dedicated section on tag configuration](#tag-configuration)                      |                         |
-| debug                    | Enable debug mode                                                                                                          |                         |
-| enable-otel-traces       | Enable OpenTelemetry traces. See [configuration](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/) | false                   |
-| listen-address           | Address to listen on for web interface                                                                                     | :9043                   |
-| log-format               | Log format (`text` or `json`)                                                                                              | json                    |
-| metrics-path             | Path under which to expose metrics                                                                                         | /metrics                |
-| tls-cert-path            | Path to TLS certificate                                                                                                    |                         |
-| tls-key-path             | Path to private key for TLS                                                                                                |                         |
+|Parameter                     | Description                                                                                                                       | Default                 |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| aws-assume-role-arn          | AWS IAM ARN role to assume to fetch metrics                                                                                       |                         |
+| aws-assume-role-session      | AWS assume role session name                                                                                                      | prometheus-rds-exporter |
+| collect-instance-metrics     | Collect AWS instances metrics (AWS Cloudwatch API)                                                                                | true                    |
+| collect-instance-tags        | Collect AWS RDS tags                                                                                                              | true                    |
+| collect-instance-types       | Collect AWS instance types information (AWS EC2 API)                                                                              | true                    |
+| collect-logs-size            | Collect AWS instances logs size, excluding serverless instances (AWS RDS API)                                                     | true                    |
+| collect-serverless-logs-size | Collect AWS instances logs size for serverless DB instance (AWS RDS API). Prevents RDS serverless DB instances from going to zero | false                   |
+| collect-maintenances         | Collect AWS instances maintenances (AWS RDS API)                                                                                  | true                    |
+| collect-quotas               | Collect AWS RDS quotas (AWS quotas API)                                                                                           | true                    |
+| collect-usages               | Collect AWS RDS usages (AWS Cloudwatch API)                                                                                       | true                    |
+| tag-selections               | Tags to select database instances with. Refer to [dedicated section on tag configuration](#tag-configuration)                     |                         |
+| debug                        | Enable debug mode                                                                                                                 |                         |
+| enable-otel-traces           | Enable OpenTelemetry traces. See [configuration](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/)        | false                   |
+| listen-address               | Address to listen on for web interface                                                                                            | :9043                   |
+| log-format                   | Log format (`text` or `json`)                                                                                                     | json                    |
+| metrics-path                 | Path under which to expose metrics                                                                                                | /metrics                |
+| tls-cert-path                | Path to TLS certificate                                                                                                           |                         |
+| tls-key-path                 | Path to private key for TLS                                                                                                       |                         |
 
 Configuration parameters priorities:
 

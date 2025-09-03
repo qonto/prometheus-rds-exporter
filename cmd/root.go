@@ -39,23 +39,24 @@ var (
 )
 
 type exporterConfig struct {
-	Debug                  bool                `koanf:"debug"`
-	LogFormat              string              `koanf:"log-format"`
-	TLSCertPath            string              `koanf:"tls-cert-path"`
-	TLSKeyPath             string              `koanf:"tls-key-path"`
-	MetricPath             string              `koanf:"metrics-path"`
-	ListenAddress          string              `koanf:"listen-address"`
-	AWSAssumeRoleSession   string              `koanf:"aws-assume-role-session"`
-	AWSAssumeRoleArn       string              `koanf:"aws-assume-role-arn"`
-	CollectInstanceMetrics bool                `koanf:"collect-instance-metrics"`
-	CollectInstanceTags    bool                `koanf:"collect-instance-tags"`
-	CollectInstanceTypes   bool                `koanf:"collect-instance-types"`
-	CollectLogsSize        bool                `koanf:"collect-logs-size"`
-	CollectMaintenances    bool                `koanf:"collect-maintenances"`
-	CollectQuotas          bool                `koanf:"collect-quotas"`
-	CollectUsages          bool                `koanf:"collect-usages"`
-	OTELTracesEnabled      bool                `koanf:"enable-otel-traces"`
-	TagSelections          map[string][]string `koanf:"tag-selections"`
+	Debug                     bool                `koanf:"debug"`
+	LogFormat                 string              `koanf:"log-format"`
+	TLSCertPath               string              `koanf:"tls-cert-path"`
+	TLSKeyPath                string              `koanf:"tls-key-path"`
+	MetricPath                string              `koanf:"metrics-path"`
+	ListenAddress             string              `koanf:"listen-address"`
+	AWSAssumeRoleSession      string              `koanf:"aws-assume-role-session"`
+	AWSAssumeRoleArn          string              `koanf:"aws-assume-role-arn"`
+	CollectInstanceMetrics    bool                `koanf:"collect-instance-metrics"`
+	CollectInstanceTags       bool                `koanf:"collect-instance-tags"`
+	CollectInstanceTypes      bool                `koanf:"collect-instance-types"`
+	CollectLogsSize           bool                `koanf:"collect-logs-size"`
+	CollectServerlessLogsSize bool                `koanf:"collect-serverless-logs-size"`
+	CollectMaintenances       bool                `koanf:"collect-maintenances"`
+	CollectQuotas             bool                `koanf:"collect-quotas"`
+	CollectUsages             bool                `koanf:"collect-usages"`
+	OTELTracesEnabled         bool                `koanf:"enable-otel-traces"`
+	TagSelections             map[string][]string `koanf:"tag-selections"`
 }
 
 func run(configuration exporterConfig) {
@@ -92,14 +93,15 @@ func run(configuration exporterConfig) {
 	servicequotasClient := servicequotas.NewFromConfig(cfg)
 
 	collectorConfiguration := exporter.Configuration{
-		CollectInstanceMetrics: configuration.CollectInstanceMetrics,
-		CollectInstanceTypes:   configuration.CollectInstanceTypes,
-		CollectInstanceTags:    configuration.CollectInstanceTags,
-		CollectLogsSize:        configuration.CollectLogsSize,
-		CollectMaintenances:    configuration.CollectMaintenances,
-		CollectQuotas:          configuration.CollectQuotas,
-		CollectUsages:          configuration.CollectUsages,
-		TagSelections:          configuration.TagSelections,
+		CollectInstanceMetrics:    configuration.CollectInstanceMetrics,
+		CollectInstanceTypes:      configuration.CollectInstanceTypes,
+		CollectInstanceTags:       configuration.CollectInstanceTags,
+		CollectLogsSize:           configuration.CollectLogsSize,
+		CollectServerlessLogsSize: configuration.CollectServerlessLogsSize,
+		CollectMaintenances:       configuration.CollectMaintenances,
+		CollectQuotas:             configuration.CollectQuotas,
+		CollectUsages:             configuration.CollectUsages,
+		TagSelections:             configuration.TagSelections,
 	}
 
 	collector := exporter.NewCollector(*logger, collectorConfiguration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, tagClient)
@@ -163,7 +165,8 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().BoolP("collect-instance-tags", "", true, "Collect AWS RDS tags")
 	cmd.Flags().BoolP("collect-instance-types", "", true, "Collect AWS instance types")
 	cmd.Flags().BoolP("collect-instance-metrics", "", true, "Collect AWS instance metrics")
-	cmd.Flags().BoolP("collect-logs-size", "", true, "Collect AWS instances logs size")
+	cmd.Flags().BoolP("collect-logs-size", "", true, "Collect AWS instances logs size for non serverless instances")
+	cmd.Flags().BoolP("collect-serverless-logs-size", "", false, "Collect AWS instances logs size for serverless DB instances")
 	cmd.Flags().BoolP("collect-maintenances", "", true, "Collect AWS instances maintenances")
 	cmd.Flags().BoolP("collect-quotas", "", true, "Collect AWS RDS quotas")
 	cmd.Flags().BoolP("collect-usages", "", true, "Collect AWS RDS usages")

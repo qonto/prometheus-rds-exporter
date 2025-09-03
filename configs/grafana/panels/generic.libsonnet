@@ -193,4 +193,23 @@ local colors = common.colors;
       + table.panelOptions.withDescription(description)
       + table.queryOptions.withTargets(targets),
   },
+  pie: {
+    local pie = g.panel.pieChart,
+    local standardOptions = pie.standardOptions,
+    local legend = pie.options.legend,
+
+    base(title, description, targets):
+      pie.new(title)
+      + pie.panelOptions.withDescription(description)
+      + pie.queryOptions.withTargets(targets)
+      + standardOptions.withDecimals(0)
+      + legend.withValues(['percent', 'value'])
+      + legend.withDisplayMode('table')
+      + legend.withPlacement('right')
+      + legend.withCalcs([
+        'Percent',
+        'Value',
+      ]),
+
+  },
 }

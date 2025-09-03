@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	aws_rds "github.com/aws/aws-sdk-go-v2/service/rds"
 	aws_rds_types "github.com/aws/aws-sdk-go-v2/service/rds/types"
 	"github.com/qonto/prometheus-rds-exporter/internal/app/rds"
 	mock "github.com/qonto/prometheus-rds-exporter/internal/app/rds/mock"
@@ -21,10 +20,11 @@ import (
 
 func TestGetMetrics(t *testing.T) {
 	rdsInstance := mock.NewRdsInstance()
-	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
+	rdsCluster := mock.NewRdsCluster()
 
 	ctx := context.TODO()
-	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	client := mock.NewRDSClient().WithDBInstances(*rdsInstance).WithDBClusters(*rdsCluster)
+
 	configuration := rds.Configuration{CollectLogsSize: true}
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
@@ -33,12 +33,12 @@ func TestGetMetrics(t *testing.T) {
 
 	var emptyInt64 *int64
 
+	// Check RDS instance
 	m := metrics.Instances[*rdsInstance.DBInstanceIdentifier]
 	assert.Equal(t, rds.InstanceStatusAvailable, m.Status, "Instance is available")
-	assert.Equal(t, "primary", m.Role, "Should be primary node")
+	assert.Equal(t, rds.RolePrimary, m.Role, "Should be primary node")
 	assert.Equal(t, emptyInt64, m.LogFilesSize, "Log file size mismatch")
 	assert.Equal(t, fmt.Sprintf("arn:aws:rds:eu-west-3:123456789012:db:%s", *rdsInstance.DBInstanceIdentifier), m.Arn, "ARN mismatch")
-
 	assert.Equal(t, converter.GigaBytesToBytes(int64(*rdsInstance.AllocatedStorage)), m.AllocatedStorage, "Allocated storage mismatch")
 	assert.Equal(t, converter.GigaBytesToBytes(int64(*rdsInstance.MaxAllocatedStorage)), m.MaxAllocatedStorage, "Max allocated storage (aka autoscaling) mismatch")
 	assert.Equal(t, int64(*rdsInstance.Iops), m.MaxIops, "Max IOPS mismatch")
@@ -55,6 +55,25 @@ func TestGetMetrics(t *testing.T) {
 	assert.Equal(t, *rdsInstance.CertificateDetails.ValidTill, *m.CertificateValidTill, "CertificateValidTill mismatch")
 	assert.Equal(t, "unittest", m.Tags["Environment"], "Environment tag mismatch")
 	assert.Equal(t, "sre", m.Tags["Team"], "Team tag mismatch")
+	assert.Equal(t, m.DBClusterIdentifier, "", "unexpected cluster identifier")
+
+	// Check cluster
+	result := metrics.Clusters[*rdsCluster.DBClusterIdentifier]
+	checkRDSCluster(t, rdsCluster, result)
+}
+
+// Check RDS cluster important fields
+func checkRDSCluster(t *testing.T, cluster *aws_rds_types.DBCluster, result rds.ClusterMetrics) {
+	t.Helper() // marks this function as a test helper
+
+	assert.Equal(t, fmt.Sprintf("arn:aws:rds:eu-west-3:123456789012:db:%s", *cluster.DBClusterIdentifier), result.Arn, "ARN mismatch")
+	assert.Equal(t, converter.GigaBytesToBytes(int64(*cluster.AllocatedStorage)), result.AllocatedStorage, "Allocated storage mismatch")
+	assert.Equal(t, *cluster.DBClusterIdentifier, result.DBClusterIdentifier, "DBClusterIdentifier mismatch")
+	assert.Equal(t, *cluster.DbClusterResourceId, result.DBClusterResourceID, "DBClusterResourceID mismatch")
+	assert.Equal(t, *cluster.Engine, result.Engine, "Engine mismatch")
+	assert.Equal(t, *cluster.EngineVersion, result.EngineVersion, "Engine version mismatch")
+	assert.Equal(t, int(time.Since(*cluster.ClusterCreateTime).Seconds()), int(result.Age), "Age should match expected age")
+	assert.Equal(t, "sre", result.Tags["Team"], "Team tag mismatch")
 }
 
 func TestGP2StorageType(t *testing.T) {
@@ -71,8 +90,7 @@ func TestGP2StorageType(t *testing.T) {
 	rdsInstanceWithLargeDisk.AllocatedStorage = aws.Int32(20000)
 
 	ctx := context.TODO()
-	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallDisk, *rdsInstanceWithMediumDisk, *rdsInstanceWithLargeDisk}}
-	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	client := mock.NewRDSClient().WithDBInstances(*rdsInstanceWithSmallDisk, *rdsInstanceWithMediumDisk, *rdsInstanceWithLargeDisk)
 	configuration := rds.Configuration{}
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
@@ -100,8 +118,7 @@ func TestGP3StorageType(t *testing.T) {
 	rdsInstanceWithLargeDisk.Iops = aws.Int32(12000)
 
 	ctx := context.TODO()
-	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallDisk, *rdsInstanceWithLargeDisk}}
-	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	client := mock.NewRDSClient().WithDBInstances(*rdsInstanceWithSmallDisk, *rdsInstanceWithLargeDisk)
 	configuration := rds.Configuration{}
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
@@ -129,8 +146,8 @@ func TestIO1StorageType(t *testing.T) {
 	rdsInstanceWithHighIOPS.Iops = aws.Int32(64000)
 
 	ctx := context.TODO()
-	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallIOPS, *rdsInstanceWithMediumIOPS, *rdsInstanceWithLargeIOPS, *rdsInstanceWithHighIOPS}}
-	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	client := mock.NewRDSClient().WithDBInstances(*rdsInstanceWithSmallIOPS, *rdsInstanceWithMediumIOPS, *rdsInstanceWithLargeIOPS, *rdsInstanceWithHighIOPS)
+
 	configuration := rds.Configuration{}
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
@@ -159,8 +176,7 @@ func TestIO2StorageType(t *testing.T) {
 	rdsInstanceWithHighIOPS.StorageType = aws.String("io2")
 	rdsInstanceWithHighIOPS.Iops = aws.Int32(64000)
 
-	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstanceWithSmallIOPS, *rdsInstanceWithMediumIOPS, *rdsInstanceWithLargeIOPS, *rdsInstanceWithHighIOPS}}
-	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	client := mock.NewRDSClient().WithDBInstances(*rdsInstanceWithSmallIOPS, *rdsInstanceWithMediumIOPS, *rdsInstanceWithLargeIOPS, *rdsInstanceWithHighIOPS)
 	configuration := rds.Configuration{}
 	ctx := context.TODO()
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
@@ -176,7 +192,6 @@ func TestIO2StorageType(t *testing.T) {
 func TestLogSize(t *testing.T) {
 	// Mock RDS instance
 	rdsInstance := mock.NewRdsInstance()
-	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
 	// Mock log files
 	logFileCount := int64(3)
@@ -188,12 +203,7 @@ func TestLogSize(t *testing.T) {
 		rdsLogFiles = append(rdsLogFiles, aws_rds_types.DescribeDBLogFilesDetails{Size: aws.Int64(logFileSize)})
 	}
 
-	mockDescribeDBLogFilesOutput := &aws_rds.DescribeDBLogFilesOutput{DescribeDBLogFiles: rdsLogFiles}
-
-	client := mock.RDSClient{
-		DescribeDBInstancesOutput: mockDescribeDBInstancesOutput,
-		DescribeDBLogFilesOutput:  mockDescribeDBLogFilesOutput,
-	}
+	client := mock.NewRDSClient().WithDBInstances(*rdsInstance).WithLogFiles(rdsLogFiles)
 	configuration := rds.Configuration{CollectLogsSize: true}
 	ctx := context.TODO()
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
@@ -206,12 +216,9 @@ func TestLogSize(t *testing.T) {
 func TestLogSizeInCreation(t *testing.T) {
 	// Mock RDS instance
 	rdsInstance := mock.NewRdsInstance()
-	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
-	client := mock.RDSClient{
-		DescribeDBInstancesOutput:     mockDescribeDBInstancesOutput,
-		DescribeDBLogFilesOutputError: &aws_rds_types.DBInstanceNotFoundFault{},
-	}
+	client := mock.NewRDSClient().WithDBInstances(*rdsInstance).WithLogFilesOutputError(&aws_rds_types.DBInstanceNotFoundFault{})
+
 	configuration := rds.Configuration{CollectLogsSize: true}
 	ctx := context.TODO()
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
@@ -229,16 +236,16 @@ func TestReplicaNode(t *testing.T) {
 	// Mock RDS instance
 	rdsInstance := mock.NewRdsInstance()
 	rdsInstance.ReadReplicaSourceDBInstanceIdentifier = aws.String(primaryInstance)
-	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
-	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	client := mock.NewRDSClient().WithDBInstances(*rdsInstance)
+
 	configuration := rds.Configuration{CollectLogsSize: true}
 	ctx := context.TODO()
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
-	assert.Equal(t, "replica", metrics.Instances[*rdsInstance.DBInstanceIdentifier].Role, "Should be replica")
+	assert.Equal(t, rds.RoleReplica, metrics.Instances[*rdsInstance.DBInstanceIdentifier].Role, "Should be replica")
 	assert.Equal(t, primaryInstance, metrics.Instances[*rdsInstance.DBInstanceIdentifier].SourceDBInstanceIdentifier, "Should be replica")
 }
 
@@ -289,11 +296,9 @@ func TestGetDBInstanceStatusCode(t *testing.T) {
 }
 
 func TestPendingModification(t *testing.T) {
-	// Mock RDS instance
 	rdsInstance := mock.NewRdsInstance()
-	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
-	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	client := mock.NewRDSClient().WithDBInstances(*rdsInstance)
 	configuration := rds.Configuration{}
 	ctx := context.TODO()
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
@@ -308,10 +313,10 @@ func TestPendingModificationDueToInstanceModification(t *testing.T) {
 	rdsInstance := mock.NewRdsInstance()
 	pendingModifications := aws_rds_types.PendingModifiedValues{AllocatedStorage: aws.Int32(int32(42))}
 	rdsInstance.PendingModifiedValues = &pendingModifications
-	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
 	ctx := context.TODO()
-	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	client := mock.NewRDSClient().WithDBInstances(*rdsInstance)
+
 	configuration := rds.Configuration{}
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
@@ -324,10 +329,10 @@ func TestPendingModificationDueToUnappliedParameterGroup(t *testing.T) {
 	// Mock RDS instance
 	rdsInstance := mock.NewRdsInstance()
 	rdsInstance.DBParameterGroups = []aws_rds_types.DBParameterGroupStatus{{DBParameterGroupName: aws.String("my_parameter_group"), ParameterApplyStatus: aws.String("pending-reboot")}}
-	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
 	ctx := context.TODO()
-	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	client := mock.NewRDSClient().WithDBInstances(*rdsInstance)
+
 	configuration := rds.Configuration{}
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
@@ -341,10 +346,9 @@ func TestInstanceAge(t *testing.T) {
 	rdsInstance := mock.NewRdsInstance()
 	creationDate := time.Date(2023, 9, 25, 12, 25, 0, 0, time.UTC) // Date of our first release
 	rdsInstance.InstanceCreateTime = &creationDate
-	mockDescribeDBInstancesOutput := &aws_rds.DescribeDBInstancesOutput{DBInstances: []aws_rds_types.DBInstance{*rdsInstance}}
 
 	ctx := context.TODO()
-	client := mock.RDSClient{DescribeDBInstancesOutput: mockDescribeDBInstancesOutput}
+	client := mock.NewRDSClient().WithDBInstances(*rdsInstance)
 	configuration := rds.Configuration{}
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
@@ -353,4 +357,137 @@ func TestInstanceAge(t *testing.T) {
 
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
 	assert.Equal(t, int(expectedAge.Seconds()), int(*metrics.Instances[*rdsInstance.DBInstanceIdentifier].Age), "Age should match expected age")
+}
+
+func TestMultiAZCluster(t *testing.T) {
+	rdsCluster := mock.NewMultiAZCluster()
+
+	ctx := context.TODO()
+	client := mock.NewRDSClient().WithDBClusters(*rdsCluster)
+	configuration := rds.Configuration{}
+	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
+	metrics, err := fetcher.GetInstancesMetrics()
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+
+	result := metrics.Clusters[*rdsCluster.DBClusterIdentifier]
+	assert.Equal(t, 3, len(result.Members), "DBInstanceIdentifier mismatch")
+}
+
+func TestDBInstanceRole(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.TODO()
+	standaloneInstance := mock.NewRdsInstance()
+	client := mock.NewRDSClient().WithDBInstances(*standaloneInstance)
+	configuration := rds.Configuration{}
+	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
+
+	metrics, err := fetcher.GetInstancesMetrics()
+
+	require.NoError(t, err, "expected no error from GetInstancesMetrics")
+
+	instanceID := *standaloneInstance.DBInstanceIdentifier
+	actualRole := metrics.Instances[instanceID].Role
+	assert.Equal(t, rds.RolePrimary, actualRole, "unexpected role for standalone instance")
+}
+
+func TestDBInstanceWithReplicaRole(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.TODO()
+	primary := mock.NewRdsInstance()
+	replica := mock.NewRdsInstance()
+	replica.ReadReplicaSourceDBInstanceIdentifier = primary.DBInstanceIdentifier
+	client := mock.NewRDSClient().WithDBInstances(*primary, *replica)
+	configuration := rds.Configuration{}
+	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
+
+	metrics, err := fetcher.GetInstancesMetrics()
+
+	require.NoError(t, err, "expected no error from GetInstancesMetrics")
+
+	primaryID := *primary.DBInstanceIdentifier
+	replicaID := *replica.DBInstanceIdentifier
+
+	assert.Equal(t, rds.RolePrimary, metrics.Instances[primaryID].Role, "unexpected role for primary instance")
+	assert.Equal(t, rds.RoleReplica, metrics.Instances[replicaID].Role, "unexpected role for replica instance")
+}
+func TestDBClusterRole(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.TODO()
+	cluster := mock.NewRdsCluster()
+	writer := mock.NewRdsInstance()
+	reader1 := mock.NewRdsInstance()
+	reader2 := mock.NewRdsInstance()
+
+	// Attach cluster to each instance
+	for _, inst := range []*aws_rds_types.DBInstance{writer, reader1, reader2} {
+		inst.DBClusterIdentifier = cluster.DBClusterIdentifier
+	}
+
+	// Attach each instance to the cluster
+	cluster.DBClusterMembers = []aws_rds_types.DBClusterMember{
+		{
+			DBInstanceIdentifier:          aws.String(*writer.DBInstanceIdentifier),
+			IsClusterWriter:               aws.Bool(true),
+			DBClusterParameterGroupStatus: aws.String("in-sync"),
+			PromotionTier:                 aws.Int32(1),
+		},
+		{
+			DBInstanceIdentifier:          aws.String(*reader1.DBInstanceIdentifier),
+			IsClusterWriter:               aws.Bool(false),
+			DBClusterParameterGroupStatus: aws.String("in-sync"),
+			PromotionTier:                 aws.Int32(1),
+		},
+		{
+			DBInstanceIdentifier:          aws.String(*reader2.DBInstanceIdentifier),
+			IsClusterWriter:               aws.Bool(false),
+			DBClusterParameterGroupStatus: aws.String("in-sync"),
+			PromotionTier:                 aws.Int32(1),
+		},
+	}
+
+	client := mock.NewRDSClient().
+		WithDBInstances(*writer, *reader1, *reader2).
+		WithDBClusters(*cluster)
+
+	config := rds.Configuration{}
+	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, config)
+
+	metrics, err := fetcher.GetInstancesMetrics()
+
+	require.NoError(t, err, "expected no error from GetInstancesMetrics")
+
+	writerID := *writer.DBInstanceIdentifier
+	reader1ID := *reader1.DBInstanceIdentifier
+	reader2ID := *reader2.DBInstanceIdentifier
+
+	assert.Equal(t, rds.RoleWriter, metrics.Instances[writerID].Role, "unexpected role for writer")
+	assert.Equal(t, rds.RoleReader, metrics.Instances[reader1ID].Role, "unexpected role for reader1")
+	assert.Equal(t, rds.RoleReader, metrics.Instances[reader2ID].Role, "unexpected role for reader2")
+
+	clusterIdentifier := cluster.DBClusterIdentifier
+
+	assert.Equal(t, *clusterIdentifier, metrics.Instances[writerID].DBClusterIdentifier, "unexpected cluster identifier for writer")
+	assert.Equal(t, *clusterIdentifier, metrics.Instances[reader1ID].DBClusterIdentifier, "unexpected cluster identifier for reader1")
+	assert.Equal(t, *clusterIdentifier, metrics.Instances[reader2ID].DBClusterIdentifier, "unexpected cluster identifier for reader2")
+}
+
+func TestServerlessMetrics(t *testing.T) {
+	cluster := mock.NewAuroraServerlessCluster()
+
+	ctx := context.TODO()
+	client := mock.NewRDSClient().WithDBClusters(*cluster)
+
+	configuration := rds.Configuration{CollectLogsSize: true}
+	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
+	metrics, err := fetcher.GetInstancesMetrics()
+
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+
+	clusterIdentifier := cluster.DBClusterIdentifier
+
+	assert.Equal(t, *cluster.ServerlessV2ScalingConfiguration.MaxCapacity, metrics.Clusters[*clusterIdentifier].ServerLessMaxACU, "unexpected max ACU value")
+	assert.Equal(t, *cluster.ServerlessV2ScalingConfiguration.MinCapacity, metrics.Clusters[*clusterIdentifier].ServerLessMinACU, "unexpected min ACU value")
 }

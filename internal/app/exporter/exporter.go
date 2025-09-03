@@ -30,14 +30,15 @@ const (
 var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/exporter")
 
 type Configuration struct {
-	CollectInstanceMetrics bool
-	CollectInstanceTags    bool
-	CollectInstanceTypes   bool
-	CollectLogsSize        bool
-	CollectMaintenances    bool
-	CollectQuotas          bool
-	CollectUsages          bool
-	TagSelections          map[string][]string
+	CollectInstanceMetrics    bool
+	CollectInstanceTags       bool
+	CollectInstanceTypes      bool
+	CollectLogsSize           bool
+	CollectServerlessLogsSize bool
+	CollectMaintenances       bool
+	CollectQuotas             bool
+	CollectUsages             bool
+	TagSelections             map[string][]string
 }
 
 type counters struct {
@@ -82,6 +83,9 @@ type rdsCollector struct {
 	allocatedDiskIOPS           *prometheus.Desc
 	allocatedDiskThroughput     *prometheus.Desc
 	information                 *prometheus.Desc
+	clusterInformation          *prometheus.Desc
+	clusterServerLessMaxACU     *prometheus.Desc
+	clusterServerLessMinACU     *prometheus.Desc
 	instanceBaselineIops        *prometheus.Desc
 	instanceMaximumIops         *prometheus.Desc
 	instanceBaselineThroughput  *prometheus.Desc
@@ -115,6 +119,7 @@ type rdsCollector struct {
 	usageAllocatedStorage       *prometheus.Desc
 	usageDBInstances            *prometheus.Desc
 	usageManualSnapshots        *prometheus.Desc
+	serverlessDatabaseCapacity  *prometheus.Desc
 	exporterBuildInformation    *prometheus.Desc
 	transactionLogsDiskUsage    *prometheus.Desc
 	certificateValidTill        *prometheus.Desc
@@ -156,7 +161,19 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 		),
 		information: prometheus.NewDesc("rds_instance_info",
 			"RDS instance information",
-			[]string{"aws_account_id", "aws_region", "dbidentifier", "dbi_resource_id", "instance_class", "engine", "engine_version", "storage_type", "multi_az", "deletion_protection", "role", "source_dbidentifier", "pending_modified_values", "pending_maintenance", "performance_insights_enabled", "ca_certificate_identifier", "arn"}, nil,
+			[]string{"aws_account_id", "aws_region", "dbidentifier", "dbi_resource_id", "cluster_identifier", "instance_class", "engine", "engine_version", "storage_type", "multi_az", "deletion_protection", "role", "source_dbidentifier", "pending_modified_values", "pending_maintenance", "performance_insights_enabled", "ca_certificate_identifier", "arn"}, nil,
+		),
+		clusterInformation: prometheus.NewDesc("rds_cluster_info",
+			"RDS cluster information",
+			[]string{"aws_account_id", "aws_region", "cluster_identifier", "cluster_resource_id", "engine", "engine_version", "arn"}, nil,
+		),
+		clusterServerLessMaxACU: prometheus.NewDesc("rds_cluster_acu_max_average",
+			"Maximum number of ACU",
+			[]string{"aws_account_id", "aws_region", "cluster_identifier"}, nil,
+		),
+		clusterServerLessMinACU: prometheus.NewDesc("rds_cluster_acu_min_average",
+			"Minimum number of ACU",
+			[]string{"aws_account_id", "aws_region", "cluster_identifier"}, nil,
 		),
 		age: prometheus.NewDesc("rds_instance_age_seconds",
 			"Time since instance creation",
@@ -314,6 +331,10 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			"Manual snapshots count",
 			[]string{"aws_account_id", "aws_region"}, nil,
 		),
+		serverlessDatabaseCapacity: prometheus.NewDesc("rds_serverless_instance_acu_average",
+			"Current ACU of the Aurora Serverless instance",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
 	}
 }
 
@@ -336,6 +357,7 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.freeStorageSpace
 	ch <- c.freeableMemory
 	ch <- c.information
+	ch <- c.clusterInformation
 	ch <- c.instanceBaselineIops
 	ch <- c.instanceMaximumIops
 	ch <- c.instanceBaselineThroughput
@@ -361,6 +383,7 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.usageAllocatedStorage
 	ch <- c.usageDBInstances
 	ch <- c.usageManualSnapshots
+	ch <- c.serverlessDatabaseCapacity
 	ch <- c.writeIOPS
 	ch <- c.writeThroughput
 }
@@ -385,9 +408,10 @@ func (c *rdsCollector) fetchMetrics() error {
 	c.logger.Debug("get RDS metrics")
 
 	rdsFetcher := rds.NewFetcher(c.ctx, c.rdsClient, c.tagClient, c.logger, rds.Configuration{
-		CollectLogsSize:     c.configuration.CollectLogsSize,
-		CollectMaintenances: c.configuration.CollectMaintenances,
-		TagSelections:       c.configuration.TagSelections,
+		CollectLogsSize:           c.configuration.CollectLogsSize,
+		CollectServerlessLogsSize: c.configuration.CollectServerlessLogsSize,
+		CollectMaintenances:       c.configuration.CollectMaintenances,
+		TagSelections:             c.configuration.TagSelections,
 	})
 
 	rdsMetrics, err := rdsFetcher.GetInstancesMetrics()
@@ -549,10 +573,29 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 
 	ch <- prometheus.MustNewConstMetric(c.up, prometheus.CounterValue, exporterUpStatusCode)
 
-	// RDS metrics
+	// API metrics
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.RDSAPIcalls, c.awsAccountID, c.awsRegion, "rds")
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.TagAPICalls, c.awsAccountID, c.awsRegion, "tag")
 
+	// Cluster metrics
+	for clusterIdentifier, cluster := range c.metrics.RDS.Clusters {
+		ch <- prometheus.MustNewConstMetric(
+			c.clusterInformation,
+			prometheus.GaugeValue,
+			1,
+			c.awsAccountID,
+			c.awsRegion,
+			clusterIdentifier,
+			cluster.DBClusterResourceID,
+			cluster.Engine,
+			cluster.EngineVersion,
+			cluster.Arn,
+		)
+		ch <- prometheus.MustNewConstMetric(c.clusterServerLessMaxACU, prometheus.GaugeValue, cluster.ServerLessMaxACU, c.awsAccountID, c.awsRegion, clusterIdentifier)
+		ch <- prometheus.MustNewConstMetric(c.clusterServerLessMinACU, prometheus.GaugeValue, cluster.ServerLessMinACU, c.awsAccountID, c.awsRegion, clusterIdentifier)
+	}
+
+	// Instance metrics
 	for dbidentifier, instance := range c.metrics.RDS.Instances {
 		ch <- prometheus.MustNewConstMetric(
 			c.allocatedStorage,
@@ -568,13 +611,14 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 			c.awsRegion,
 			dbidentifier,
 			instance.DbiResourceID,
+			instance.DBClusterIdentifier,
 			instance.DBInstanceClass,
 			instance.Engine,
 			instance.EngineVersion,
 			instance.StorageType,
 			strconv.FormatBool(instance.MultiAZ),
 			strconv.FormatBool(instance.DeletionProtection),
-			instance.Role,
+			instance.Role.String(),
 			instance.SourceDBInstanceIdentifier,
 			strconv.FormatBool(instance.PendingModifiedValues),
 			instance.PendingMaintenanceAction,
@@ -582,15 +626,19 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 			instance.CACertificateIdentifier,
 			instance.Arn,
 		)
+
 		if instance.MaxAllocatedStorage > 0 {
 			ch <- prometheus.MustNewConstMetric(c.maxAllocatedStorage, prometheus.GaugeValue, float64(instance.MaxAllocatedStorage), c.awsAccountID, c.awsRegion, dbidentifier)
 		}
+
 		if instance.MaxIops > 0 {
 			ch <- prometheus.MustNewConstMetric(c.allocatedDiskIOPS, prometheus.GaugeValue, float64(instance.MaxIops), c.awsAccountID, c.awsRegion, dbidentifier)
 		}
+
 		if instance.StorageThroughput > 0 {
 			ch <- prometheus.MustNewConstMetric(c.allocatedDiskThroughput, prometheus.GaugeValue, float64(instance.StorageThroughput), c.awsAccountID, c.awsRegion, dbidentifier)
 		}
+
 		ch <- prometheus.MustNewConstMetric(c.status, prometheus.GaugeValue, float64(instance.Status), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.backupRetentionPeriod, prometheus.GaugeValue, float64(instance.BackupRetentionPeriod), c.awsAccountID, c.awsRegion, dbidentifier)
 
@@ -599,13 +647,23 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 
 		// RDS disk performance are limited by the EBS volume attached the RDS instance
 		if ec2Metrics, ok := c.metrics.EC2.Instances[instance.DBInstanceClass]; ok {
-			maxIops = min(instance.MaxIops, int64(ec2Metrics.BaselineIOPS))
-			storageThroughput = min(float64(instance.StorageThroughput), ec2Metrics.BaselineThroughput)
+			if instance.MaxIops > 0 {
+				maxIops = min(instance.MaxIops, int64(ec2Metrics.BaselineIOPS))
+			} else {
+				maxIops = int64(ec2Metrics.BaselineIOPS)
+			}
+
+			if instance.StorageThroughput > 0 {
+				storageThroughput = min(float64(instance.StorageThroughput), ec2Metrics.BaselineThroughput)
+			} else {
+				storageThroughput = ec2Metrics.BaselineThroughput
+			}
 		}
 
 		if maxIops > 0 {
 			ch <- prometheus.MustNewConstMetric(c.maxIops, prometheus.GaugeValue, float64(maxIops), c.awsAccountID, c.awsRegion, dbidentifier)
 		}
+
 		if storageThroughput > 0 {
 			ch <- prometheus.MustNewConstMetric(c.storageThroughput, prometheus.GaugeValue, storageThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
 		}
@@ -696,6 +754,10 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 
 		if instance.DBLoadNonCPU != nil {
 			ch <- prometheus.MustNewConstMetric(c.dBLoadNonCPU, prometheus.GaugeValue, *instance.DBLoadNonCPU, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.ServerlessDatabaseCapacity != nil {
+			ch <- prometheus.MustNewConstMetric(c.serverlessDatabaseCapacity, prometheus.GaugeValue, *instance.ServerlessDatabaseCapacity, c.awsAccountID, c.awsRegion, dbidentifier)
 		}
 	}
 

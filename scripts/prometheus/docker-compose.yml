@@ -35,7 +35,7 @@ services:
     volumes:
       - ./.grafana_data:/var/lib/grafana  # Grafana persistent storage
       - ./../../configs/grafana/public:/var/tmp/prometheus-rds-exporter-dashboards  # Grafana dashboards folder is used for dashboard provisioning
-      - ./configuration/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources/ # Datasource provisioning
+      - ./configuration/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources/  # Datasource provisioning
       - ./configuration/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards/
       - ./configuration/grafana/entrypoint.sh:/usr/share/grafana/entrypoint.sh
     tmpfs:
@@ -53,7 +53,9 @@ services:
     environment:
       - AWS_SDK_LOAD_CONFIG=1
       - AWS_PROFILE=${AWS_PROFILE-}
+      - AWS_REGION=${AWS_REGION-}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID-}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY-}
       - PROMETHEUS_RDS_EXPORTER_LOG_FORMAT=text
     volumes:

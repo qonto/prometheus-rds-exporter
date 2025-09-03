@@ -14,20 +14,24 @@ import (
 	aws_rds_types "github.com/aws/aws-sdk-go-v2/service/rds/types"
 	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
 	tag_types "github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi/types"
+	"github.com/aws/smithy-go"
 	converter "github.com/qonto/prometheus-rds-exporter/internal/app/unit"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	semconv "go.opentelemetry.io/otel/semconv/v1.24.0"
 )
 
 type Configuration struct {
-	CollectLogsSize     bool
-	CollectMaintenances bool
-	TagSelections       map[string][]string
+	CollectLogsSize           bool
+	CollectServerlessLogsSize bool
+	CollectMaintenances       bool
+	TagSelections             map[string][]string
 }
 
 type Metrics struct {
 	Instances map[string]RdsInstanceMetrics
+	Clusters  map[string]ClusterMetrics
 }
 
 type Statistics struct {
@@ -35,33 +39,138 @@ type Statistics struct {
 	TagAPICall float64
 }
 
+type ClusterMetrics struct {
+	// Seconds since cluster creation date.
+	Age float64
+
+	// The Amazon Resource Name (ARN) for the DB cluster.
+	Arn string
+
+	// The database engine used for this DB cluster.
+	Engine string
+
+	EngineVersion string
+
+	// For all database engines except Amazon Aurora, AllocatedStorage specifies the
+	// allocated storage size in gibibytes (GiB). For Aurora, AllocatedStorage always
+	// returns 1, because Aurora DB cluster storage size isn't fixed, but instead
+	// automatically adjusts as needed.
+	AllocatedStorage int64
+
+	// The user-supplied identifier for the DB cluster. This identifier is the unique
+	// key that identifies a DB cluster.
+	DBClusterIdentifier string
+
+	// The Amazon Web Services Region-unique, immutable identifier for the DB cluster.
+	// This identifier is found in Amazon Web Services CloudTrail log entries whenever
+	// the KMS key for the DB cluster is accessed.
+	DBClusterResourceID string
+
+	// Members
+	Members map[string]DBRole
+
+	// dbidentifier of the write node
+	WriterDBInstanceIdentifier string
+
+	// Minimum number of Aurora capacity units (ACUs) for a DB instance in an Aurora Serverless v2 cluster.
+	ServerLessMinACU float64
+
+	// Maximum number of Aurora capacity units (ACUs) for a DB instance in an Aurora Serverless v2 cluster.
+	ServerLessMaxACU float64
+
+	// AWS tags on the cluster.
+	Tags map[string]string
+}
+
 type RdsInstanceMetrics struct {
-	Arn                              string
-	Engine                           string
-	EngineVersion                    string
-	DBInstanceClass                  string
-	DbiResourceID                    string
-	StorageType                      string
-	AllocatedStorage                 int64
-	StorageThroughput                int64
-	MaxAllocatedStorage              int64
-	MaxIops                          int64
-	LogFilesSize                     *int64
-	PendingMaintenanceAction         string
-	PendingModifiedValues            bool
-	BackupRetentionPeriod            int32
-	Status                           int
-	DeletionProtection               bool
-	PubliclyAccessible               bool
-	PerformanceInsightsEnabled       bool
-	MultiAZ                          bool
+	// Seconds since instance creation date.
+	Age *float64
+
+	// The Amazon Resource Name (ARN) for the DB instance.
+	Arn string
+
+	// The version of the database engine.
+	AllocatedStorage int64
+
+	// The number of days for which automatic DB snapshots are retained.
+	BackupRetentionPeriod int32
+
+	// The identifier of the CA certificate for this DB instance.
+	CACertificateIdentifier string
+
+	// Certificate expiration date
+	CertificateValidTill *time.Time
+
+	// The name of the compute and memory capacity class of the DB instance.
+	DBInstanceClass string
+
+	// The name of the cluster identifier if this instance is part of a cluster
+	DBClusterIdentifier string
+
+	// The Amazon Web Services Region-unique, immutable identifier for the DB
+	DbiResourceID string
+
+	// Indicates whether the DB instance has deletion protection enabled. The database
+	DeletionProtection bool
+
+	// The database engine used for this instance.
+	Engine string
+
+	// The version of the database engine.
+	EngineVersion string
+
+	// Indicates whether mapping of Amazon Web Services Identity and Access Management
+	// (IAM) accounts to database accounts is enabled for the DB instance.
 	IAMDatabaseAuthenticationEnabled bool
-	Role                             string
-	SourceDBInstanceIdentifier       string
-	CACertificateIdentifier          string
-	CertificateValidTill             *time.Time
-	Age                              *float64
-	Tags                             map[string]string
+
+	// Total amount of log files (GiB)
+	LogFilesSize *int64
+
+	// The upper limit in gibibytes (GiB) to which Amazon RDS can automatically scale
+	MaxAllocatedStorage int64
+
+	// Maximum provisioned IOPS per GiB for a DB instance.
+	MaxIops int64
+
+	// Indicates whether the Single-AZ DB instance will change to a Multi-AZ deployment.
+	MultiAZ bool
+
+	// Pending maintenance action
+	PendingMaintenanceAction string
+
+	// Define if instance is pending for modification
+	PendingModifiedValues bool
+
+	// Indicates whether Performance Insights is enabled for the DB cluster.
+	PerformanceInsightsEnabled bool
+
+	// Indicates whether the DB instance is publicly accessible.
+	PubliclyAccessible bool
+
+	// Role of Instance primary or replica
+	Role DBRole
+
+	// If db instance is a replica, specify the identifier of the source
+	SourceDBInstanceIdentifier string
+
+	// Code representing instance status
+	Status int
+
+	// The storage throughput for the DB instance.
+	StorageThroughput int64
+
+	// The storage type associated with the DB instance.
+	StorageType string
+
+	// AWS tags on the cluster.
+	Tags map[string]string
+}
+
+// DBRole defines the type for database instance roles such as primary, replica, writer or reader.
+type DBRole string
+
+func (r DBRole) String() string {
+	return string(r)
 }
 
 const (
@@ -105,8 +214,11 @@ const (
 	io2StorageMinThroughput                     int64   = 256  // 1000 IOPS * 0.256 MiB/s per provisioned IOPS
 	io2StorageMaxThroughput                     int64   = 4000 // AWS EBS limit
 	io2StorageThroughputPerIOPS                 float64 = 0.256
-	primaryRole                                 string  = "primary"
-	replicaRole                                 string  = "replica"
+	RolePrimary                                 DBRole  = "primary"
+	RoleReplica                                 DBRole  = "replica"
+	RoleWriter                                  DBRole  = "writer"
+	RoleReader                                  DBRole  = "reader"
+	ServerlessClassType                         string  = "db.serverless"
 )
 
 var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/rds")
@@ -135,6 +247,7 @@ var instanceStatuses = map[string]int{ // retrieved from https://docs.aws.amazon
 
 type RDSClient interface {
 	DescribeDBInstances(ctx context.Context, params *aws_rds.DescribeDBInstancesInput, optFns ...func(*aws_rds.Options)) (*aws_rds.DescribeDBInstancesOutput, error)
+	DescribeDBClusters(ctx context.Context, params *aws_rds.DescribeDBClustersInput, optFns ...func(*aws_rds.Options)) (*aws_rds.DescribeDBClustersOutput, error)
 	DescribePendingMaintenanceActions(context.Context, *aws_rds.DescribePendingMaintenanceActionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribePendingMaintenanceActionsOutput, error)
 	DescribeDBLogFiles(context.Context, *aws_rds.DescribeDBLogFilesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBLogFilesOutput, error)
 }
@@ -208,6 +321,77 @@ func (r *RDSFetcher) getPendingMaintenances(ctx context.Context) (map[string]str
 	return instances, nil
 }
 
+func (r *RDSFetcher) getClusters(ctx context.Context, filters []aws_rds_types.Filter) (map[string]ClusterMetrics, error) {
+	clusterMetrics := make(map[string]ClusterMetrics)
+
+	inputCluster := &aws_rds.DescribeDBClustersInput{Filters: filters}
+
+	paginatorCluster := aws_rds.NewDescribeDBClustersPaginator(r.client, inputCluster)
+	for paginatorCluster.HasMorePages() {
+		_, span := tracer.Start(ctx, "describe-rds-clusters")
+		defer span.End()
+
+		r.statistics.RdsAPICall++
+
+		output, err := paginatorCluster.NextPage(context.TODO())
+		if err != nil {
+			span.SetStatus(codes.Error, "can't describe RDS clusters")
+			span.RecordError(err)
+
+			return clusterMetrics, fmt.Errorf("can't describe RDS clusters: %w", err)
+		}
+
+		span.SetStatus(codes.Ok, "metrics fetched")
+		span.SetAttributes(attribute.Int("qonto.prometheus_rds_exporter.cluster_count", len(output.DBClusters)))
+
+		for _, dbCluster := range output.DBClusters {
+			var writerDBInstanceIdentifier string
+
+			members := make(map[string]DBRole)
+
+			for _, member := range dbCluster.DBClusterMembers {
+				instanceID := aws.ToString(member.DBInstanceIdentifier)
+
+				if aws.ToBool(member.IsClusterWriter) {
+					members[instanceID] = RoleWriter
+					writerDBInstanceIdentifier = instanceID
+				} else {
+					members[instanceID] = RoleReader
+				}
+			}
+
+			var maxACU, minACU float64
+
+			if dbCluster.ServerlessV2ScalingConfiguration != nil {
+				if dbCluster.ServerlessV2ScalingConfiguration.MaxCapacity != nil {
+					maxACU = *dbCluster.ServerlessV2ScalingConfiguration.MaxCapacity
+				}
+
+				if dbCluster.ServerlessV2ScalingConfiguration.MinCapacity != nil {
+					minACU = *dbCluster.ServerlessV2ScalingConfiguration.MinCapacity
+				}
+			}
+
+			clusterMetrics[*dbCluster.DBClusterIdentifier] = ClusterMetrics{
+				Arn:                        *dbCluster.DBClusterArn,
+				Engine:                     *dbCluster.Engine,
+				EngineVersion:              *dbCluster.EngineVersion,
+				AllocatedStorage:           converter.GigaBytesToBytes(int64(*dbCluster.AllocatedStorage)),
+				DBClusterIdentifier:        *dbCluster.DBClusterIdentifier,
+				Members:                    members,
+				WriterDBInstanceIdentifier: writerDBInstanceIdentifier,
+				DBClusterResourceID:        *dbCluster.DbClusterResourceId,
+				Age:                        time.Since(*dbCluster.ClusterCreateTime).Seconds(),
+				Tags:                       ConvertRDSTagsToMap(dbCluster.TagList),
+				ServerLessMaxACU:           maxACU,
+				ServerLessMinACU:           minACU,
+			}
+		}
+	}
+
+	return clusterMetrics, nil
+}
+
 func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 	ctx, span := tracer.Start(r.ctx, "collect-instance-metrics")
 	defer span.End()
@@ -233,6 +417,11 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 		return Metrics{}, err
 	}
 
+	clusterMetrics, err := r.getClusters(ctx, filters)
+	if err != nil {
+		return Metrics{}, fmt.Errorf("can't get cluster metrics: %w", err)
+	}
+
 	input := &aws_rds.DescribeDBInstancesInput{Filters: filters}
 
 	paginator := aws_rds.NewDescribeDBInstancesPaginator(r.client, input)
@@ -253,7 +442,7 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 		for _, dbInstance := range output.DBInstances {
 			dbIdentifier := dbInstance.DBInstanceIdentifier
 
-			instanceMetrics, err := r.computeInstanceMetrics(instanceCtx, dbInstance, instanceMaintenances)
+			instanceMetrics, err := r.computeInstanceMetrics(instanceCtx, dbInstance, instanceMaintenances, &clusterMetrics)
 			if err != nil {
 				span.SetStatus(codes.Error, "can't compute instance metrics")
 				span.RecordError(err)
@@ -269,11 +458,12 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 
 	span.SetStatus(codes.Ok, "metrics fetched")
 
-	return Metrics{Instances: metrics}, nil
+	return Metrics{Instances: metrics, Clusters: clusterMetrics}, nil
 }
 
 func (r *RDSFetcher) getDBInstanceFilters(ctx context.Context) ([]aws_rds_types.Filter, error) {
 	var filters []aws_rds_types.Filter
+
 	if r.configuration.TagSelections == nil {
 		return filters, nil
 	}
@@ -328,7 +518,7 @@ func (r *RDSFetcher) getDBInstanceFilters(ctx context.Context) ([]aws_rds_types.
 }
 
 // computeInstanceMetrics returns metrics about the specified instance
-func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_rds_types.DBInstance, instanceMaintenances map[string]string) (RdsInstanceMetrics, error) {
+func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_rds_types.DBInstance, instanceMaintenances map[string]string, clusterMetrics *map[string]ClusterMetrics) (RdsInstanceMetrics, error) {
 	dbIdentifier := dbInstance.DBInstanceIdentifier
 
 	var iops int64
@@ -373,16 +563,34 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 
 	var logFilesSize *int64
 
-	if r.configuration.CollectLogsSize {
+	isServerless := *dbInstance.DBInstanceClass == ServerlessClassType
+
+	shouldCollectLogs := (r.configuration.CollectLogsSize && !isServerless) || (r.configuration.CollectServerlessLogsSize && isServerless)
+	if shouldCollectLogs {
 		var err error
 
 		logFilesSize, err = r.getLogFilesSize(ctx, *dbIdentifier)
+
 		if err != nil {
-			return RdsInstanceMetrics{}, fmt.Errorf("can't get log files size for %d: %w", dbIdentifier, err)
+			return RdsInstanceMetrics{}, fmt.Errorf("can't get log files size for %s: %w", *dbIdentifier, err)
 		}
 	}
 
-	role, sourceDBInstanceIdentifier := getRoleInCluster(&dbInstance)
+	var clusterDetails ClusterMetrics
+
+	var dbClusterIdentifier string
+
+	if dbInstance.DBClusterIdentifier != nil {
+		dbClusterIdentifier = *dbInstance.DBClusterIdentifier
+
+		if details, exists := (*clusterMetrics)[*dbInstance.DBClusterIdentifier]; exists {
+			clusterDetails = details
+		}
+	} else {
+		dbClusterIdentifier = ""
+	}
+
+	role, sourceDBInstanceIdentifier := GetInstanceRole(&dbInstance, clusterDetails)
 
 	var age *float64
 
@@ -397,18 +605,13 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 		certificateValidTill = dbInstance.CertificateDetails.ValidTill
 	}
 
-	tags := make(map[string]string)
-
-	for _, tag := range dbInstance.TagList {
-		tags[*tag.Key] = *tag.Value
-	}
-
 	metrics := RdsInstanceMetrics{
 		Arn:                        *dbInstance.DBInstanceArn,
 		AllocatedStorage:           converter.GigaBytesToBytes(int64(*dbInstance.AllocatedStorage)),
 		BackupRetentionPeriod:      converter.DaystoSeconds(*dbInstance.BackupRetentionPeriod),
 		DBInstanceClass:            *dbInstance.DBInstanceClass,
 		DbiResourceID:              *dbInstance.DbiResourceId,
+		DBClusterIdentifier:        dbClusterIdentifier,
 		DeletionProtection:         aws.ToBool(dbInstance.DeletionProtection),
 		Engine:                     *dbInstance.Engine,
 		EngineVersion:              *dbInstance.EngineVersion,
@@ -428,7 +631,7 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 		CACertificateIdentifier:    aws.ToString(dbInstance.CACertificateIdentifier),
 		CertificateValidTill:       certificateValidTill,
 		Age:                        age,
-		Tags:                       tags,
+		Tags:                       ConvertRDSTagsToMap(dbInstance.TagList),
 	}
 
 	return metrics, nil
@@ -449,13 +652,12 @@ func (r *RDSFetcher) getLogFilesSize(ctx context.Context, dbidentifier string) (
 
 	result, err := r.client.DescribeDBLogFiles(context.TODO(), input)
 	if err != nil {
-		var notFoundError *aws_rds_types.DBInstanceNotFoundFault
-		if errors.As(err, &notFoundError) { // Replica in "creating" status may return notFoundError exception
-			return filesSize, nil
-		}
-
 		span.SetStatus(codes.Error, "can't describe db logs files")
 		span.RecordError(err)
+
+		if r.isRecoverableLogError(err, dbidentifier) {
+			return filesSize, nil
+		}
 
 		return filesSize, fmt.Errorf("can't describe db logs files for %s: %w", dbidentifier, err)
 	}
@@ -471,4 +673,21 @@ func (r *RDSFetcher) getLogFilesSize(ctx context.Context, dbidentifier string) (
 	}
 
 	return filesSize, nil
+}
+
+// isRecoverableLogError checks if the error is recoverable and logs should be skipped
+func (r *RDSFetcher) isRecoverableLogError(err error, dbidentifier string) bool {
+	var notFoundError *aws_rds_types.DBInstanceNotFoundFault
+	if errors.As(err, &notFoundError) {
+		return true // Replica in "creating" status may return notFoundError exception
+	}
+
+	var apiErr smithy.APIError
+	if errors.As(err, &apiErr) && apiErr.ErrorCode() == "DBInstanceNotReady" {
+		r.logger.Warn("Instance is not ready for log collect, skipping", "dbidentifier", dbidentifier)
+
+		return true
+	}
+
+	return false
 }
