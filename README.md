@@ -292,6 +292,16 @@ If you are running on [AWS EKS](https://aws.amazon.com/eks/), we strongly recomm
             ]
         },
         {
+            "Sid": "AllowClusters",
+            "Effect": "Allow",
+            "Action": [
+                "rds:DescribeDBClusters"
+            ],
+            "Resource": [
+                "arn:aws:rds:*:*:cluster:*"
+            ]
+        },
+        {
             "Sid": "AllowMaintenanceDescriptions",
             "Effect": "Allow",
             "Action": [

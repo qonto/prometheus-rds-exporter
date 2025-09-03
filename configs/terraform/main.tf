@@ -37,6 +37,17 @@ data "aws_iam_policy_document" "prometheus-rds-exporter" {
   }
 
   statement {
+    sid    = "AllowClusters"
+    effect = "Allow"
+    actions = [
+      "rds:DescribeDBClusters",
+    ]
+    resources = [
+      "arn:aws:rds:*:*:cluster:*",
+    ]
+  }
+
+  statement {
     sid    = "AllowMaintenanceDescriptions"
     effect = "Allow"
     actions = [
