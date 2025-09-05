@@ -383,7 +383,121 @@ See the [Development environment](#development-environment) to start the Prometh
 
 ### AWS EKS
 
-**Recommended method** to deploy on AWS EKS using [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) and Helm.
+**Recommended method** to deploy on AWS EKS using [Pod Identity](https://docs.aws.amazon.com/eks/latest/userguide/pod-identities.html) and Helm.
+
+#### EKS Pod Identity
+
+1. Enable EKS Pod Identity Agent, see [documentation](https://docs.aws.amazon.com/eks/latest/userguide/pod-id-agent-setup.html)
+
+    EKS Pod Identity Agent is pre-installed on EKS Auto Mode clusters.
+
+1. Create the IAM policy for the exporter
+
+    ```bash
+    IAM_POLICY_NAME=prometheus-rds-exporter
+
+    # Download IAM policy template
+    curl --fail --silent --write-out "Reponse code: %{response_code}\n" https://raw.githubusercontent.com/qonto/prometheus-rds-exporter/main/configs/aws/policy.json -o /tmp/prometheus-rds-exporter.policy.json
+
+    # Create IAM policy
+    aws iam create-policy --policy-name ${IAM_POLICY_NAME} --policy-document file:///tmp/prometheus-rds-exporter.policy.json
+
+    IAM_POLICY_ARN=$(aws iam list-policies --query "Policies[?PolicyName=='${IAM_POLICY_NAME}'].[Arn]" --output text)
+    ```
+
+1. Create the IAM role for the exporter
+
+    ```bash
+    IAM_ROLE_NAME=prometheus-rds-exporter
+
+    # Download role trust policy
+    curl --fail --silent --write-out "Reponse code: %{response_code}\n" https://raw.githubusercontent.com/qonto/prometheus-rds-exporter/main/configs/aws/trust-policy.json -o /tmp/prometheus-rds-exporter.trust-policy.json
+
+    # Create IAM role
+    aws iam create-role \
+    --role-name ${IAM_ROLE_NAME} \
+    --assume-role-policy-document file:///tmp/prometheus-rds-exporter.trust-policy.json
+
+    # Attach IAM policy to IAM role
+    aws iam attach-role-policy \
+    --role-name ${IAM_ROLE_NAME} \
+    --policy-arn ${IAM_POLICY_ARN}
+
+    IAM_ROLE_ARN=$(aws iam get-role --role-name ${IAM_ROLE_NAME} --query "Role.Arn" --output text)
+    ```
+
+1. Creates an EKS Pod Identity association between the Kubernetes Service Account and the IAM role with EKS Pod Identity
+
+    ```bash
+    EKS_CLUSTER_NAME=REPLACE_WITH_YOUR_EKS_CLUSTER_NAME # Replace with your EKS Cluster name
+    KUBERNETES_NAMESPACE=monitoring # Replace with namespace of your choice
+    KUBERNETES_SERVICE_ACCOUNT_NAME=prometheus-rds-exporter # Replace with namespace of your choice
+
+    aws eks create-pod-identity-association \
+    --cluster-name ${EKS_CLUSTER_NAME}  \
+    --namespace ${KUBERNETES_NAMESPACE} \
+    --service-account ${KUBERNETES_SERVICE_ACCOUNT_NAME} \
+    --role-arn ${IAM_ROLE_ARN}
+    ```
+
+1. Login on AWS public ECR
+
+    ```bash
+    aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws    ```
+
+1. Deploy the exporter
+
+    ```bash
+    PROMETHEUS_RDS_EXPORTER_VERSION=0.16.0 # Replace with latest version
+
+    helm upgrade \
+    prometheus-rds-exporter \
+    oci://public.ecr.aws/qonto/prometheus-rds-exporter-chart \
+    --version ${PROMETHEUS_RDS_EXPORTER_VERSION} \
+    --install \
+    --namespace ${KUBERNETES_NAMESPACE} \
+    --set serviceAccount.name="${KUBERNETES_SERVICE_ACCOUNT_NAME}"
+    ```
+
+1. Option. Customize Prometheus exporter settings
+
+    Download Helm chart default values
+
+    ```bash
+    helm show values oci://public.ecr.aws/qonto/prometheus-rds-exporter-chart --version ${PROMETHEUS_RDS_EXPORTER_VERSION} > values.yaml
+    ```
+
+    Customize settings
+
+    ```bash
+    vim values.yaml
+    ```
+
+    <details>
+    <summary>Example to enable debug via PROMETHEUS_RDS_EXPORTER_DEBUG environment variable</summary>
+
+    ```bash
+    yq --inplace '.env += {"PROMETHEUS_RDS_EXPORTER_DEBUG": "true"}' values.yaml
+    ```
+
+    </details>
+
+    Update Helm deployment:
+
+    ```bash
+    helm upgrade \
+    prometheus-rds-exporter \
+    oci://public.ecr.aws/qonto/prometheus-rds-exporter-chart \
+    --version ${PROMETHEUS_RDS_EXPORTER_VERSION} \
+    --install \
+    --namespace ${KUBERNETES_NAMESPACE} \
+    --set serviceAccount.name="${KUBERNETES_SERVICE_ACCOUNT_NAME}" \
+    --values values.yaml
+    ```
+
+#### IRSA
+
+Steps to install using [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html) and Helm.
 
 > [!IMPORTANT]
 > You need a [Prometheus Operator](https://github.com/prometheus-operator/prometheus-operator) already installed in your cluster.
