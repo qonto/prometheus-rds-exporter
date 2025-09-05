@@ -539,7 +539,7 @@ Steps to install using [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/i
 1. Deploy the exporter
 
     ```bash
-    PROMETHEUS_RDS_EXPORTER_VERSION=0.3.0 # Replace with latest version
+    PROMETHEUS_RDS_EXPORTER_VERSION=0.16.0 # Replace with latest version
     SERVICE_ACCOUNT_ANNOTATION="arn:aws:iam::${AWS_ACCOUNT_ID}:role/${IAM_ROLE_NAME}"
 
     helm upgrade \
@@ -661,7 +661,7 @@ Steps to install using [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/i
 1. Download the Debian package
 
     ```bash
-    PROMETHEUS_RDS_EXPORTER_VERSION=0.3.0 # Replace with latest version
+    PROMETHEUS_RDS_EXPORTER_VERSION=0.16.0 # Replace with latest version
 
     PACKAGE_NAME=prometheus-rds-exporter_${PROMETHEUS_RDS_EXPORTER_VERSION}_$(uname -m).deb
     wget https://github.com/qonto/prometheus-rds-exporter/releases/download/${PROMETHEUS_RDS_EXPORTER_VERSION}/${PACKAGE_NAME}
@@ -693,7 +693,7 @@ Steps to install using [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/i
 1. Binary
 
     ```bash
-    PROMETHEUS_RDS_EXPORTER_VERSION=0.3.0 # Replace with latest version
+    PROMETHEUS_RDS_EXPORTER_VERSION=0.16.0 # Replace with latest version
     TARBALL_NAME=prometheus-rds-exporter_Linux_$(uname -m).tar.gz
 
     wget https://github.com/qonto/prometheus-rds-exporter/releases/download/${PROMETHEUS_RDS_EXPORTER_VERSION}/${TARBALL_NAME}
