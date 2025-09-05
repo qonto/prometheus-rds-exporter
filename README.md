@@ -514,6 +514,11 @@ Steps to install using [IRSA](https://docs.aws.amazon.com/eks/latest/userguide/i
     aws iam create-policy --policy-name ${IAM_POLICY_NAME} --policy-document file:///tmp/prometheus-rds-exporter.policy.json
     ```
 
+1. Login on AWS public ECR
+
+    ```bash
+    aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws    ```
+
 1. Create and attach an IAM role to your EKS cluster
 
     [eksctl](https://eksctl.io) will create an IAM role and a Kubernetes Service account
