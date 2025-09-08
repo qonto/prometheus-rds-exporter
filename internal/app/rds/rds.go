@@ -252,6 +252,7 @@ type RDSClient interface {
 	DescribeDBClusters(ctx context.Context, params *aws_rds.DescribeDBClustersInput, optFns ...func(*aws_rds.Options)) (*aws_rds.DescribeDBClustersOutput, error)
 	DescribePendingMaintenanceActions(context.Context, *aws_rds.DescribePendingMaintenanceActionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribePendingMaintenanceActionsOutput, error)
 	DescribeDBLogFiles(context.Context, *aws_rds.DescribeDBLogFilesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBLogFilesOutput, error)
+	DescribeDBEngineVersions(ctx context.Context, params *aws_rds.DescribeDBEngineVersionsInput, optFns ...func(*aws_rds.Options)) (*aws_rds.DescribeDBEngineVersionsOutput, error)
 }
 
 func NewFetcher(ctx context.Context, client RDSClient, tagClient resourcegroupstaggingapi.GetResourcesAPIClient, logger slog.Logger, configuration Configuration) RDSFetcher {

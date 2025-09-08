@@ -18,6 +18,7 @@ type RDSClient struct {
 	DescribeDBLogFilesOutput                *aws_rds.DescribeDBLogFilesOutput
 	DescribeDBLogFilesOutputError           error
 	DescribePendingMaintenanceActionsOutput *aws_rds.DescribePendingMaintenanceActionsOutput
+	DescribeDBEngineVersionsOutput          *aws_rds.DescribeDBEngineVersionsOutput
 	Error                                   error
 }
 
@@ -34,6 +35,9 @@ func NewRDSClient() *RDSClient {
 		},
 		DescribePendingMaintenanceActionsOutput: &aws_rds.DescribePendingMaintenanceActionsOutput{
 			PendingMaintenanceActions: []aws_rds_types.ResourcePendingMaintenanceActions{},
+		},
+		DescribeDBEngineVersionsOutput: &aws_rds.DescribeDBEngineVersionsOutput{
+			DBEngineVersions: []aws_rds_types.DBEngineVersion{},
 		},
 	}
 
@@ -90,6 +94,10 @@ func (m RDSClient) DescribeDBLogFiles(ctx context.Context, input *aws_rds.Descri
 
 func (m RDSClient) DescribeDBInstances(context.Context, *aws_rds.DescribeDBInstancesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBInstancesOutput, error) {
 	return m.DescribeDBInstancesOutput, nil
+}
+
+func (m RDSClient) DescribeDBEngineVersions(context.Context, *aws_rds.DescribeDBEngineVersionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBEngineVersionsOutput, error) {
+	return m.DescribeDBEngineVersionsOutput, nil
 }
 
 // RandomString returns a random alphanumeric string of the specified length
