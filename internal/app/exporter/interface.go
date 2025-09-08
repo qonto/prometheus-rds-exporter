@@ -15,6 +15,7 @@ type rdsClient interface {
 	DescribePendingMaintenanceActions(context.Context, *aws_rds.DescribePendingMaintenanceActionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribePendingMaintenanceActionsOutput, error)
 	DescribeDBLogFiles(context.Context, *aws_rds.DescribeDBLogFilesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBLogFilesOutput, error)
 	DescribeDBEngineVersions(context.Context, *aws_rds.DescribeDBEngineVersionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBEngineVersionsOutput, error)
+	DescribeDBMajorEngineVersions(context.Context, *aws_rds.DescribeDBMajorEngineVersionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBMajorEngineVersionsOutput, error)
 }
 
 type EC2Client interface {

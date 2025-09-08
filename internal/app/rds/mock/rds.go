@@ -19,6 +19,8 @@ type RDSClient struct {
 	DescribeDBLogFilesOutputError           error
 	DescribePendingMaintenanceActionsOutput *aws_rds.DescribePendingMaintenanceActionsOutput
 	DescribeDBEngineVersionsOutput          *aws_rds.DescribeDBEngineVersionsOutput
+	DescribeDBMajorEngineVersionsOutput     *aws_rds.DescribeDBMajorEngineVersionsOutput
+	DescribeDBMajorEngineVersionsCallCount  int
 	Error                                   error
 }
 
@@ -38,6 +40,9 @@ func NewRDSClient() *RDSClient {
 		},
 		DescribeDBEngineVersionsOutput: &aws_rds.DescribeDBEngineVersionsOutput{
 			DBEngineVersions: []aws_rds_types.DBEngineVersion{},
+		},
+		DescribeDBMajorEngineVersionsOutput: &aws_rds.DescribeDBMajorEngineVersionsOutput{
+			DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{},
 		},
 	}
 
@@ -74,6 +79,16 @@ func (m *RDSClient) WithLogFilesOutputError(output error) *RDSClient {
 	return m
 }
 
+func (m *RDSClient) WithDescribeDBMajorEngineVersionsOutput(output *aws_rds.DescribeDBMajorEngineVersionsOutput) *RDSClient {
+	m.DescribeDBMajorEngineVersionsOutput = output
+
+	return m
+}
+
+func (m *RDSClient) GetDescribeDBMajorEngineVersionsCallCount() int {
+	return m.DescribeDBMajorEngineVersionsCallCount
+}
+
 func (m RDSClient) DescribeDBClusters(ctx context.Context, params *aws_rds.DescribeDBClustersInput, optFns ...func(*aws_rds.Options)) (*aws_rds.DescribeDBClustersOutput, error) {
 	return m.DescribeDBClustersOutput, nil
 }
@@ -98,6 +113,11 @@ func (m RDSClient) DescribeDBInstances(context.Context, *aws_rds.DescribeDBInsta
 
 func (m RDSClient) DescribeDBEngineVersions(context.Context, *aws_rds.DescribeDBEngineVersionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBEngineVersionsOutput, error) {
 	return m.DescribeDBEngineVersionsOutput, nil
+}
+
+func (m *RDSClient) DescribeDBMajorEngineVersions(context.Context, *aws_rds.DescribeDBMajorEngineVersionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBMajorEngineVersionsOutput, error) {
+	m.DescribeDBMajorEngineVersionsCallCount++
+	return m.DescribeDBMajorEngineVersionsOutput, nil
 }
 
 // RandomString returns a random alphanumeric string of the specified length
