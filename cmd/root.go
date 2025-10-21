@@ -53,6 +53,7 @@ type exporterConfig struct {
 	CollectLogsSize           bool                `koanf:"collect-logs-size"`
 	CollectServerlessLogsSize bool                `koanf:"collect-serverless-logs-size"`
 	CollectMaintenances       bool                `koanf:"collect-maintenances"`
+	CollectClusterMetrics     bool                `koanf:"collect-cluster-metrics"`
 	CollectQuotas             bool                `koanf:"collect-quotas"`
 	CollectUsages             bool                `koanf:"collect-usages"`
 	OTELTracesEnabled         bool                `koanf:"enable-otel-traces"`
@@ -99,6 +100,7 @@ func run(configuration exporterConfig) {
 		CollectLogsSize:           configuration.CollectLogsSize,
 		CollectServerlessLogsSize: configuration.CollectServerlessLogsSize,
 		CollectMaintenances:       configuration.CollectMaintenances,
+		CollectClusterMetrics:     configuration.CollectClusterMetrics,
 		CollectQuotas:             configuration.CollectQuotas,
 		CollectUsages:             configuration.CollectUsages,
 		TagSelections:             configuration.TagSelections,

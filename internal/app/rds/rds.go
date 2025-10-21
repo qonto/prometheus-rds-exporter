@@ -27,6 +27,7 @@ type Configuration struct {
 	CollectLogsSize           bool
 	CollectServerlessLogsSize bool
 	CollectMaintenances       bool
+	CollectClusterMetrics     bool
 	TagSelections             map[string][]string
 }
 
@@ -420,14 +421,19 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 		return Metrics{}, err
 	}
 
-	clusterFilters, err := r.getDBClusterFilters(ctx)
-	if err != nil {
-		return Metrics{}, err
-	}
+	var clusterMetrics map[string]ClusterMetrics
+	if r.configuration.CollectClusterMetrics {
+		clusterFilters, err := r.getDBClusterFilters(ctx)
+		if err != nil {
+			return Metrics{}, err
+		}
 
-	clusterMetrics, err := r.getClusters(ctx, clusterFilters)
-	if err != nil {
-		return Metrics{}, fmt.Errorf("can't get cluster metrics: %w", err)
+		clusterMetrics, err = r.getClusters(ctx, clusterFilters)
+		if err != nil {
+			return Metrics{}, fmt.Errorf("can't get cluster metrics: %w", err)
+		}
+	} else {
+		clusterMetrics = make(map[string]ClusterMetrics)
 	}
 
 	input := &aws_rds.DescribeDBInstancesInput{Filters: instanceFilters}
