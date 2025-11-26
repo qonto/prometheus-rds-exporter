@@ -35,6 +35,8 @@ type Metrics struct {
 	DBinstances               float64
 	TotalStorage              float64
 	ManualDBInstanceSnapshots float64
+	// The AWS region these quotas are from
+	Region string
 }
 
 type Statistics struct {
@@ -108,7 +110,7 @@ func (s *serviceQuotaFetcher) getQuota(serviceCode string, quotaCode string) (fl
 }
 
 // GetRDSQuotas retrieves quotas for the AWS RDS service
-func (s *serviceQuotaFetcher) GetRDSQuotas() (Metrics, error) {
+func (s *serviceQuotaFetcher) GetRDSQuotas(region string) (Metrics, error) {
 	DBinstances, err := s.getQuota(RDSServiceCode, DBinstancesQuotacode)
 	if err != nil {
 		return Metrics{}, fmt.Errorf("can't fetch DBinstance quota: %w", err)
@@ -128,5 +130,6 @@ func (s *serviceQuotaFetcher) GetRDSQuotas() (Metrics, error) {
 		DBinstances:               DBinstances,
 		TotalStorage:              converter.GigaBytesToBytes(totalStorage),
 		ManualDBInstanceSnapshots: manualDBInstanceSnapshots,
+		Region:                    region,
 	}, nil
 }
