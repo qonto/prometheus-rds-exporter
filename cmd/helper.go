@@ -54,3 +54,10 @@ func getAWSSessionInformation(cfg aws.Config) (string, string, error) {
 
 	return *output.Account, cfg.Region, nil
 }
+
+func createRegionConfig(baseConfig aws.Config, region string) aws.Config {
+	// Create a copy of the base config and override the region
+	regionConfig := baseConfig.Copy()
+	regionConfig.Region = region
+	return regionConfig
+}

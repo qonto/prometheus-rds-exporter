@@ -30,6 +30,7 @@ const (
 var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/exporter")
 
 type Configuration struct {
+	Regions                   []string
 	CollectInstanceMetrics    bool
 	CollectInstanceTags       bool
 	CollectInstanceTypes      bool
@@ -52,7 +53,7 @@ type counters struct {
 }
 
 type metrics struct {
-	ServiceQuota        servicequotas.Metrics
+	ServiceQuota        map[string]servicequotas.Metrics // map[region]metrics for multi-region support
 	RDS                 rds.Metrics
 	EC2                 ec2.Metrics
 	CloudwatchInstances cloudwatch.CloudWatchMetrics
@@ -69,11 +70,15 @@ type rdsCollector struct {
 	awsRegion     string
 	configuration Configuration
 
-	rdsClient           rdsClient
-	EC2Client           EC2Client
-	servicequotasClient servicequotasClient
-	cloudWatchClient    cloudWatchClient
-	tagClient           resourcegroupstaggingapi.GetResourcesAPIClient
+	rdsClient                    rdsClient
+	rdsRegionClients             map[string]interface{}  // Per-region RDS clients for multi-region support
+	EC2Client                    EC2Client
+	ec2RegionClients             map[string]interface{}  // Per-region EC2 clients for multi-region support
+	servicequotasClient          servicequotasClient
+	servicequotasRegionClients   map[string]interface{}  // Per-region ServiceQuotas clients for multi-region support
+	cloudWatchClient             cloudWatchClient
+	cloudWatchRegionClients      map[string]interface{}  // Per-region CloudWatch clients for multi-region support
+	tagClient                    resourcegroupstaggingapi.GetResourcesAPIClient
 
 	errors                      *prometheus.Desc
 	DBLoad                      *prometheus.Desc
@@ -126,16 +131,20 @@ type rdsCollector struct {
 	age                         *prometheus.Desc
 }
 
-func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient, tagClient resourcegroupstaggingapi.GetResourcesAPIClient) *rdsCollector {
+func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient, tagClient resourcegroupstaggingapi.GetResourcesAPIClient, rdsRegionClients map[string]interface{}, cloudWatchRegionClients map[string]interface{}, ec2RegionClients map[string]interface{}, servicequotasRegionClients map[string]interface{}) *rdsCollector {
 	return &rdsCollector{
-		logger:              logger,
-		awsAccountID:        awsAccountID,
-		awsRegion:           awsRegion,
-		rdsClient:           rdsClient,
-		servicequotasClient: servicequotasClient,
-		EC2Client:           ec2Client,
-		cloudWatchClient:    cloudWatchClient,
-		tagClient:           tagClient,
+		logger:                      logger,
+		awsAccountID:                awsAccountID,
+		awsRegion:                   awsRegion,
+		rdsClient:                   rdsClient,
+		rdsRegionClients:            rdsRegionClients,
+		servicequotasClient:         servicequotasClient,
+		servicequotasRegionClients:  servicequotasRegionClients,
+		EC2Client:                   ec2Client,
+		ec2RegionClients:            ec2RegionClients,
+		cloudWatchClient:            cloudWatchClient,
+		cloudWatchRegionClients:     cloudWatchRegionClients,
+		tagClient:                   tagClient,
 
 		configuration: collectorConfiguration,
 
@@ -394,13 +403,13 @@ func (c *rdsCollector) fetchMetrics() error {
 
 	// Fetch serviceQuotas metrics
 	if c.configuration.CollectQuotas {
-		go c.getQuotasMetrics(c.servicequotasClient)
+		go c.getQuotasMetrics()
 		c.wg.Add(1)
 	}
 
 	// Fetch usages metrics
 	if c.configuration.CollectUsages {
-		go c.getUsagesMetrics(c.cloudWatchClient)
+		go c.getUsagesMetrics()
 		c.wg.Add(1)
 	}
 
@@ -408,11 +417,17 @@ func (c *rdsCollector) fetchMetrics() error {
 	c.logger.Debug("get RDS metrics")
 
 	rdsFetcher := rds.NewFetcher(c.ctx, c.rdsClient, c.tagClient, c.logger, rds.Configuration{
+		Regions:                   c.configuration.Regions,
 		CollectLogsSize:           c.configuration.CollectLogsSize,
 		CollectServerlessLogsSize: c.configuration.CollectServerlessLogsSize,
 		CollectMaintenances:       c.configuration.CollectMaintenances,
 		TagSelections:             c.configuration.TagSelections,
 	})
+
+	// Set per-region clients for multi-region support
+	if len(c.rdsRegionClients) > 0 {
+		rdsFetcher.SetRegionClients(c.rdsRegionClients)
+	}
 
 	rdsMetrics, err := rdsFetcher.GetInstancesMetrics()
 	if err != nil {
@@ -429,13 +444,13 @@ func (c *rdsCollector) fetchMetrics() error {
 
 	// Fetch EC2 Metrics for instance types
 	if c.configuration.CollectInstanceTypes && len(instanceTypes) > 0 {
-		go c.getEC2Metrics(c.EC2Client, instanceTypes)
+		go c.getEC2Metrics(instanceTypes)
 		c.wg.Add(1)
 	}
 
 	// Fetch Cloudwatch metrics for instances
 	if c.configuration.CollectInstanceMetrics {
-		go c.getCloudwatchMetrics(c.cloudWatchClient, instanceIdentifiers)
+		go c.getCloudwatchMetrics(instanceIdentifiers)
 		c.wg.Add(1)
 	}
 
@@ -445,31 +460,93 @@ func (c *rdsCollector) fetchMetrics() error {
 	return nil
 }
 
-func (c *rdsCollector) getCloudwatchMetrics(client cloudwatch.CloudWatchClient, instanceIdentifiers []string) {
+func (c *rdsCollector) getCloudwatchMetrics(instanceIdentifiers []string) {
 	defer c.wg.Done()
 	c.logger.Debug("fetch cloudwatch metrics")
 
 	_, span := tracer.Start(c.ctx, "collect-cloudwatch-metrics")
 	defer span.End()
 
-	fetcher := cloudwatch.NewRDSFetcher(client, c.logger)
+	// Aggregate metrics from all regions
+	aggregatedMetrics := make(map[string]*cloudwatch.RdsMetrics)
 
-	metrics, err := fetcher.GetRDSInstanceMetrics(instanceIdentifiers)
-	if err != nil {
-		c.counters.Errors++
+	// Get regions to scan
+	regionsToScan := c.configuration.Regions
+	if len(regionsToScan) == 0 {
+		regionsToScan = []string{c.awsRegion}
 	}
 
-	c.counters.CloudwatchAPICalls += fetcher.GetStatistics().CloudWatchAPICall
-	c.metrics.CloudwatchInstances = metrics
+	// Iterate through regions and fetch metrics
+	for _, region := range regionsToScan {
+		var clientToUse cloudwatch.CloudWatchClient = c.cloudWatchClient
 
-	c.logger.Debug("cloudwatch metrics fetched", "metrics", metrics)
+		// Use region-specific client if available
+		if region != c.awsRegion && len(c.cloudWatchRegionClients) > 0 {
+			if regionClientInterface, exists := c.cloudWatchRegionClients[region]; exists {
+				if regionClient, ok := regionClientInterface.(cloudwatch.CloudWatchClient); ok {
+					clientToUse = regionClient
+					c.logger.Debug("querying cloudwatch for region", "region", region)
+				} else {
+					c.logger.Warn("failed to cast cloudwatch region client, skipping region", "region", region)
+					continue
+				}
+			}
+		}
+
+		fetcher := cloudwatch.NewRDSFetcher(clientToUse, c.logger)
+		metrics, err := fetcher.GetRDSInstanceMetrics(instanceIdentifiers)
+		if err != nil {
+			c.counters.Errors++
+			c.logger.Error(fmt.Sprintf("failed to fetch cloudwatch metrics for region %s: %s", region, err))
+			continue
+		}
+
+		c.counters.CloudwatchAPICalls += fetcher.GetStatistics().CloudWatchAPICall
+
+		// Aggregate metrics and set region
+		for identifier, metric := range metrics.Instances {
+			if region != "" {
+				metric.Region = region
+				// Use region:identifier as key to avoid collisions when same instance name exists in multiple regions
+				aggregatedMetrics[region+":"+identifier] = metric
+			} else {
+				aggregatedMetrics[identifier] = metric
+			}
+		}
+	}
+
+	c.metrics.CloudwatchInstances = cloudwatch.CloudWatchMetrics{
+		Instances: aggregatedMetrics,
+	}
+
+	c.logger.Debug("cloudwatch metrics fetched", "metrics", c.metrics.CloudwatchInstances)
 }
 
-func (c *rdsCollector) getUsagesMetrics(client cloudwatch.CloudWatchClient) {
+func (c *rdsCollector) getUsagesMetrics() {
 	defer c.wg.Done()
 	c.logger.Debug("fetch usage metrics")
 
-	fetcher := cloudwatch.NewUsageFetcher(c.ctx, client, c.logger)
+	// Note: Usage metrics are regional - we aggregate from the primary region
+	// Get regions to scan
+	regionsToScan := c.configuration.Regions
+	if len(regionsToScan) == 0 {
+		regionsToScan = []string{c.awsRegion}
+	}
+
+	// Use the first configured region (or the current region if none configured)
+	var clientToUse cloudwatch.CloudWatchClient = c.cloudWatchClient
+	primaryRegion := regionsToScan[0]
+
+	if primaryRegion != c.awsRegion && len(c.cloudWatchRegionClients) > 0 {
+		if regionClientInterface, exists := c.cloudWatchRegionClients[primaryRegion]; exists {
+			if regionClient, ok := regionClientInterface.(cloudwatch.CloudWatchClient); ok {
+				clientToUse = regionClient
+				c.logger.Debug("querying usage metrics for region", "region", primaryRegion)
+			}
+		}
+	}
+
+	fetcher := cloudwatch.NewUsageFetcher(c.ctx, clientToUse, c.logger)
 
 	metrics, err := fetcher.GetUsageMetrics()
 	if err != nil {
@@ -483,25 +560,66 @@ func (c *rdsCollector) getUsagesMetrics(client cloudwatch.CloudWatchClient) {
 	c.logger.Debug("usage metrics fetched", "metrics", metrics)
 }
 
-func (c *rdsCollector) getEC2Metrics(client ec2.EC2Client, instanceTypes []string) {
+func (c *rdsCollector) getEC2Metrics(instanceTypes []string) {
 	defer c.wg.Done()
 	c.logger.Debug("fetch EC2 metrics")
 
-	fetcher := ec2.NewFetcher(c.ctx, client)
+	// Aggregate metrics from all regions
+	aggregatedMetrics := make(map[string]ec2.EC2InstanceMetrics)
 
-	metrics, err := fetcher.GetDBInstanceTypeInformation(instanceTypes)
-	if err != nil {
-		c.counters.Errors++
-		c.logger.Error(fmt.Sprintf("can't fetch EC2 metrics: %s", err))
+	// Get regions to scan
+	regionsToScan := c.configuration.Regions
+	if len(regionsToScan) == 0 {
+		regionsToScan = []string{c.awsRegion}
 	}
 
-	c.counters.EC2APIcalls += fetcher.GetStatistics().EC2ApiCall
-	c.metrics.EC2 = metrics
+	// Iterate through regions and fetch metrics
+	for _, region := range regionsToScan {
+		var clientToUse ec2.EC2Client = c.EC2Client
 
-	c.logger.Debug("EC2 metrics fetched", "metrics", metrics)
+		// Use region-specific client if available
+		if region != c.awsRegion && len(c.ec2RegionClients) > 0 {
+			if regionClientInterface, exists := c.ec2RegionClients[region]; exists {
+				if regionClient, ok := regionClientInterface.(ec2.EC2Client); ok {
+					clientToUse = regionClient
+					c.logger.Debug("querying EC2 for region", "region", region)
+				} else {
+					c.logger.Warn("failed to cast EC2 region client, skipping region", "region", region)
+					continue
+				}
+			}
+		}
+
+		fetcher := ec2.NewFetcher(c.ctx, clientToUse)
+		metrics, err := fetcher.GetDBInstanceTypeInformation(region, instanceTypes)
+		if err != nil {
+			c.counters.Errors++
+			c.logger.Error(fmt.Sprintf("can't fetch EC2 metrics for region %s: %s", region, err))
+			continue
+		}
+
+		c.counters.EC2APIcalls += fetcher.GetStatistics().EC2ApiCall
+
+		// Aggregate metrics with region-aware key to avoid collisions
+		for instanceType, metric := range metrics.Instances {
+			if region != "" {
+				metric.Region = region
+				// Use region:instanceType as key to avoid collisions when same instance type exists in multiple regions
+				aggregatedMetrics[region+":"+instanceType] = metric
+			} else {
+				aggregatedMetrics[instanceType] = metric
+			}
+		}
+	}
+
+	c.metrics.EC2 = ec2.Metrics{
+		Instances: aggregatedMetrics,
+	}
+
+	c.logger.Debug("EC2 metrics fetched", "metrics", c.metrics.EC2)
 }
 
-func (c *rdsCollector) getQuotasMetrics(client servicequotas.ServiceQuotasClient) {
+func (c *rdsCollector) getQuotasMetrics() {
 	defer c.wg.Done()
 
 	ctx, span := tracer.Start(c.ctx, "collect-quota-metrics")
@@ -509,18 +627,50 @@ func (c *rdsCollector) getQuotasMetrics(client servicequotas.ServiceQuotasClient
 
 	c.logger.Debug("fetch quotas")
 
-	fetcher := servicequotas.NewFetcher(ctx, client, c.logger)
-
-	metrics, err := fetcher.GetRDSQuotas()
-	if err != nil {
-		c.counters.Errors++
-		c.logger.Error(fmt.Sprintf("can't fetch service quota metrics: %s", err))
-		span.SetStatus(codes.Error, "can't fetch service quota metrics")
-		span.RecordError(err)
+	// ServiceQuotas are regional - query all configured regions
+	// Get regions to scan
+	regionsToScan := c.configuration.Regions
+	if len(regionsToScan) == 0 {
+		regionsToScan = []string{c.awsRegion}
 	}
 
-	c.counters.ServiceQuotasAPICalls += fetcher.GetStatistics().UsageAPICall
-	c.metrics.ServiceQuota = metrics
+	// Aggregate metrics from all regions
+	aggregatedMetrics := make(map[string]servicequotas.Metrics)
+
+	// Iterate through regions and fetch metrics
+	for _, region := range regionsToScan {
+		var clientToUse servicequotas.ServiceQuotasClient = c.servicequotasClient
+
+		// Use region-specific client if available
+		if region != c.awsRegion && len(c.servicequotasRegionClients) > 0 {
+			if regionClientInterface, exists := c.servicequotasRegionClients[region]; exists {
+				if regionClient, ok := regionClientInterface.(servicequotas.ServiceQuotasClient); ok {
+					clientToUse = regionClient
+					c.logger.Debug("querying service quotas for region", "region", region)
+				} else {
+					c.logger.Warn("failed to cast ServiceQuotas region client, skipping region", "region", region)
+					continue
+				}
+			}
+		}
+
+		fetcher := servicequotas.NewFetcher(ctx, clientToUse, c.logger)
+
+		metrics, err := fetcher.GetRDSQuotas(region)
+		if err != nil {
+			c.counters.Errors++
+			c.logger.Error(fmt.Sprintf("can't fetch service quota metrics for region %s: %s", region, err))
+			span.RecordError(err)
+			continue
+		}
+
+		c.counters.ServiceQuotasAPICalls += fetcher.GetStatistics().UsageAPICall
+
+		// Use region as key
+		aggregatedMetrics[region] = metrics
+	}
+
+	c.metrics.ServiceQuota = aggregatedMetrics
 
 	span.SetStatus(codes.Ok, "quota fetched")
 }
@@ -579,36 +729,48 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 
 	// Cluster metrics
 	for clusterIdentifier, cluster := range c.metrics.RDS.Clusters {
+		// Use the region from the cluster metrics if available, fall back to deployment region
+		clusterRegion := cluster.Region
+		if clusterRegion == "" {
+			clusterRegion = c.awsRegion
+		}
+
 		ch <- prometheus.MustNewConstMetric(
 			c.clusterInformation,
 			prometheus.GaugeValue,
 			1,
 			c.awsAccountID,
-			c.awsRegion,
+			clusterRegion,
 			clusterIdentifier,
 			cluster.DBClusterResourceID,
 			cluster.Engine,
 			cluster.EngineVersion,
 			cluster.Arn,
 		)
-		ch <- prometheus.MustNewConstMetric(c.clusterServerLessMaxACU, prometheus.GaugeValue, cluster.ServerLessMaxACU, c.awsAccountID, c.awsRegion, clusterIdentifier)
-		ch <- prometheus.MustNewConstMetric(c.clusterServerLessMinACU, prometheus.GaugeValue, cluster.ServerLessMinACU, c.awsAccountID, c.awsRegion, clusterIdentifier)
+		ch <- prometheus.MustNewConstMetric(c.clusterServerLessMaxACU, prometheus.GaugeValue, cluster.ServerLessMaxACU, c.awsAccountID, clusterRegion, clusterIdentifier)
+		ch <- prometheus.MustNewConstMetric(c.clusterServerLessMinACU, prometheus.GaugeValue, cluster.ServerLessMinACU, c.awsAccountID, clusterRegion, clusterIdentifier)
 	}
 
 	// Instance metrics
 	for dbidentifier, instance := range c.metrics.RDS.Instances {
+		// Use the region from the instance metrics if available, fall back to deployment region
+		instanceRegion := instance.Region
+		if instanceRegion == "" {
+			instanceRegion = c.awsRegion
+		}
+
 		ch <- prometheus.MustNewConstMetric(
 			c.allocatedStorage,
 			prometheus.GaugeValue,
 			float64(instance.AllocatedStorage),
-			c.awsAccountID, c.awsRegion, dbidentifier,
+			c.awsAccountID, instanceRegion, dbidentifier,
 		)
 		ch <- prometheus.MustNewConstMetric(
 			c.information,
 			prometheus.GaugeValue,
 			1,
 			c.awsAccountID,
-			c.awsRegion,
+			instanceRegion,
 			dbidentifier,
 			instance.DbiResourceID,
 			instance.DBClusterIdentifier,
@@ -628,25 +790,35 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		)
 
 		if instance.MaxAllocatedStorage > 0 {
-			ch <- prometheus.MustNewConstMetric(c.maxAllocatedStorage, prometheus.GaugeValue, float64(instance.MaxAllocatedStorage), c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.maxAllocatedStorage, prometheus.GaugeValue, float64(instance.MaxAllocatedStorage), c.awsAccountID, instanceRegion, dbidentifier)
 		}
 
 		if instance.MaxIops > 0 {
-			ch <- prometheus.MustNewConstMetric(c.allocatedDiskIOPS, prometheus.GaugeValue, float64(instance.MaxIops), c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.allocatedDiskIOPS, prometheus.GaugeValue, float64(instance.MaxIops), c.awsAccountID, instanceRegion, dbidentifier)
 		}
 
 		if instance.StorageThroughput > 0 {
-			ch <- prometheus.MustNewConstMetric(c.allocatedDiskThroughput, prometheus.GaugeValue, float64(instance.StorageThroughput), c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.allocatedDiskThroughput, prometheus.GaugeValue, float64(instance.StorageThroughput), c.awsAccountID, instanceRegion, dbidentifier)
 		}
 
-		ch <- prometheus.MustNewConstMetric(c.status, prometheus.GaugeValue, float64(instance.Status), c.awsAccountID, c.awsRegion, dbidentifier)
-		ch <- prometheus.MustNewConstMetric(c.backupRetentionPeriod, prometheus.GaugeValue, float64(instance.BackupRetentionPeriod), c.awsAccountID, c.awsRegion, dbidentifier)
+		ch <- prometheus.MustNewConstMetric(c.status, prometheus.GaugeValue, float64(instance.Status), c.awsAccountID, instanceRegion, dbidentifier)
+		ch <- prometheus.MustNewConstMetric(c.backupRetentionPeriod, prometheus.GaugeValue, float64(instance.BackupRetentionPeriod), c.awsAccountID, instanceRegion, dbidentifier)
 
 		maxIops := instance.MaxIops
 		storageThroughput := float64(instance.StorageThroughput)
 
 		// RDS disk performance are limited by the EBS volume attached the RDS instance
-		if ec2Metrics, ok := c.metrics.EC2.Instances[instance.DBInstanceClass]; ok {
+		// Try to find EC2 metrics for this instance class - try both composite key and simple key
+		ec2LookupKey := instance.DBInstanceClass
+		if instanceRegion != "" {
+			// First try the region-specific composite key
+			ec2LookupKey = instanceRegion + ":" + instance.DBInstanceClass
+			if _, ok := c.metrics.EC2.Instances[ec2LookupKey]; !ok {
+				// Fall back to simple key if composite key not found
+				ec2LookupKey = instance.DBInstanceClass
+			}
+		}
+		if ec2Metrics, ok := c.metrics.EC2.Instances[ec2LookupKey]; ok {
 			if instance.MaxIops > 0 {
 				maxIops = min(instance.MaxIops, int64(ec2Metrics.BaselineIOPS))
 			} else {
@@ -661,11 +833,11 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		}
 
 		if maxIops > 0 {
-			ch <- prometheus.MustNewConstMetric(c.maxIops, prometheus.GaugeValue, float64(maxIops), c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.maxIops, prometheus.GaugeValue, float64(maxIops), c.awsAccountID, instanceRegion, dbidentifier)
 		}
 
 		if storageThroughput > 0 {
-			ch <- prometheus.MustNewConstMetric(c.storageThroughput, prometheus.GaugeValue, storageThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.storageThroughput, prometheus.GaugeValue, storageThroughput, c.awsAccountID, instanceRegion, dbidentifier)
 		}
 
 		if c.configuration.CollectInstanceTags {
@@ -676,88 +848,102 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		}
 
 		if instance.CertificateValidTill != nil {
-			ch <- prometheus.MustNewConstMetric(c.certificateValidTill, prometheus.GaugeValue, float64(instance.CertificateValidTill.Unix()), c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.certificateValidTill, prometheus.GaugeValue, float64(instance.CertificateValidTill.Unix()), c.awsAccountID, instanceRegion, dbidentifier)
 		}
 
 		if instance.Age != nil {
-			ch <- prometheus.MustNewConstMetric(c.age, prometheus.GaugeValue, *instance.Age, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.age, prometheus.GaugeValue, *instance.Age, c.awsAccountID, instanceRegion, dbidentifier)
 		}
 
 		if instance.LogFilesSize != nil {
-			ch <- prometheus.MustNewConstMetric(c.logFilesSize, prometheus.GaugeValue, float64(*instance.LogFilesSize), c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.logFilesSize, prometheus.GaugeValue, float64(*instance.LogFilesSize), c.awsAccountID, instanceRegion, dbidentifier)
 		}
 	}
 
 	// Cloudwatch metrics
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.CloudwatchAPICalls, c.awsAccountID, c.awsRegion, "cloudwatch")
 
-	for dbidentifier, instance := range c.metrics.CloudwatchInstances.Instances {
+	for mapKey, instance := range c.metrics.CloudwatchInstances.Instances {
+		// Extract identifier from composite key (region:identifier)
+		var dbidentifier string
+		if instance.Region != "" && len(mapKey) > len(instance.Region)+1 {
+			// Key is in format "region:identifier", extract just the identifier
+			dbidentifier = mapKey[len(instance.Region)+1:]
+		} else {
+			// Key is just the identifier (for backward compatibility)
+			dbidentifier = mapKey
+		}
+		// Use the region from the CloudWatch metrics if available, fall back to deployment region
+		cwRegion := instance.Region
+		if cwRegion == "" {
+			cwRegion = c.awsRegion
+		}
 		if instance.DatabaseConnections != nil {
-			ch <- prometheus.MustNewConstMetric(c.databaseConnections, prometheus.GaugeValue, *instance.DatabaseConnections, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.databaseConnections, prometheus.GaugeValue, *instance.DatabaseConnections, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.FreeStorageSpace != nil {
-			ch <- prometheus.MustNewConstMetric(c.freeStorageSpace, prometheus.GaugeValue, *instance.FreeStorageSpace, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.freeStorageSpace, prometheus.GaugeValue, *instance.FreeStorageSpace, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.FreeableMemory != nil {
-			ch <- prometheus.MustNewConstMetric(c.freeableMemory, prometheus.GaugeValue, *instance.FreeableMemory, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.freeableMemory, prometheus.GaugeValue, *instance.FreeableMemory, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.MaximumUsedTransactionIDs != nil {
-			ch <- prometheus.MustNewConstMetric(c.maximumUsedTransactionIDs, prometheus.GaugeValue, *instance.MaximumUsedTransactionIDs, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.maximumUsedTransactionIDs, prometheus.GaugeValue, *instance.MaximumUsedTransactionIDs, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.ReadThroughput != nil {
-			ch <- prometheus.MustNewConstMetric(c.readThroughput, prometheus.GaugeValue, *instance.ReadThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.readThroughput, prometheus.GaugeValue, *instance.ReadThroughput, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.ReplicaLag != nil {
-			ch <- prometheus.MustNewConstMetric(c.replicaLag, prometheus.GaugeValue, *instance.ReplicaLag, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.replicaLag, prometheus.GaugeValue, *instance.ReplicaLag, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.ReplicationSlotDiskUsage != nil {
-			ch <- prometheus.MustNewConstMetric(c.replicationSlotDiskUsage, prometheus.GaugeValue, *instance.ReplicationSlotDiskUsage, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.replicationSlotDiskUsage, prometheus.GaugeValue, *instance.ReplicationSlotDiskUsage, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.SwapUsage != nil {
-			ch <- prometheus.MustNewConstMetric(c.swapUsage, prometheus.GaugeValue, *instance.SwapUsage, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.swapUsage, prometheus.GaugeValue, *instance.SwapUsage, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.ReadIOPS != nil {
-			ch <- prometheus.MustNewConstMetric(c.readIOPS, prometheus.GaugeValue, *instance.ReadIOPS, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.readIOPS, prometheus.GaugeValue, *instance.ReadIOPS, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.WriteIOPS != nil {
-			ch <- prometheus.MustNewConstMetric(c.writeIOPS, prometheus.GaugeValue, *instance.WriteIOPS, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.writeIOPS, prometheus.GaugeValue, *instance.WriteIOPS, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.WriteThroughput != nil {
-			ch <- prometheus.MustNewConstMetric(c.writeThroughput, prometheus.GaugeValue, *instance.WriteThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.writeThroughput, prometheus.GaugeValue, *instance.WriteThroughput, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.TransactionLogsDiskUsage != nil {
-			ch <- prometheus.MustNewConstMetric(c.transactionLogsDiskUsage, prometheus.GaugeValue, *instance.TransactionLogsDiskUsage, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.transactionLogsDiskUsage, prometheus.GaugeValue, *instance.TransactionLogsDiskUsage, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.DBLoad != nil {
-			ch <- prometheus.MustNewConstMetric(c.DBLoad, prometheus.GaugeValue, *instance.DBLoad, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.DBLoad, prometheus.GaugeValue, *instance.DBLoad, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.CPUUtilization != nil {
-			ch <- prometheus.MustNewConstMetric(c.cpuUtilisation, prometheus.GaugeValue, *instance.CPUUtilization, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.cpuUtilisation, prometheus.GaugeValue, *instance.CPUUtilization, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.DBLoadCPU != nil {
-			ch <- prometheus.MustNewConstMetric(c.dBLoadCPU, prometheus.GaugeValue, *instance.DBLoadCPU, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.dBLoadCPU, prometheus.GaugeValue, *instance.DBLoadCPU, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.DBLoadNonCPU != nil {
-			ch <- prometheus.MustNewConstMetric(c.dBLoadNonCPU, prometheus.GaugeValue, *instance.DBLoadNonCPU, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.dBLoadNonCPU, prometheus.GaugeValue, *instance.DBLoadNonCPU, c.awsAccountID, cwRegion, dbidentifier)
 		}
 
 		if instance.ServerlessDatabaseCapacity != nil {
-			ch <- prometheus.MustNewConstMetric(c.serverlessDatabaseCapacity, prometheus.GaugeValue, *instance.ServerlessDatabaseCapacity, c.awsAccountID, c.awsRegion, dbidentifier)
+			ch <- prometheus.MustNewConstMetric(c.serverlessDatabaseCapacity, prometheus.GaugeValue, *instance.ServerlessDatabaseCapacity, c.awsAccountID, cwRegion, dbidentifier)
 		}
 	}
 
@@ -771,21 +957,42 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 
 	// EC2 metrics
 	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.EC2APIcalls, c.awsAccountID, c.awsRegion, "ec2")
-	for instanceType, instance := range c.metrics.EC2.Instances {
-		ch <- prometheus.MustNewConstMetric(c.instanceBaselineIops, prometheus.GaugeValue, float64(instance.BaselineIOPS), c.awsAccountID, c.awsRegion, instanceType)
-		ch <- prometheus.MustNewConstMetric(c.instanceBaselineThroughput, prometheus.GaugeValue, instance.BaselineThroughput, c.awsAccountID, c.awsRegion, instanceType)
-		ch <- prometheus.MustNewConstMetric(c.instanceMaximumIops, prometheus.GaugeValue, float64(instance.MaximumIops), c.awsAccountID, c.awsRegion, instanceType)
-		ch <- prometheus.MustNewConstMetric(c.instanceMaximumThroughput, prometheus.GaugeValue, instance.MaximumThroughput, c.awsAccountID, c.awsRegion, instanceType)
-		ch <- prometheus.MustNewConstMetric(c.instanceMemory, prometheus.GaugeValue, float64(instance.Memory), c.awsAccountID, c.awsRegion, instanceType)
-		ch <- prometheus.MustNewConstMetric(c.instanceVCPU, prometheus.GaugeValue, float64(instance.Vcpu), c.awsAccountID, c.awsRegion, instanceType)
+	for mapKey, instance := range c.metrics.EC2.Instances {
+		// Extract instance type from composite key (region:instanceType)
+		var instanceType string
+		if instance.Region != "" && len(mapKey) > len(instance.Region)+1 {
+			// Key is in format "region:instanceType", extract just the instance type
+			instanceType = mapKey[len(instance.Region)+1:]
+		} else {
+			// Key is just the instance type (for backward compatibility)
+			instanceType = mapKey
+		}
+		// Use the region from the EC2 metrics if available, fall back to deployment region
+		ec2Region := instance.Region
+		if ec2Region == "" {
+			ec2Region = c.awsRegion
+		}
+		ch <- prometheus.MustNewConstMetric(c.instanceBaselineIops, prometheus.GaugeValue, float64(instance.BaselineIOPS), c.awsAccountID, ec2Region, instanceType)
+		ch <- prometheus.MustNewConstMetric(c.instanceBaselineThroughput, prometheus.GaugeValue, instance.BaselineThroughput, c.awsAccountID, ec2Region, instanceType)
+		ch <- prometheus.MustNewConstMetric(c.instanceMaximumIops, prometheus.GaugeValue, float64(instance.MaximumIops), c.awsAccountID, ec2Region, instanceType)
+		ch <- prometheus.MustNewConstMetric(c.instanceMaximumThroughput, prometheus.GaugeValue, instance.MaximumThroughput, c.awsAccountID, ec2Region, instanceType)
+		ch <- prometheus.MustNewConstMetric(c.instanceMemory, prometheus.GaugeValue, float64(instance.Memory), c.awsAccountID, ec2Region, instanceType)
+		ch <- prometheus.MustNewConstMetric(c.instanceVCPU, prometheus.GaugeValue, float64(instance.Vcpu), c.awsAccountID, ec2Region, instanceType)
 	}
 
 	// serviceQuotas metrics
 	if c.configuration.CollectQuotas {
 		ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.ServiceQuotasAPICalls, c.awsAccountID, c.awsRegion, "servicequotas")
-		ch <- prometheus.MustNewConstMetric(c.quotaDBInstances, prometheus.GaugeValue, c.metrics.ServiceQuota.DBinstances, c.awsAccountID, c.awsRegion)
-		ch <- prometheus.MustNewConstMetric(c.quotaTotalStorage, prometheus.GaugeValue, c.metrics.ServiceQuota.TotalStorage, c.awsAccountID, c.awsRegion)
-		ch <- prometheus.MustNewConstMetric(c.quotaMaxDBInstanceSnapshots, prometheus.GaugeValue, c.metrics.ServiceQuota.ManualDBInstanceSnapshots, c.awsAccountID, c.awsRegion)
+		// Export metrics for all regions
+		for region, metrics := range c.metrics.ServiceQuota {
+			quotaRegion := region
+			if quotaRegion == "" {
+				quotaRegion = c.awsRegion
+			}
+			ch <- prometheus.MustNewConstMetric(c.quotaDBInstances, prometheus.GaugeValue, metrics.DBinstances, c.awsAccountID, quotaRegion)
+			ch <- prometheus.MustNewConstMetric(c.quotaTotalStorage, prometheus.GaugeValue, metrics.TotalStorage, c.awsAccountID, quotaRegion)
+			ch <- prometheus.MustNewConstMetric(c.quotaMaxDBInstanceSnapshots, prometheus.GaugeValue, metrics.ManualDBInstanceSnapshots, c.awsAccountID, quotaRegion)
+		}
 	}
 }
 

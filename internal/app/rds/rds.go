@@ -23,6 +23,7 @@ import (
 )
 
 type Configuration struct {
+	Regions                   []string
 	CollectLogsSize           bool
 	CollectServerlessLogsSize bool
 	CollectMaintenances       bool
@@ -80,6 +81,9 @@ type ClusterMetrics struct {
 
 	// AWS tags on the cluster.
 	Tags map[string]string
+
+	// The AWS region this cluster is in
+	Region string
 }
 
 type RdsInstanceMetrics struct {
@@ -164,6 +168,9 @@ type RdsInstanceMetrics struct {
 
 	// AWS tags on the cluster.
 	Tags map[string]string
+
+	// The AWS region this instance is in
+	Region string
 }
 
 // DBRole defines the type for database instance roles such as primary, replica, writer or reader.
@@ -261,16 +268,23 @@ func NewFetcher(ctx context.Context, client RDSClient, tagClient resourcegroupst
 		tagClient:     tagClient,
 		logger:        logger,
 		configuration: configuration,
+		regionClients: make(map[string]interface{}),
 	}
 }
 
 type RDSFetcher struct {
 	ctx           context.Context
-	client        RDSClient
+	client        RDSClient                 // Default/primary client
+	regionClients map[string]interface{}    // Per-region clients (using interface{} for flexibility)
 	statistics    Statistics
 	configuration Configuration
 	tagClient     resourcegroupstaggingapi.GetResourcesAPIClient
 	logger        slog.Logger
+}
+
+// SetRegionClients sets the map of region-specific RDS clients
+func (r *RDSFetcher) SetRegionClients(clients map[string]interface{}) {
+	r.regionClients = clients
 }
 
 func (r *RDSFetcher) GetStatistics() Statistics {
@@ -323,12 +337,13 @@ func (r *RDSFetcher) getPendingMaintenances(ctx context.Context) (map[string]str
 	return instances, nil
 }
 
-func (r *RDSFetcher) getClusters(ctx context.Context, filters []aws_rds_types.Filter) (map[string]ClusterMetrics, error) {
+func (r *RDSFetcher) getClusters(ctx context.Context, filters []aws_rds_types.Filter, client RDSClient) (map[string]ClusterMetrics, error) {
 	clusterMetrics := make(map[string]ClusterMetrics)
 
-	inputCluster := &aws_rds.DescribeDBClustersInput{Filters: filters}
+	// Clusters don't support db-instance-id filter, so we create a separate input without instance filters
+	inputCluster := &aws_rds.DescribeDBClustersInput{}
 
-	paginatorCluster := aws_rds.NewDescribeDBClustersPaginator(r.client, inputCluster)
+	paginatorCluster := aws_rds.NewDescribeDBClustersPaginator(client, inputCluster)
 	for paginatorCluster.HasMorePages() {
 		_, span := tracer.Start(ctx, "describe-rds-clusters")
 		defer span.End()
@@ -399,6 +414,7 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 	defer span.End()
 
 	metrics := make(map[string]RdsInstanceMetrics)
+	clusterMetrics := make(map[string]ClusterMetrics)
 
 	var err error
 
@@ -419,43 +435,100 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 		return Metrics{}, err
 	}
 
-	clusterMetrics, err := r.getClusters(ctx, filters)
-	if err != nil {
-		return Metrics{}, fmt.Errorf("can't get cluster metrics: %w", err)
+	// Debug logging for filters
+	if len(filters) > 0 {
+		r.logger.Debug("RDS instance filters configured", "filter_count", len(filters))
+		for _, f := range filters {
+			r.logger.Debug("RDS filter", "name", *f.Name, "value_count", len(f.Values))
+		}
+	} else {
+		r.logger.Debug("No RDS instance filters configured (will query all instances)")
 	}
 
-	input := &aws_rds.DescribeDBInstancesInput{Filters: filters}
+	// Determine which regions to scan
+	regionsToScan := r.configuration.Regions
+	if len(regionsToScan) == 0 {
+		// Fall back to current client's region (single region mode)
+		regionsToScan = []string{""}
+	}
 
-	paginator := aws_rds.NewDescribeDBInstancesPaginator(r.client, input)
-	for paginator.HasMorePages() {
-		instanceCtx, instanceSpan := tracer.Start(ctx, "collect-rds-instances")
-		defer instanceSpan.End()
+	// Iterate through each region
+	for _, region := range regionsToScan {
+		var clientToUse RDSClient = r.client
 
-		r.statistics.RdsAPICall++
-
-		output, err := paginator.NextPage(context.TODO())
-		if err != nil {
-			span.SetStatus(codes.Error, "can't get RDS instances")
-			span.RecordError(err)
-
-			return Metrics{}, fmt.Errorf("can't get RDS instances: %w", err)
+		// If region-specific clients are available, use the one for this region
+		if region != "" && len(r.regionClients) > 0 {
+			if regionClientInterface, exists := r.regionClients[region]; exists {
+				// Cast interface{} to RDSClient
+				if regionClient, ok := regionClientInterface.(RDSClient); ok {
+					clientToUse = regionClient
+					r.logger.Debug("scanning region", "region", region)
+				} else {
+					r.logger.Warn("failed to cast region client, skipping region", "region", region)
+					continue
+				}
+			} else {
+				r.logger.Warn("region client not available, skipping region", "region", region)
+				continue
+			}
 		}
 
-		for _, dbInstance := range output.DBInstances {
-			dbIdentifier := dbInstance.DBInstanceIdentifier
+		// Get clusters for this region
+		regionClusterMetrics, err := r.getClusters(ctx, filters, clientToUse)
+		if err != nil {
+			span.RecordError(err)
+			r.logger.Warn("can't get cluster metrics for region", "region", region, "error", err)
+			// Continue to next region instead of failing completely
+			continue
+		}
 
-			instanceMetrics, err := r.computeInstanceMetrics(instanceCtx, dbInstance, instanceMaintenances, &clusterMetrics)
+		// Merge cluster metrics and set region
+		for k, v := range regionClusterMetrics {
+			if region != "" {
+				v.Region = region
+			}
+			clusterMetrics[k] = v
+		}
+
+		// Get instances for this region
+		input := &aws_rds.DescribeDBInstancesInput{Filters: filters}
+
+		paginator := aws_rds.NewDescribeDBInstancesPaginator(clientToUse, input)
+		for paginator.HasMorePages() {
+			instanceCtx, instanceSpan := tracer.Start(ctx, "collect-rds-instances")
+			defer instanceSpan.End()
+
+			r.statistics.RdsAPICall++
+
+			output, err := paginator.NextPage(context.TODO())
 			if err != nil {
-				span.SetStatus(codes.Error, "can't compute instance metrics")
 				span.RecordError(err)
-
-				return Metrics{}, fmt.Errorf("can't compute instance metrics for %s: %w", *dbIdentifier, err)
+				r.logger.Warn("can't get RDS instances for region", "region", region, "error", err)
+				instanceSpan.SetStatus(codes.Error, "can't get RDS instances")
+				// Continue to next region instead of failing completely
+				break
 			}
 
-			metrics[*dbIdentifier] = instanceMetrics
-		}
+			for _, dbInstance := range output.DBInstances {
+				dbIdentifier := dbInstance.DBInstanceIdentifier
 
-		instanceSpan.SetStatus(codes.Ok, "instance metrics fetch")
+				instanceMetrics, err := r.computeInstanceMetrics(instanceCtx, dbInstance, instanceMaintenances, &clusterMetrics)
+				if err != nil {
+					span.RecordError(err)
+					r.logger.Warn("can't compute instance metrics", "instance", *dbIdentifier, "region", region, "error", err)
+					continue
+				}
+
+				// Set the region for this instance
+				if region != "" {
+					instanceMetrics.Region = region
+				}
+
+				metrics[*dbIdentifier] = instanceMetrics
+			}
+
+			instanceSpan.SetStatus(codes.Ok, "instance metrics fetch")
+		}
 	}
 
 	span.SetStatus(codes.Ok, "metrics fetched")
@@ -466,7 +539,7 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 func (r *RDSFetcher) getDBInstanceFilters(ctx context.Context) ([]aws_rds_types.Filter, error) {
 	var filters []aws_rds_types.Filter
 
-	if r.configuration.TagSelections == nil {
+	if r.configuration.TagSelections == nil || len(r.configuration.TagSelections) == 0 {
 		return filters, nil
 	}
 
@@ -507,10 +580,18 @@ func (r *RDSFetcher) getDBInstanceFilters(ctx context.Context) ([]aws_rds_types.
 		r.logger.Warn(fmt.Sprintf("no resources any matching tag selection (won't limit which dbs to get metrics for): %v", r.configuration.TagSelections))
 		resourcesSpan.SetStatus(codes.Error, "did not find any RDS instances matching tag selection")
 	} else {
+		// Extract DB instance identifiers from ARNs
+		// ARNs are too long to use as db-instance-id filter values (max 63 chars)
+		// ARN format: arn:aws:rds:region:account-id:db:instance-name
+		dbInstanceIds := make([]string, len(arns))
+		for i, arn := range arns {
+			dbInstanceIds[i] = GetDBIdentifierFromARN(arn)
+		}
+
 		id := "db-instance-id"
 		filters = append(filters, aws_rds_types.Filter{
 			Name:   &id,
-			Values: arns,
+			Values: dbInstanceIds,
 		})
 
 		resourcesSpan.SetStatus(codes.Ok, "found RDS instances matching tag selection")
