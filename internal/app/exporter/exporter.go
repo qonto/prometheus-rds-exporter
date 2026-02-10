@@ -39,6 +39,7 @@ type Configuration struct {
 	CollectMaintenances       bool
 	CollectQuotas             bool
 	CollectUsages             bool
+	CollectEngineSupport      bool
 	TagSelections             map[string][]string
 }
 
@@ -745,7 +746,9 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		}
 
 		// Engine support metrics for PostgreSQL instances
-		c.collectEngineSupportMetrics(ch, dbidentifier, instance.Engine, instance.EngineVersion)
+		if c.configuration.CollectEngineSupport {
+			c.collectEngineSupportMetrics(ch, dbidentifier, instance.Engine, instance.EngineVersion)
+		}
 	}
 
 	// Cloudwatch metrics

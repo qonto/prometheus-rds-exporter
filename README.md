@@ -56,6 +56,8 @@ It collects key metrics about:
 | rds_dbload_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of active sessions for the DB engine |
 | rds_dbload_cpu_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of active sessions where the wait event type is CPU |
 | rds_dbload_noncpu_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of active sessions where the wait event type is not CPU |
+| rds_extended_support_engine_remaining_days | `aws_account_id`, `aws_region`, `dbidentifier`, `engine`, `engine_version` | Days remaining until extended support ends for the database engine version. Returns -1 if already ended or no data available |
+| rds_standard_support_engine_remaining_days | `aws_account_id`, `aws_region`, `dbidentifier`, `engine`, `engine_version` | Days remaining until standard support ends for the database engine version. Returns -1 if already ended or no data available |
 | rds_exporter_build_info | `build_date`, `commit_sha`, `version` | A metric with constant '1' value labeled by version from which exporter was built |
 | rds_exporter_errors_total | | Total number of errors encountered by the exporter |
 | rds_free_storage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Free storage on the instance |
@@ -239,6 +241,7 @@ Configuration could be defined in [prometheus-rds-exporter.yaml](https://github.
 | collect-maintenances         | Collect AWS instances maintenances (AWS RDS API)                                                                                  | true                    |
 | collect-quotas               | Collect AWS RDS quotas (AWS quotas API)                                                                                           | true                    |
 | collect-usages               | Collect AWS RDS usages (AWS Cloudwatch API)                                                                                       | true                    |
+| collect-engine-support       | Collect engine version support lifecycle information (AWS RDS API)                                                                | true                    |
 | tag-selections               | Tags to select database instances with. Refer to [dedicated section on tag configuration](#tag-configuration)                     |                         |
 | debug                        | Enable debug mode                                                                                                                 |                         |
 | enable-otel-traces           | Enable OpenTelemetry traces. See [configuration](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/)        | false                   |

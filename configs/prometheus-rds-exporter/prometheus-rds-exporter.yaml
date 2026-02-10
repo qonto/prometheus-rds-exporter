@@ -63,6 +63,9 @@
 # Collect AWS RDS usages (AWS Cloudwatch API)
 # collect-usages: true
 
+# Collect engine standard and extended support information
+# collect-engine-support: true
+
 # Select AWS instances by tags. See https://docs.aws.amazon.com/resourcegroupstagging/latest/APIReference/API_GetResources.html#resourcegrouptagging-GetResources-request-TagFilters
 # tag-selections:
 #   Environment:

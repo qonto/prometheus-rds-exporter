@@ -11,6 +11,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_rds "github.com/aws/aws-sdk-go-v2/service/rds"
 	"github.com/patrickmn/go-cache"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // EngineVersionLifecycle represents the lifecycle support information for a specific engine version
@@ -162,44 +164,71 @@ func (s *EngineSupportService) FetchEngineVersionLifecycles(ctx context.Context,
 		Engine: aws.String(engine),
 	}
 
-	output, err := s.client.DescribeDBMajorEngineVersions(ctx, input)
-	if err != nil {
-		s.logger.Error("Failed to describe DB major engine versions", "engine", engine, "error", err)
+	var allLifecycles []EngineVersionLifecycle
+	paginator := aws_rds.NewDescribeDBMajorEngineVersionsPaginator(s.client, input)
 
-		// Check for specific AWS error types for better error handling
-		if strings.Contains(err.Error(), "AccessDenied") {
-			s.logger.Error("Access denied when calling DescribeDBMajorEngineVersions - check IAM permissions",
-				"engine", engine,
-				"required_permission", "rds:DescribeDBMajorEngineVersions")
-		} else if strings.Contains(err.Error(), "InvalidParameterValue") {
-			s.logger.Error("Invalid engine parameter provided to AWS API", "engine", engine)
-		} else if strings.Contains(err.Error(), "RequestLimitExceeded") || strings.Contains(err.Error(), "Throttling") {
-			s.logger.Error("AWS API rate limit exceeded for DescribeDBMajorEngineVersions", "engine", engine)
+	for paginator.HasMorePages() {
+		_, pageSpan := tracer.Start(ctx, "describe-db-major-engine-versions")
+
+		output, err := paginator.NextPage(ctx)
+		if err != nil {
+			pageSpan.SetStatus(codes.Error, "failed to describe DB major engine versions")
+			pageSpan.RecordError(err)
+			pageSpan.End()
+
+			s.logger.Error("Failed to describe DB major engine versions", "engine", engine, "error", err)
+
+			// Check for specific AWS error types for better error handling
+			if strings.Contains(err.Error(), "AccessDenied") {
+				s.logger.Error("Access denied when calling DescribeDBMajorEngineVersions - check IAM permissions",
+					"engine", engine,
+					"required_permission", "rds:DescribeDBMajorEngineVersions")
+			} else if strings.Contains(err.Error(), "InvalidParameterValue") {
+				s.logger.Error("Invalid engine parameter provided to AWS API", "engine", engine)
+			} else if strings.Contains(err.Error(), "RequestLimitExceeded") || strings.Contains(err.Error(), "Throttling") {
+				s.logger.Error("AWS API rate limit exceeded for DescribeDBMajorEngineVersions", "engine", engine)
+			}
+
+			return nil, fmt.Errorf("failed to describe DB major engine versions for %s: %w", engine, err)
 		}
 
-		return nil, fmt.Errorf("failed to describe DB major engine versions for %s: %w", engine, err)
-	}
+		// Validate API response
+		if output == nil {
+			pageSpan.SetStatus(codes.Error, "received nil response")
+			pageSpan.End()
 
-	// Validate API response
-	if output == nil {
-		s.logger.Error("Received nil response from DescribeDBMajorEngineVersions API", "engine", engine)
-		return nil, fmt.Errorf("received nil response from AWS API for engine %s", engine)
-	}
+			s.logger.Error("Received nil response from DescribeDBMajorEngineVersions API", "engine", engine)
+			return nil, fmt.Errorf("received nil response from AWS API for engine %s", engine)
+		}
 
-	// Parse API response and extract lifecycle data
-	lifecycles := s.parseEngineVersionLifecycles(engine, output)
+		// Parse API response and extract lifecycle data from this page
+		lifecycles := s.parseEngineVersionLifecycles(engine, output)
+		allLifecycles = append(allLifecycles, lifecycles...)
+
+		pageSpan.SetStatus(codes.Ok, "page fetched")
+		pageSpan.SetAttributes(
+			attribute.String("db.engine", engine),
+			attribute.Int("db.engine.page_lifecycle_count", len(lifecycles)),
+		)
+		pageSpan.End()
+
+		s.logger.Debug("Fetched page of engine lifecycle data",
+			"engine", engine,
+			"page_count", len(lifecycles),
+			"total_count", len(allLifecycles))
+	}
 
 	// Log if no lifecycle data was found
-	if len(lifecycles) == 0 {
+	if len(allLifecycles) == 0 {
 		s.logger.Debug("No engine lifecycle data found in API response", "engine", engine)
 	}
 
 	// Store in cache with TTL
-	s.cache.Set(cacheKey, lifecycles, cache.DefaultExpiration)
+	s.cache.Set(cacheKey, allLifecycles, cache.DefaultExpiration)
 
-	s.logger.Debug("Fetched and cached engine lifecycle data", "engine", engine, "count", len(lifecycles))
+	s.logger.Debug("Fetched and cached engine lifecycle data", "engine", engine, "count", len(allLifecycles))
 
-	return lifecycles, nil
+	return allLifecycles, nil
 }
 
 // GenerateCacheKey creates a cache key for the given engine
