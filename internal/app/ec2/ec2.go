@@ -21,12 +21,13 @@ const (
 var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/ec2")
 
 type EC2InstanceMetrics struct {
-	BaselineIOPS       int32
-	BaselineThroughput float64
-	MaximumIops        int32
-	MaximumThroughput  float64
-	Memory             int64
-	Vcpu               int32
+	BaselineIOPS             int32
+	BaselineThroughput       float64
+	MaximumIops              int32
+	MaximumThroughput        float64
+	Memory                   int64
+	Vcpu                     int32
+	BaselineNetworkBandwidth float64
 }
 
 type Metrics struct {
@@ -107,6 +108,13 @@ func (e *EC2Fetcher) GetDBInstanceTypeInformation(instanceTypes []string) (Metri
 
 				instanceMetrics.MaximumIops = aws.ToInt32(i.EbsInfo.EbsOptimizedInfo.MaximumIops)
 				instanceMetrics.MaximumThroughput = converter.MegaBytesToBytes(aws.ToFloat64(i.EbsInfo.EbsOptimizedInfo.MaximumThroughputInMBps))
+			}
+
+			if i.NetworkInfo != nil && i.NetworkInfo.NetworkCards != nil && len(i.NetworkInfo.NetworkCards) > 0 {
+				// Use the baseline bandwidth from the first network card (primary network interface)
+				if i.NetworkInfo.NetworkCards[0].BaselineBandwidthInGbps != nil {
+					instanceMetrics.BaselineNetworkBandwidth = converter.GigaBytesToBytesSI(aws.ToFloat64(i.NetworkInfo.NetworkCards[0].BaselineBandwidthInGbps))
+				}
 			}
 
 			instanceName := addDBPrefix(string(i.InstanceType))
