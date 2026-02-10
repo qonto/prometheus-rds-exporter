@@ -2061,6 +2061,215 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
+         "description": "The average number of bytes received/transmitted per second from/to the network. Storage network metrics are specific to Aurora storage subsystem.",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10
+               },
+               "decimals": 0,
+               "min": 0,
+               "unit": "decbytes"
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Max"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "red",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.fillOpacity",
+                        "value": 0
+                     },
+                     {
+                        "id": "custom.lineWidth",
+                        "value": "2"
+                     },
+                     {
+                        "id": "unit",
+                        "value": "decbytes"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Receive"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "green",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     },
+                     {
+                        "id": "unit",
+                        "value": "decbytes"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Transmit"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "yellow",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     },
+                     {
+                        "id": "unit",
+                        "value": "decbytes"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Storage: Receive"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "blue",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     },
+                     {
+                        "id": "unit",
+                        "value": "decbytes"
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Storage: Transmit"
+                  },
+                  "properties": [
+                     {
+                        "id": "color",
+                        "value": {
+                           "fixedColor": "purple",
+                           "mode": "fixed"
+                        }
+                     },
+                     {
+                        "id": "custom.stacking",
+                        "value": {
+                           "mode": "normal"
+                        }
+                     },
+                     {
+                        "id": "unit",
+                        "value": "decbytes"
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 38
+         },
+         "id": 33,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_network_receive_throughput_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Receive"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_network_transmit_throughput_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Transmit"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_max_network_throughput_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Max"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_storage_network_receive_throughput_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Storage: Receive"
+            },
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_storage_network_transmit_throughput_bytes{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "legendFormat": "Storage: Transmit"
+            }
+         ],
+         "title": "Network throughput",
+         "type": "timeseries"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
          "description": "Storage size per type. WAL only applied to PostgreSQL",
          "fieldConfig": {
             "defaults": {
@@ -2221,10 +2430,10 @@
          "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 12,
-            "y": 38
+            "x": 0,
+            "y": 46
          },
-         "id": 33,
+         "id": 34,
          "options": {
             "legend": {
                "calcs": [
@@ -2447,10 +2656,10 @@
          "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 0,
+            "x": 12,
             "y": 46
          },
-         "id": 34,
+         "id": 35,
          "options": {
             "legend": {
                "calcs": [
@@ -2499,7 +2708,7 @@
                      "mode": "line"
                   }
                },
-               "decimals": 0,
+               "decimals": null,
                "max": 100,
                "min": 0,
                "thresholds": {
@@ -2521,10 +2730,10 @@
          "gridPos": {
             "h": 8,
             "w": 12,
-            "x": 12,
-            "y": 46
+            "x": 0,
+            "y": 54
          },
-         "id": 35,
+         "id": 36,
          "options": {
             "legend": {
                "calcs": [
@@ -2555,10 +2764,10 @@
          "gridPos": {
             "h": 1,
             "w": 0,
-            "x": 24,
-            "y": 54
+            "x": 12,
+            "y": 62
          },
-         "id": 36,
+         "id": 37,
          "title": "PostgreSQL",
          "type": "row"
       },
@@ -2603,9 +2812,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 55
+            "y": 63
          },
-         "id": 37,
+         "id": 38,
          "options": {
             "legend": {
                "calcs": [
@@ -2651,9 +2860,9 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 55
+            "y": 63
          },
-         "id": 38,
+         "id": 39,
          "options": {
             "legend": {
                "calcs": [
@@ -2685,9 +2894,9 @@
             "h": 1,
             "w": 0,
             "x": 24,
-            "y": 63
+            "y": 71
          },
-         "id": 39,
+         "id": 40,
          "title": "Scaling capacity",
          "type": "row"
       },
@@ -2780,9 +2989,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 64
+            "y": 72
          },
-         "id": 40,
+         "id": 41,
          "options": {
             "legend": {
                "calcs": [
@@ -2881,9 +3090,9 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 64
+            "y": 72
          },
-         "id": 41,
+         "id": 42,
          "options": {
             "legend": {
                "calcs": [
@@ -2998,9 +3207,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 72
+            "y": 80
          },
-         "id": 42,
+         "id": 43,
          "options": {
             "legend": {
                "calcs": [

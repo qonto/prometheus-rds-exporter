@@ -58,6 +58,7 @@ dashboard.new(title)
       p.timeSeries.memory { gridPos+: { w: 12 } },
       p.timeSeries.diskThroughput { gridPos+: { w: 12 } },
       p.timeSeries.swap { gridPos+: { w: 12 } },
+      p.timeSeries.networkThroughput { gridPos+: { w: 12 } },
       p.timeSeries.storage { gridPos+: { w: 12 } },
       p.timeSeries.status { gridPos+: { w: 12 } },
       p.timeSeries.storagePercent { gridPos+: { w: 12 } },
