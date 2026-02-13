@@ -39,7 +39,9 @@ dashboard.new(title)
       p.stat.source { gridPos+: { w: 8, h: 2 } },
       p.stat.dbi { gridPos+: { w: 6, h: 2 } },
       p.stat.ca { gridPos+: { w: 3, h: 2 } },
-      p.stat.snapshotRetention { gridPos+: { w: 3, h: 2 } }
+      p.stat.snapshotRetention { gridPos+: { w: 3, h: 2 } },
+      p.stat.engineStandardSupportRemainingDays { gridPos+: { w: 12, h: 2 } },
+      p.stat.engineExtendedSupportRemainingDays { gridPos+: { w: 12, h: 2 } }
       + g.panel.row.withCollapsed(true),
 
       g.panel.row.new('Main'),

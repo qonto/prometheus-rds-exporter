@@ -733,7 +733,6 @@
          "type": "stat"
       },
       {
-         "collapsed": true,
          "datasource": {
             "type": "datasource",
             "uid": "-- Mixed --"
@@ -796,14 +795,123 @@
          "type": "stat"
       },
       {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Days before end of standard support. After the standard support period ends, AWS will continue providing security patches and critical fixes for that engine version during the Extended Support window to give you more time to upgrade. But an additional Extended Support cost will be applied until you upgrade. See https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/extended-support.htmla",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "red",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 30
+                     },
+                     {
+                        "color": "green",
+                        "value": 90
+                     }
+                  ]
+               },
+               "unit": "d"
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 12,
+            "x": 0,
+            "y": 5
+         },
+         "id": 17,
+         "options": {
+            "graphMode": "none"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_standard_support_engine_remaining_days{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "instant": true
+            }
+         ],
+         "title": "Standard support remaining",
+         "type": "stat"
+      },
+      {
+         "collapsed": true,
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Days before extended support end. RDS Extended Support is available for up to 3 years past the RDS end of standard support date for a major engine version. After this time, if instance has not been upgraded to major engine version to a supported version, then Amazon RDS will automatically upgrade your major engine version. We recommend that you upgrade to a supported major engine version as soon as possible. See https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/extended-support.html",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "noValue": "n/a",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "red",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 30
+                     },
+                     {
+                        "color": "green",
+                        "value": 90
+                     }
+                  ]
+               },
+               "unit": "d"
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 12,
+            "x": 12,
+            "y": 5
+         },
+         "id": 18,
+         "options": {
+            "graphMode": "none"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "max(rds_extended_support_engine_remaining_days{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\"})\n",
+               "instant": true
+            }
+         ],
+         "title": "Extended support remaining",
+         "type": "stat"
+      },
+      {
          "collapsed": false,
          "gridPos": {
             "h": 1,
             "w": 0,
             "x": 24,
-            "y": 5
+            "y": 7
          },
-         "id": 17,
+         "id": 19,
          "title": "Main",
          "type": "row"
       },
@@ -842,9 +950,9 @@
             "h": 3,
             "w": 3,
             "x": 0,
-            "y": 6
+            "y": 8
          },
-         "id": 18,
+         "id": 20,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -894,9 +1002,9 @@
             "h": 3,
             "w": 3,
             "x": 3,
-            "y": 6
+            "y": 8
          },
-         "id": 19,
+         "id": 21,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -946,9 +1054,9 @@
             "h": 3,
             "w": 3,
             "x": 6,
-            "y": 6
+            "y": 8
          },
-         "id": 20,
+         "id": 22,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -998,9 +1106,9 @@
             "h": 3,
             "w": 3,
             "x": 9,
-            "y": 6
+            "y": 8
          },
-         "id": 21,
+         "id": 23,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -1049,9 +1157,9 @@
             "h": 3,
             "w": 3,
             "x": 12,
-            "y": 6
+            "y": 8
          },
-         "id": 22,
+         "id": 24,
          "options": {
             "graphMode": "area"
          },
@@ -1184,9 +1292,9 @@
             "h": 3,
             "w": 3,
             "x": 15,
-            "y": 6
+            "y": 8
          },
-         "id": 23,
+         "id": 25,
          "options": {
             "graphMode": "none"
          },
@@ -1235,9 +1343,9 @@
             "h": 3,
             "w": 3,
             "x": 18,
-            "y": 6
+            "y": 8
          },
-         "id": 24,
+         "id": 26,
          "options": {
             "graphMode": "none",
             "reduceOptions": {
@@ -1300,9 +1408,9 @@
             "h": 3,
             "w": 3,
             "x": 21,
-            "y": 6
+            "y": 8
          },
-         "id": 25,
+         "id": 27,
          "options": {
             "graphMode": "none",
             "reduceOptions": {
@@ -1409,9 +1517,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 14
+            "y": 16
          },
-         "id": 26,
+         "id": 28,
          "options": {
             "legend": {
                "calcs": [
@@ -1499,9 +1607,9 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 14
+            "y": 16
          },
-         "id": 27,
+         "id": 29,
          "options": {
             "legend": {
                "calcs": [
@@ -1546,9 +1654,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 22
+            "y": 24
          },
-         "id": 28,
+         "id": 30,
          "options": {
             "legend": {
                "calcs": [
@@ -1668,9 +1776,9 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 22
+            "y": 24
          },
-         "id": 29,
+         "id": 31,
          "options": {
             "legend": {
                "calcs": [
@@ -1811,9 +1919,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 30
+            "y": 32
          },
-         "id": 30,
+         "id": 32,
          "options": {
             "legend": {
                "calcs": [
@@ -1964,9 +2072,9 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 30
+            "y": 32
          },
-         "id": 31,
+         "id": 33,
          "options": {
             "legend": {
                "calcs": [
@@ -2028,9 +2136,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 38
+            "y": 40
          },
-         "id": 32,
+         "id": 34,
          "options": {
             "legend": {
                "calcs": [
@@ -2205,9 +2313,9 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 38
+            "y": 40
          },
-         "id": 33,
+         "id": 35,
          "options": {
             "legend": {
                "calcs": [
@@ -2431,9 +2539,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 46
+            "y": 48
          },
-         "id": 34,
+         "id": 36,
          "options": {
             "legend": {
                "calcs": [
@@ -2657,9 +2765,9 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 46
+            "y": 48
          },
-         "id": 35,
+         "id": 37,
          "options": {
             "legend": {
                "calcs": [
@@ -2731,9 +2839,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 54
+            "y": 56
          },
-         "id": 36,
+         "id": 38,
          "options": {
             "legend": {
                "calcs": [
@@ -2765,9 +2873,9 @@
             "h": 1,
             "w": 0,
             "x": 12,
-            "y": 62
+            "y": 64
          },
-         "id": 37,
+         "id": 39,
          "title": "PostgreSQL",
          "type": "row"
       },
@@ -2812,9 +2920,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 63
+            "y": 65
          },
-         "id": 38,
+         "id": 40,
          "options": {
             "legend": {
                "calcs": [
@@ -2860,9 +2968,9 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 63
+            "y": 65
          },
-         "id": 39,
+         "id": 41,
          "options": {
             "legend": {
                "calcs": [
@@ -2894,9 +3002,9 @@
             "h": 1,
             "w": 0,
             "x": 24,
-            "y": 71
+            "y": 73
          },
-         "id": 40,
+         "id": 42,
          "title": "Scaling capacity",
          "type": "row"
       },
@@ -2989,9 +3097,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 72
+            "y": 74
          },
-         "id": 41,
+         "id": 43,
          "options": {
             "legend": {
                "calcs": [
@@ -3090,9 +3198,9 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 72
+            "y": 74
          },
-         "id": 42,
+         "id": 44,
          "options": {
             "legend": {
                "calcs": [
@@ -3207,9 +3315,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 80
+            "y": 82
          },
-         "id": 43,
+         "id": 45,
          "options": {
             "legend": {
                "calcs": [

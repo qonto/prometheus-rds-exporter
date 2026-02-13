@@ -455,6 +455,24 @@ local variables = import '../variables.libsonnet';
         )
         + prometheusQuery.withLegendFormat('{{dbidentifier}}'),
     },
+    engineSupport: {
+      standardRemainingDays:
+        prometheusQuery.new(
+          '$' + variables.datasource.name,
+          |||
+            max(rds_standard_support_engine_remaining_days{aws_account_id="$aws_account_id",aws_region="$aws_region",dbidentifier="$dbidentifier"})
+          |||
+        )
+        + prometheusQuery.withInstant(true),
+      extendedRemainingDays:
+        prometheusQuery.new(
+          '$' + variables.datasource.name,
+          |||
+            max(rds_extended_support_engine_remaining_days{aws_account_id="$aws_account_id",aws_region="$aws_region",dbidentifier="$dbidentifier"})
+          |||
+        )
+        + prometheusQuery.withInstant(true),
+    },
     databaseConnections:
       prometheusQuery.new(
         '$' + variables.datasource.name,
