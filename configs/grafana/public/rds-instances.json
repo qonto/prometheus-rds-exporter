@@ -245,14 +245,110 @@
          "type": "stat"
       },
       {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Total number of RDS instances with standard support ending in less than 90 days",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "noValue": "0",
+               "thresholds": {
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 1
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 12,
+            "y": 1
+         },
+         "id": 6,
+         "options": {
+            "colorMode": "background",
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(rds_standard_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} < 90)\n"
+            }
+         ],
+         "title": "Standard support ending",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Total number of RDS instances with extended support ending in less than 90 days",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "noValue": "0",
+               "thresholds": {
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 1
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 15,
+            "y": 1
+         },
+         "id": 7,
+         "options": {
+            "colorMode": "background",
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(rds_extended_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} < 90)\n"
+            }
+         ],
+         "title": "Extended support ending",
+         "type": "stat"
+      },
+      {
          "collapsed": false,
          "gridPos": {
             "h": 1,
             "w": 0,
-            "x": 12,
+            "x": 18,
             "y": 4
          },
-         "id": 6,
+         "id": 8,
          "title": "Pending operations",
          "type": "row"
       },
@@ -470,7 +566,7 @@
             "x": 0,
             "y": 5
          },
-         "id": 7,
+         "id": 9,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -742,7 +838,7 @@
             "x": 12,
             "y": 5
          },
-         "id": 8,
+         "id": 10,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -808,7 +904,279 @@
             "x": 24,
             "y": 10
          },
-         "id": 9,
+         "id": 11,
+         "title": "Standard and extended support",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "RDS instances with standard support ending in less than 90 days",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "displayMode": "color-text"
+               },
+               "decimals": 0,
+               "noValue": "No instance",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "dbidentifier"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/a7049b32-6be3-42e5-aa9a-2879a14f46dd/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-dbidentifier=${__data.fields.dbidentifier}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Value"
+                  },
+                  "properties": [
+                     {
+                        "id": "displayName",
+                        "value": "Days remaining"
+                     },
+                     {
+                        "id": "thresholds",
+                        "value": {
+                           "mode": "absolute",
+                           "steps": [
+                              {
+                                 "color": "red",
+                                 "value": 0
+                              },
+                              {
+                                 "color": "orange",
+                                 "value": 30
+                              },
+                              {
+                                 "color": "green",
+                                 "value": 90
+                              }
+                           ]
+                        }
+                     },
+                     {
+                        "id": "unit",
+                        "value": "d"
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 0,
+            "y": 11
+         },
+         "id": 12,
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_standard_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} < 90\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Instances with standard support ending",
+         "transformations": [
+            {
+               "id": "organize",
+               "options": {
+                  "excludeByName": {
+                     "Time": true,
+                     "__name__": true,
+                     "container": true,
+                     "context": true,
+                     "endpoint": true,
+                     "instance": true,
+                     "job": true,
+                     "kubernetes_cluster": true,
+                     "namespace": true,
+                     "pod": true,
+                     "prometheus": true,
+                     "service": true
+                  },
+                  "indexByName": {
+                     "Value": 3,
+                     "aws_account_id": 0,
+                     "aws_region": 1,
+                     "dbidentifier": 2,
+                     "engine": 4,
+                     "engine_version": 5
+                  }
+               }
+            }
+         ],
+         "type": "table"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "RDS instances with extended support ending in less than 90 days",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "displayMode": "color-text"
+               },
+               "decimals": 0,
+               "noValue": "No instance",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "dbidentifier"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/a7049b32-6be3-42e5-aa9a-2879a14f46dd/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-dbidentifier=${__data.fields.dbidentifier}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Value"
+                  },
+                  "properties": [
+                     {
+                        "id": "displayName",
+                        "value": "Days remaining"
+                     },
+                     {
+                        "id": "thresholds",
+                        "value": {
+                           "mode": "absolute",
+                           "steps": [
+                              {
+                                 "color": "red",
+                                 "value": 0
+                              },
+                              {
+                                 "color": "orange",
+                                 "value": 30
+                              },
+                              {
+                                 "color": "green",
+                                 "value": 90
+                              }
+                           ]
+                        }
+                     },
+                     {
+                        "id": "unit",
+                        "value": "d"
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 5,
+            "w": 12,
+            "x": 12,
+            "y": 11
+         },
+         "id": 13,
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_extended_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} < 90\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Instances with extended support ending",
+         "transformations": [
+            {
+               "id": "organize",
+               "options": {
+                  "excludeByName": {
+                     "Time": true,
+                     "__name__": true,
+                     "container": true,
+                     "context": true,
+                     "endpoint": true,
+                     "instance": true,
+                     "job": true,
+                     "kubernetes_cluster": true,
+                     "namespace": true,
+                     "pod": true,
+                     "prometheus": true,
+                     "service": true
+                  },
+                  "indexByName": {
+                     "Value": 3,
+                     "aws_account_id": 0,
+                     "aws_region": 1,
+                     "dbidentifier": 2,
+                     "engine": 4,
+                     "engine_version": 5
+                  }
+               }
+            }
+         ],
+         "type": "table"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 24,
+            "y": 16
+         },
+         "id": 14,
          "title": "Inventory",
          "type": "row"
       },
@@ -1024,9 +1392,9 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 11
+            "y": 17
          },
-         "id": 10,
+         "id": 15,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -1093,9 +1461,9 @@
             "h": 1,
             "w": 0,
             "x": 24,
-            "y": 18
+            "y": 24
          },
-         "id": 11,
+         "id": 16,
          "title": "AWS Quota",
          "type": "row"
       },
@@ -1145,9 +1513,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 19
+            "y": 25
          },
-         "id": 12,
+         "id": 17,
          "options": {
             "legend": {
                "calcs": [
@@ -1219,9 +1587,9 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 19
+            "y": 25
          },
-         "id": 13,
+         "id": 18,
          "options": {
             "legend": {
                "calcs": [
@@ -1302,9 +1670,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 27
+            "y": 33
          },
-         "id": 14,
+         "id": 19,
          "options": {
             "legend": {
                "calcs": [
@@ -1394,9 +1762,9 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 27
+            "y": 33
          },
-         "id": 15,
+         "id": 20,
          "options": {
             "legend": {
                "calcs": [

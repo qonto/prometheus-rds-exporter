@@ -68,6 +68,42 @@ local variables = import '../variables.libsonnet';
       |||
     ),
 
+  instancesWithStandardSupportEnding:
+    prometheusQuery.new(
+      '$' + variables.datasource.name,
+      |||
+        count(rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 90)
+      |||
+    ),
+
+  instancesWithStandardSupportEndingTable:
+    prometheusQuery.new(
+      '$' + variables.datasource.name,
+      |||
+        rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 90
+      |||
+    )
+    + prometheusQuery.withInstant(true)
+    + self.__table,
+
+  instancesWithExtendedSupportEnding:
+    prometheusQuery.new(
+      '$' + variables.datasource.name,
+      |||
+        count(rds_extended_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 90)
+      |||
+    ),
+
+  instancesWithExtendedSupportEndingTable:
+    prometheusQuery.new(
+      '$' + variables.datasource.name,
+      |||
+        rds_extended_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 90
+      |||
+    )
+    + prometheusQuery.withInstant(true)
+    + self.__table,
+
   instances: {
     total:
       prometheusQuery.new(
