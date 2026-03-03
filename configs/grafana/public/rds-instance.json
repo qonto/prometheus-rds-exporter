@@ -803,6 +803,20 @@
          "fieldConfig": {
             "defaults": {
                "decimals": 0,
+               "mappings": [
+                  {
+                     "options": {
+                        "from": -1825,
+                        "result": {
+                           "color": "red",
+                           "index": 0,
+                           "text": "Expired - instance in extended support"
+                        },
+                        "to": 0
+                     },
+                     "type": "range"
+                  }
+               ],
                "noValue": "n/a",
                "thresholds": {
                   "mode": "absolute",
@@ -845,7 +859,7 @@
                "instant": true
             }
          ],
-         "title": "Standard support remaining",
+         "title": "Standard support remaining days",
          "type": "stat"
       },
       {
@@ -900,7 +914,7 @@
                "instant": true
             }
          ],
-         "title": "Extended support remaining",
+         "title": "Extended support remaining days",
          "type": "stat"
       },
       {
