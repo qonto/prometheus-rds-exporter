@@ -249,7 +249,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Total number of RDS instances with standard support ending in less than 90 days",
+         "description": "Total number of RDS instances with standard support ending soon",
          "fieldConfig": {
             "defaults": {
                "decimals": 0,
@@ -286,10 +286,10 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "count(rds_standard_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} < 90)\n"
+               "expr": "count(\n  rds_standard_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} < 90\n  and\n  rds_standard_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} > 0\n  )\n"
             }
          ],
-         "title": "Standard support ending",
+         "title": "Standard support ending soon",
          "type": "stat"
       },
       {
@@ -297,7 +297,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Total number of RDS instances with extended support ending in less than 90 days",
+         "description": "Total number of RDS instances running with extended support",
          "fieldConfig": {
             "defaults": {
                "decimals": 0,
@@ -334,10 +334,10 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "count(rds_extended_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} < 90)\n"
+               "expr": "count(rds_standard_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} < 0)\n"
             }
          ],
-         "title": "Extended support ending",
+         "title": "Extended support",
          "type": "stat"
       },
       {
@@ -913,7 +913,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "RDS instances with standard support ending in less than 90 days",
+         "description": "RDS instances with standard support will be ending in the near future.",
          "fieldConfig": {
             "defaults": {
                "custom": {
@@ -1001,12 +1001,12 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "rds_standard_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} < 90\n",
+               "expr": "rds_standard_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} < 90\nand\nrds_standard_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} > 0\n",
                "format": "table",
                "instant": true
             }
          ],
-         "title": "Instances with standard support ending",
+         "title": "Instances with standard support ending soon",
          "transformations": [
             {
                "id": "organize",
@@ -1043,7 +1043,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "RDS instances with extended support ending in less than 90 days",
+         "description": "RDS instances running in extended support",
          "fieldConfig": {
             "defaults": {
                "custom": {
@@ -1131,12 +1131,12 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "rds_extended_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} < 90\n",
+               "expr": "rds_extended_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"}\nand on (aws_account_id, aws_region, dbidentifier)\n(\n  rds_standard_support_engine_remaining_days{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} < 0\n)\n",
                "format": "table",
                "instant": true
             }
          ],
-         "title": "Instances with extended support ending",
+         "title": "Instances with extended support",
          "transformations": [
             {
                "id": "organize",

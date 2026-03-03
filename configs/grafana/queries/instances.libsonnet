@@ -72,7 +72,11 @@ local variables = import '../variables.libsonnet';
     prometheusQuery.new(
       '$' + variables.datasource.name,
       |||
-        count(rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 90)
+        count(
+          rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 90
+          and
+          rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} > 0
+          )
       |||
     ),
 
@@ -81,24 +85,30 @@ local variables = import '../variables.libsonnet';
       '$' + variables.datasource.name,
       |||
         rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 90
+        and
+        rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} > 0
       |||
     )
     + prometheusQuery.withInstant(true)
     + self.__table,
 
-  instancesWithExtendedSupportEnding:
+  instancesWithExtendedSupport:
     prometheusQuery.new(
       '$' + variables.datasource.name,
       |||
-        count(rds_extended_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 90)
+        count(rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 0)
       |||
     ),
 
-  instancesWithExtendedSupportEndingTable:
+  instancesWithExtendedSupportTable:
     prometheusQuery.new(
       '$' + variables.datasource.name,
       |||
-        rds_extended_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 90
+        rds_extended_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"}
+        and on (aws_account_id, aws_region, dbidentifier)
+        (
+          rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 0
+        )
       |||
     )
     + prometheusQuery.withInstant(true)

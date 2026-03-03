@@ -23,11 +23,11 @@ local colors = common.colors;
       stat.alert('Deprecated certificates', 'Total number of RDS instances with deprecated certificate', [queries.instancesWithDeprecatedCertificate]),
 
     standardSupportEnding:
-      stat.alert('Standard support ending', 'Total number of RDS instances with standard support ending in less than 90 days', [queries.instancesWithStandardSupportEnding])
+      stat.alert('Standard support ending soon', 'Total number of RDS instances with standard support ending soon', [queries.instancesWithStandardSupportEnding])
       + g.panel.stat.standardOptions.withDecimals(0),
 
     extendedSupportEnding:
-      stat.alert('Extended support ending', 'Total number of RDS instances with extended support ending in less than 90 days', [queries.instancesWithExtendedSupportEnding])
+      stat.alert('Extended support', 'Total number of RDS instances running with extended support', [queries.instancesWithExtendedSupport])
       + g.panel.stat.standardOptions.withDecimals(0),
   },
   table: {
@@ -255,7 +255,7 @@ local colors = common.colors;
       ]),
 
     standardSupportEnding:
-      self.__table('Instances with standard support ending', 'RDS instances with standard support ending in less than 90 days', [queries.instancesWithStandardSupportEndingTable])
+      self.__table('Instances with standard support ending soon', 'RDS instances with standard support will be ending in the near future.', [queries.instancesWithStandardSupportEndingTable])
       + table.standardOptions.withNoValue('No instance')
       + table.standardOptions.withDecimals(0)
       + table.standardOptions.withOverrides([
@@ -311,7 +311,7 @@ local colors = common.colors;
       ]),
 
     extendedSupportEnding:
-      self.__table('Instances with extended support ending', 'RDS instances with extended support ending in less than 90 days', [queries.instancesWithExtendedSupportEndingTable])
+      self.__table('Instances with extended support', 'RDS instances running in extended support', [queries.instancesWithExtendedSupportTable])
       + table.standardOptions.withNoValue('No instance')
       + table.standardOptions.withDecimals(0)
       + table.standardOptions.withOverrides([
