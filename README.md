@@ -13,8 +13,9 @@ It collects key metrics about:
 - Underlying EC2 instance's hard limits
 - Pending AWS RDS maintenance operations
 - Pending modifications
+- Standard and extended deadlines for RDS support
+- RDS quota usage
 - Logs size
-- RDS quota usage information
 
 > [!TIP]
 > Prometheus RDS exporter is part of the [Database Monitoring Framework](https://github.com/qonto/database-monitoring-framework) which provides alerts, along with their handy runbooks for AWS RDS.
