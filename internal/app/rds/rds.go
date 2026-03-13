@@ -416,11 +416,6 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 		}
 	}
 
-	instanceFilters, err := r.getDBInstanceFilters(ctx)
-	if err != nil {
-		return Metrics{}, err
-	}
-
 	var clusterMetrics map[string]ClusterMetrics
 	if r.configuration.CollectClusterMetrics {
 		clusterFilters, err := r.getDBClusterFilters(ctx)
@@ -432,8 +427,11 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 		if err != nil {
 			return Metrics{}, fmt.Errorf("can't get cluster metrics: %w", err)
 		}
-	} else {
-		clusterMetrics = make(map[string]ClusterMetrics)
+	}
+
+	instanceFilters, err := r.getDBInstanceFilters(ctx)
+	if err != nil {
+		return Metrics{}, err
 	}
 
 	input := &aws_rds.DescribeDBInstancesInput{Filters: instanceFilters}
