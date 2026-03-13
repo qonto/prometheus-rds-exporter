@@ -170,7 +170,7 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().BoolP("collect-logs-size", "", true, "Collect AWS instances logs size for non serverless instances")
 	cmd.Flags().BoolP("collect-serverless-logs-size", "", false, "Collect AWS instances logs size for serverless DB instances")
 	cmd.Flags().BoolP("collect-maintenances", "", true, "Collect AWS instances maintenances")
-	cmd.Flags().BoolP("collect-cluster-metrics", "", false, "Collect AWS RDS cluster metrics")
+	cmd.Flags().BoolP("collect-cluster-metrics", "", true, "Collect AWS RDS cluster metrics")
 	cmd.Flags().BoolP("collect-quotas", "", true, "Collect AWS RDS quotas")
 	cmd.Flags().BoolP("collect-usages", "", true, "Collect AWS RDS usages")
 
