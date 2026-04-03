@@ -314,6 +314,49 @@ local colors = common.colors;
         ),
       ]),
 
+    networkThroughput:
+      ts.base('Network throughput', 'The average number of bytes received/transmitted per second from/to the network. Storage network metrics are specific to Aurora storage subsystem.', [queries.instance.network.throughput.receive, queries.instance.network.throughput.transmit, queries.instance.network.throughput.max, queries.instance.network.throughput.storageReceive, queries.instance.network.throughput.storageTransmit])
+      + standardOptions.withDecimals(0)
+      + standardOptions.withUnit('decbytes')
+      + standardOptions.withOverrides([
+        fieldOverride.byName.new('Max')
+        + standardOptions.override.byType.withPropertiesFromOptions(
+          standardOptions.withUnit('decbytes')
+          + custom.withLineWidth('2')
+          + color.withMode('fixed')
+          + color.withFixedColor(colors.danger)
+          + custom.withFillOpacity(0)
+        ),
+        fieldOverride.byName.new('Receive')
+        + standardOptions.override.byType.withPropertiesFromOptions(
+          standardOptions.withUnit('decbytes')
+          + color.withMode('fixed')
+          + color.withFixedColor(colors.ok)
+          + custom.stacking.withMode('normal')
+        ),
+        fieldOverride.byName.new('Transmit')
+        + standardOptions.override.byType.withPropertiesFromOptions(
+          standardOptions.withUnit('decbytes')
+          + color.withMode('fixed')
+          + color.withFixedColor(colors.notice)
+          + custom.stacking.withMode('normal')
+        ),
+        fieldOverride.byName.new('Storage: Receive')
+        + standardOptions.override.byType.withPropertiesFromOptions(
+          standardOptions.withUnit('decbytes')
+          + color.withMode('fixed')
+          + color.withFixedColor(colors.info)
+          + custom.stacking.withMode('normal')
+        ),
+        fieldOverride.byName.new('Storage: Transmit')
+        + standardOptions.override.byType.withPropertiesFromOptions(
+          standardOptions.withUnit('decbytes')
+          + color.withMode('fixed')
+          + color.withFixedColor('purple')
+          + custom.stacking.withMode('normal')
+        ),
+      ]),
+
     memory:
       ts.base('Memory usage', 'The amount of available Random Access Memory', [queries.instance.memory.max, queries.instance.memory.freeable])
       + ts.maxBytes
