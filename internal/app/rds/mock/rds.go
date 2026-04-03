@@ -20,6 +20,7 @@ type RDSClient struct {
 	DescribePendingMaintenanceActionsOutput *aws_rds.DescribePendingMaintenanceActionsOutput
 	DescribeDBEngineVersionsOutput          *aws_rds.DescribeDBEngineVersionsOutput
 	DescribeDBMajorEngineVersionsOutput     *aws_rds.DescribeDBMajorEngineVersionsOutput
+	DescribeDBMajorEngineVersionsError      error
 	DescribeDBMajorEngineVersionsCallCount  int
 	Error                                   error
 }
@@ -85,6 +86,12 @@ func (m *RDSClient) WithDescribeDBMajorEngineVersionsOutput(output *aws_rds.Desc
 	return m
 }
 
+func (m *RDSClient) WithDescribeDBMajorEngineVersionsError(err error) *RDSClient {
+	m.DescribeDBMajorEngineVersionsError = err
+
+	return m
+}
+
 func (m *RDSClient) GetDescribeDBMajorEngineVersionsCallCount() int {
 	return m.DescribeDBMajorEngineVersionsCallCount
 }
@@ -117,7 +124,7 @@ func (m RDSClient) DescribeDBEngineVersions(context.Context, *aws_rds.DescribeDB
 
 func (m *RDSClient) DescribeDBMajorEngineVersions(context.Context, *aws_rds.DescribeDBMajorEngineVersionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBMajorEngineVersionsOutput, error) {
 	m.DescribeDBMajorEngineVersionsCallCount++
-	return m.DescribeDBMajorEngineVersionsOutput, nil
+	return m.DescribeDBMajorEngineVersionsOutput, m.DescribeDBMajorEngineVersionsError
 }
 
 // RandomString returns a random alphanumeric string of the specified length

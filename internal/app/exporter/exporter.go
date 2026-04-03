@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/service/resourcegroupstaggingapi"
@@ -69,11 +70,12 @@ type rdsCollector struct {
 	awsRegion     string
 	configuration Configuration
 
-	rdsClient           rdsClient
-	EC2Client           EC2Client
-	servicequotasClient servicequotasClient
-	cloudWatchClient    cloudWatchClient
-	tagClient           resourcegroupstaggingapi.GetResourcesAPIClient
+	rdsClient            rdsClient
+	EC2Client            EC2Client
+	servicequotasClient  servicequotasClient
+	cloudWatchClient     cloudWatchClient
+	tagClient            resourcegroupstaggingapi.GetResourcesAPIClient
+	engineSupportService *rds.EngineSupportService
 
 	errors                           *prometheus.Desc
 	DBLoad                           *prometheus.Desc
@@ -130,6 +132,8 @@ type rdsCollector struct {
 	transactionLogsDiskUsage         *prometheus.Desc
 	certificateValidTill             *prometheus.Desc
 	age                              *prometheus.Desc
+	standardSupportRemainingDays     *prometheus.Desc
+	extendedSupportRemainingDays     *prometheus.Desc
 }
 
 func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient, tagClient resourcegroupstaggingapi.GetResourcesAPIClient) *rdsCollector {
@@ -365,6 +369,14 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			"Current ACU of the Aurora Serverless instance",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
+		standardSupportRemainingDays: prometheus.NewDesc("rds_standard_support_engine_remaining_days",
+			"Remaining days until PostgreSQL engine standard support ends",
+			[]string{"aws_account_id", "aws_region", "dbidentifier", "engine", "engine_version"}, nil,
+		),
+		extendedSupportRemainingDays: prometheus.NewDesc("rds_extended_support_engine_remaining_days",
+			"Remaining days until PostgreSQL engine extended support ends",
+			[]string{"aws_account_id", "aws_region", "dbidentifier", "engine", "engine_version"}, nil,
+		),
 	}
 }
 
@@ -420,6 +432,8 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.usageDBInstances
 	ch <- c.usageManualSnapshots
 	ch <- c.serverlessDatabaseCapacity
+	ch <- c.standardSupportRemainingDays
+	ch <- c.extendedSupportRemainingDays
 	ch <- c.writeIOPS
 	ch <- c.writeThroughput
 }
@@ -729,6 +743,9 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		if instance.LogFilesSize != nil {
 			ch <- prometheus.MustNewConstMetric(c.logFilesSize, prometheus.GaugeValue, float64(*instance.LogFilesSize), c.awsAccountID, c.awsRegion, dbidentifier)
 		}
+
+		// Engine support metrics for PostgreSQL instances
+		c.collectEngineSupportMetrics(ch, dbidentifier, instance.Engine, instance.EngineVersion)
 	}
 
 	// Cloudwatch metrics
@@ -857,4 +874,107 @@ func (c *rdsCollector) GetStatistics() counters {
 
 func (c *rdsCollector) GetMetrics() metrics {
 	return c.metrics
+}
+
+// collectEngineSupportMetrics collects engine support metrics for PostgreSQL instances
+func (c *rdsCollector) collectEngineSupportMetrics(ch chan<- prometheus.Metric, dbidentifier, engine, engineVersion string) {
+	// Validate input parameters
+	if dbidentifier == "" || engine == "" || engineVersion == "" {
+		c.logger.Error("Invalid parameters for engine support metrics collection",
+			"dbidentifier", dbidentifier,
+			"engine", engine,
+			"engine_version", engineVersion)
+		c.counters.Errors++
+		return
+	}
+
+	// Create engine support service with cache (reuse existing service if available)
+	if c.engineSupportService == nil {
+		c.engineSupportService = rds.NewEngineSupportService(c.rdsClient, &c.logger)
+	}
+	engineSupportService := c.engineSupportService
+
+	// Get engine support metrics
+	metrics, err := engineSupportService.GetEngineSupportMetrics(c.ctx, engine, engineVersion)
+	if err != nil {
+		// Log specific error details for debugging
+		c.logger.Error("Failed to get engine support metrics",
+			"dbidentifier", dbidentifier,
+			"engine", engine,
+			"engine_version", engineVersion,
+			"error", err)
+
+		// Check for specific error types to provide better monitoring
+		if strings.Contains(err.Error(), "AccessDenied") {
+			c.logger.Error("Access denied for engine support metrics - check IAM permissions",
+				"dbidentifier", dbidentifier,
+				"required_permission", "rds:DescribeDBMajorEngineVersions")
+		} else if strings.Contains(err.Error(), "RequestLimitExceeded") || strings.Contains(err.Error(), "Throttling") {
+			c.logger.Error("AWS API rate limit exceeded for engine support metrics",
+				"dbidentifier", dbidentifier)
+		}
+
+		c.counters.Errors++
+		return
+	}
+
+	// Log when no metrics are available (graceful handling)
+	if metrics.StandardSupportRemainingDays == nil && metrics.ExtendedSupportRemainingDays == nil {
+		c.logger.Debug("No engine support metrics available for instance",
+			"dbidentifier", dbidentifier,
+			"engine", engine,
+			"engine_version", engineVersion,
+			"reason", "no_lifecycle_data")
+		return
+	}
+
+	// Emit standard support remaining days metric if available
+	if metrics.StandardSupportRemainingDays != nil {
+		c.logger.Debug("Emitting standard support remaining days metric",
+			"dbidentifier", dbidentifier,
+			"engine", engine,
+			"engine_version", engineVersion,
+			"days", *metrics.StandardSupportRemainingDays)
+
+		ch <- prometheus.MustNewConstMetric(
+			c.standardSupportRemainingDays,
+			prometheus.GaugeValue,
+			float64(*metrics.StandardSupportRemainingDays),
+			c.awsAccountID,
+			c.awsRegion,
+			dbidentifier,
+			engine,
+			engineVersion,
+		)
+	} else {
+		c.logger.Debug("No standard support end date available",
+			"dbidentifier", dbidentifier,
+			"engine", engine,
+			"engine_version", engineVersion)
+	}
+
+	// Emit extended support remaining days metric if available
+	if metrics.ExtendedSupportRemainingDays != nil {
+		c.logger.Debug("Emitting extended support remaining days metric",
+			"dbidentifier", dbidentifier,
+			"engine", engine,
+			"engine_version", engineVersion,
+			"days", *metrics.ExtendedSupportRemainingDays)
+
+		ch <- prometheus.MustNewConstMetric(
+			c.extendedSupportRemainingDays,
+			prometheus.GaugeValue,
+			float64(*metrics.ExtendedSupportRemainingDays),
+			c.awsAccountID,
+			c.awsRegion,
+			dbidentifier,
+			engine,
+			engineVersion,
+		)
+	} else {
+		c.logger.Debug("No extended support end date available",
+			"dbidentifier", dbidentifier,
+			"engine", engine,
+			"engine_version", engineVersion)
+	}
 }
