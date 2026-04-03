@@ -31,10 +31,12 @@
             ]
         },
         {
-            "Sid": "AllowMaintenanceDescriptions",
+            "Sid": "AllowRDSDescriptions",
             "Effect": "Allow",
             "Action": [
-                "rds:DescribePendingMaintenanceActions"
+                "rds:DescribePendingMaintenanceActions",
+                "rds:DescribeAccountAttributes",
+                "rds:DescribeDBMajorEngineVersions"
             ],
             "Resource": "*"
         },
@@ -43,14 +45,6 @@
             "Effect": "Allow",
             "Action": [
                 "cloudwatch:GetMetricData"
-            ],
-            "Resource": "*"
-        },
-        {
-            "Sid": "AllowRDSUsageDescriptions",
-            "Effect": "Allow",
-            "Action": [
-                "rds:DescribeAccountAttributes"
             ],
             "Resource": "*"
         },

@@ -21,6 +21,14 @@ local colors = common.colors;
 
     deprecatedCertificates:
       stat.alert('Deprecated certificates', 'Total number of RDS instances with deprecated certificate', [queries.instancesWithDeprecatedCertificate]),
+
+    standardSupportEnding:
+      stat.alert('Standard support ending soon', 'Total number of RDS instances with standard support ending soon', [queries.instancesWithStandardSupportEnding])
+      + g.panel.stat.standardOptions.withDecimals(0),
+
+    extendedSupportEnding:
+      stat.alert('Extended support', 'Total number of RDS instances running with extended support', [queries.instancesWithExtendedSupport])
+      + g.panel.stat.standardOptions.withDecimals(0),
   },
   table: {
     local t = generic.table,
@@ -241,6 +249,118 @@ local colors = common.colors;
               aws_region: 2,
               dbidentifier: 3,
               pending_modified_values: 4,
+            },
+          },
+        },
+      ]),
+
+    standardSupportEnding:
+      self.__table('Instances with standard support ending soon', 'RDS instances with standard support will be ending in the near future.', [queries.instancesWithStandardSupportEndingTable])
+      + table.standardOptions.withNoValue('No instance')
+      + table.standardOptions.withDecimals(0)
+      + table.standardOptions.withOverrides([
+        fieldOverride.byName.new('dbidentifier')
+        + table.standardOptions.override.byType.withPropertiesFromOptions(
+          table.standardOptions.withLinks([
+            {
+              title: '',
+              url: '/d/' + common.uuids.rdsInstance + '/?${datasource:queryparam}&${__url_time_range}&var-' + variables.aws_account_id.name + '=${__data.fields.aws_account_id}&var-' + variables.aws_region.name + '=${__data.fields.aws_region}&var-' + variables.dbidentifier.name + '=${__data.fields.dbidentifier}',
+            },
+          ])
+        ),
+        fieldOverride.byName.new('Value')
+        + table.standardOptions.override.byType.withPropertiesFromOptions(
+          table.standardOptions.withUnit('d')
+          + table.standardOptions.withDisplayName('Days remaining')
+          + thresholds.withMode('absolute')
+          + thresholds.withSteps([
+            step.withValue(0) + step.withColor(colors.danger),
+            step.withValue(30) + step.withColor(colors.warning),
+            step.withValue(90) + step.withColor(colors.ok),
+          ])
+        ),
+      ])
+      + table.queryOptions.withTransformations([
+        {
+          id: 'organize',
+          options: {
+            excludeByName: {
+              Time: true,
+              __name__: true,
+              container: true,
+              context: true,
+              endpoint: true,
+              instance: true,
+              job: true,
+              kubernetes_cluster: true,
+              namespace: true,
+              pod: true,
+              prometheus: true,
+              service: true,
+            },
+            indexByName: {
+              aws_account_id: 0,
+              aws_region: 1,
+              dbidentifier: 2,
+              Value: 3,
+              engine: 4,
+              engine_version: 5,
+            },
+          },
+        },
+      ]),
+
+    extendedSupportEnding:
+      self.__table('Instances with extended support', 'RDS instances running in extended support', [queries.instancesWithExtendedSupportTable])
+      + table.standardOptions.withNoValue('No instance')
+      + table.standardOptions.withDecimals(0)
+      + table.standardOptions.withOverrides([
+        fieldOverride.byName.new('dbidentifier')
+        + table.standardOptions.override.byType.withPropertiesFromOptions(
+          table.standardOptions.withLinks([
+            {
+              title: '',
+              url: '/d/' + common.uuids.rdsInstance + '/?${datasource:queryparam}&${__url_time_range}&var-' + variables.aws_account_id.name + '=${__data.fields.aws_account_id}&var-' + variables.aws_region.name + '=${__data.fields.aws_region}&var-' + variables.dbidentifier.name + '=${__data.fields.dbidentifier}',
+            },
+          ])
+        ),
+        fieldOverride.byName.new('Value')
+        + table.standardOptions.override.byType.withPropertiesFromOptions(
+          table.standardOptions.withUnit('d')
+          + table.standardOptions.withDisplayName('Days remaining')
+          + thresholds.withMode('absolute')
+          + thresholds.withSteps([
+            step.withValue(0) + step.withColor(colors.danger),
+            step.withValue(30) + step.withColor(colors.warning),
+            step.withValue(90) + step.withColor(colors.ok),
+          ])
+        ),
+      ])
+      + table.queryOptions.withTransformations([
+        {
+          id: 'organize',
+          options: {
+            excludeByName: {
+              Time: true,
+              __name__: true,
+              container: true,
+              context: true,
+              endpoint: true,
+              instance: true,
+              job: true,
+              kubernetes_cluster: true,
+              namespace: true,
+              pod: true,
+              prometheus: true,
+              service: true,
+            },
+            indexByName: {
+              aws_account_id: 0,
+              aws_region: 1,
+              dbidentifier: 2,
+              Value: 3,
+              engine: 4,
+              engine_version: 5,
             },
           },
         },

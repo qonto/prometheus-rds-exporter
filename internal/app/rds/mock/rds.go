@@ -18,6 +18,10 @@ type RDSClient struct {
 	DescribeDBLogFilesOutput                *aws_rds.DescribeDBLogFilesOutput
 	DescribeDBLogFilesOutputError           error
 	DescribePendingMaintenanceActionsOutput *aws_rds.DescribePendingMaintenanceActionsOutput
+	DescribeDBEngineVersionsOutput          *aws_rds.DescribeDBEngineVersionsOutput
+	DescribeDBMajorEngineVersionsOutput     *aws_rds.DescribeDBMajorEngineVersionsOutput
+	DescribeDBMajorEngineVersionsError      error
+	DescribeDBMajorEngineVersionsCallCount  int
 	Error                                   error
 }
 
@@ -34,6 +38,12 @@ func NewRDSClient() *RDSClient {
 		},
 		DescribePendingMaintenanceActionsOutput: &aws_rds.DescribePendingMaintenanceActionsOutput{
 			PendingMaintenanceActions: []aws_rds_types.ResourcePendingMaintenanceActions{},
+		},
+		DescribeDBEngineVersionsOutput: &aws_rds.DescribeDBEngineVersionsOutput{
+			DBEngineVersions: []aws_rds_types.DBEngineVersion{},
+		},
+		DescribeDBMajorEngineVersionsOutput: &aws_rds.DescribeDBMajorEngineVersionsOutput{
+			DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{},
 		},
 	}
 
@@ -70,6 +80,22 @@ func (m *RDSClient) WithLogFilesOutputError(output error) *RDSClient {
 	return m
 }
 
+func (m *RDSClient) WithDescribeDBMajorEngineVersionsOutput(output *aws_rds.DescribeDBMajorEngineVersionsOutput) *RDSClient {
+	m.DescribeDBMajorEngineVersionsOutput = output
+
+	return m
+}
+
+func (m *RDSClient) WithDescribeDBMajorEngineVersionsError(err error) *RDSClient {
+	m.DescribeDBMajorEngineVersionsError = err
+
+	return m
+}
+
+func (m *RDSClient) GetDescribeDBMajorEngineVersionsCallCount() int {
+	return m.DescribeDBMajorEngineVersionsCallCount
+}
+
 func (m RDSClient) DescribeDBClusters(ctx context.Context, params *aws_rds.DescribeDBClustersInput, optFns ...func(*aws_rds.Options)) (*aws_rds.DescribeDBClustersOutput, error) {
 	return m.DescribeDBClustersOutput, nil
 }
@@ -90,6 +116,15 @@ func (m RDSClient) DescribeDBLogFiles(ctx context.Context, input *aws_rds.Descri
 
 func (m RDSClient) DescribeDBInstances(context.Context, *aws_rds.DescribeDBInstancesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBInstancesOutput, error) {
 	return m.DescribeDBInstancesOutput, nil
+}
+
+func (m RDSClient) DescribeDBEngineVersions(context.Context, *aws_rds.DescribeDBEngineVersionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBEngineVersionsOutput, error) {
+	return m.DescribeDBEngineVersionsOutput, nil
+}
+
+func (m *RDSClient) DescribeDBMajorEngineVersions(context.Context, *aws_rds.DescribeDBMajorEngineVersionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBMajorEngineVersionsOutput, error) {
+	m.DescribeDBMajorEngineVersionsCallCount++
+	return m.DescribeDBMajorEngineVersionsOutput, m.DescribeDBMajorEngineVersionsError
 }
 
 // RandomString returns a random alphanumeric string of the specified length

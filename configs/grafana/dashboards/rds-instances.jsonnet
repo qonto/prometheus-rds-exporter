@@ -30,10 +30,16 @@ dashboard.new(title)
       p.stat.pendingMaintenances { gridPos+: { w: 3, h: 3 } },
       p.stat.pendingModification { gridPos+: { w: 3, h: 3 } },
       p.stat.deprecatedCertificates { gridPos+: { w: 3, h: 3 } },
+      p.stat.standardSupportEnding { gridPos+: { w: 3, h: 3 } },
+      p.stat.extendedSupportEnding { gridPos+: { w: 3, h: 3 } },
 
       g.panel.row.new('Pending operations'),
       p.table.pendingMaintenances { gridPos+: { w: 12, h: 5 } },
       p.table.pendingModifications { gridPos+: { w: 12, h: 5 } },
+
+      g.panel.row.new('Standard and extended support'),
+      p.table.standardSupportEnding { gridPos+: { w: 12, h: 5 } },
+      p.table.extendedSupportEnding { gridPos+: { w: 12, h: 5 } },
 
       g.panel.row.new('Inventory'),
       p.table.instances { gridPos+: { w: 24, h: 7 } },
