@@ -36,6 +36,7 @@ type Configuration struct {
 	CollectLogsSize           bool
 	CollectServerlessLogsSize bool
 	CollectMaintenances       bool
+	CollectClusterMetrics     bool
 	CollectQuotas             bool
 	CollectUsages             bool
 	TagSelections             map[string][]string
@@ -447,6 +448,7 @@ func (c *rdsCollector) fetchMetrics() error {
 		CollectLogsSize:           c.configuration.CollectLogsSize,
 		CollectServerlessLogsSize: c.configuration.CollectServerlessLogsSize,
 		CollectMaintenances:       c.configuration.CollectMaintenances,
+		CollectClusterMetrics:     c.configuration.CollectClusterMetrics,
 		TagSelections:             c.configuration.TagSelections,
 	})
 

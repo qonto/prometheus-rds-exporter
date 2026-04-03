@@ -25,7 +25,7 @@ func TestGetMetrics(t *testing.T) {
 	ctx := context.TODO()
 	client := mock.NewRDSClient().WithDBInstances(*rdsInstance).WithDBClusters(*rdsCluster)
 
-	configuration := rds.Configuration{CollectLogsSize: true}
+	configuration := rds.Configuration{CollectLogsSize: true, CollectClusterMetrics: true}
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
@@ -364,7 +364,7 @@ func TestMultiAZCluster(t *testing.T) {
 
 	ctx := context.TODO()
 	client := mock.NewRDSClient().WithDBClusters(*rdsCluster)
-	configuration := rds.Configuration{}
+	configuration := rds.Configuration{CollectClusterMetrics: true}
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 	require.NoError(t, err, "GetInstancesMetrics must succeed")
@@ -452,7 +452,7 @@ func TestDBClusterRole(t *testing.T) {
 		WithDBInstances(*writer, *reader1, *reader2).
 		WithDBClusters(*cluster)
 
-	config := rds.Configuration{}
+	config := rds.Configuration{CollectClusterMetrics: true}
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, config)
 
 	metrics, err := fetcher.GetInstancesMetrics()
@@ -480,7 +480,7 @@ func TestServerlessMetrics(t *testing.T) {
 	ctx := context.TODO()
 	client := mock.NewRDSClient().WithDBClusters(*cluster)
 
-	configuration := rds.Configuration{CollectLogsSize: true}
+	configuration := rds.Configuration{CollectLogsSize: true, CollectClusterMetrics: true}
 	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
 	metrics, err := fetcher.GetInstancesMetrics()
 
