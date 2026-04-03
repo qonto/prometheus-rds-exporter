@@ -148,7 +148,8 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 		cloudWatchClient:    cloudWatchClient,
 		tagClient:           tagClient,
 
-		configuration: collectorConfiguration,
+		configuration:        collectorConfiguration,
+		engineSupportService: rds.NewEngineSupportService(rdsClient, &logger),
 
 		exporterBuildInformation: prometheus.NewDesc("rds_exporter_build_info",
 			"A metric with constant '1' value labeled by version from which exporter was built",
@@ -891,14 +892,8 @@ func (c *rdsCollector) collectEngineSupportMetrics(ch chan<- prometheus.Metric, 
 		return
 	}
 
-	// Create engine support service with cache (reuse existing service if available)
-	if c.engineSupportService == nil {
-		c.engineSupportService = rds.NewEngineSupportService(c.rdsClient, &c.logger)
-	}
-	engineSupportService := c.engineSupportService
-
 	// Get engine support metrics
-	metrics, err := engineSupportService.GetEngineSupportMetrics(c.ctx, engine, engineVersion)
+	metrics, err := c.engineSupportService.GetEngineSupportMetrics(c.ctx, engine, engineVersion)
 	if err != nil {
 		// Log specific error details for debugging
 		c.logger.Error("Failed to get engine support metrics",
