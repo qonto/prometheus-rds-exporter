@@ -397,6 +397,54 @@ local variables = import '../variables.libsonnet';
         + prometheusQuery.withLegendFormat('{{dbidentifier}}'),
 
     },
+    network: {
+      throughput: {
+        receive:
+          prometheusQuery.new(
+            '$' + variables.datasource.name,
+            |||
+              max(rds_network_receive_throughput_bytes{aws_account_id="$aws_account_id",aws_region="$aws_region",dbidentifier="$dbidentifier"})
+            |||
+          )
+          + prometheusQuery.withLegendFormat('Receive'),
+
+        transmit:
+          prometheusQuery.new(
+            '$' + variables.datasource.name,
+            |||
+              max(rds_network_transmit_throughput_bytes{aws_account_id="$aws_account_id",aws_region="$aws_region",dbidentifier="$dbidentifier"})
+            |||
+          )
+          + prometheusQuery.withLegendFormat('Transmit'),
+
+        max:
+          prometheusQuery.new(
+            '$' + variables.datasource.name,
+            |||
+              max(rds_max_network_throughput_bytes{aws_account_id="$aws_account_id",aws_region="$aws_region",dbidentifier="$dbidentifier"})
+            |||
+          )
+          + prometheusQuery.withLegendFormat('Max'),
+
+        storageReceive:
+          prometheusQuery.new(
+            '$' + variables.datasource.name,
+            |||
+              max(rds_storage_network_receive_throughput_bytes{aws_account_id="$aws_account_id",aws_region="$aws_region",dbidentifier="$dbidentifier"})
+            |||
+          )
+          + prometheusQuery.withLegendFormat('Storage: Receive'),
+
+        storageTransmit:
+          prometheusQuery.new(
+            '$' + variables.datasource.name,
+            |||
+              max(rds_storage_network_transmit_throughput_bytes{aws_account_id="$aws_account_id",aws_region="$aws_region",dbidentifier="$dbidentifier"})
+            |||
+          )
+          + prometheusQuery.withLegendFormat('Storage: Transmit'),
+      },
+    },
     backup: {
       retention:
         prometheusQuery.new(

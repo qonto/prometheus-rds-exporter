@@ -27,23 +27,27 @@ type CloudWatchMetrics struct {
 }
 
 type RdsMetrics struct {
-	CPUUtilization             *float64
-	DBLoad                     *float64
-	DBLoadCPU                  *float64
-	DBLoadNonCPU               *float64
-	DatabaseConnections        *float64
-	FreeStorageSpace           *float64
-	FreeableMemory             *float64
-	MaximumUsedTransactionIDs  *float64
-	ReadIOPS                   *float64
-	ReadThroughput             *float64
-	ReplicaLag                 *float64
-	ReplicationSlotDiskUsage   *float64
-	SwapUsage                  *float64
-	TransactionLogsDiskUsage   *float64
-	ServerlessDatabaseCapacity *float64
-	WriteIOPS                  *float64
-	WriteThroughput            *float64
+	CPUUtilization                   *float64
+	DatabaseConnections              *float64
+	DBLoad                           *float64
+	DBLoadCPU                        *float64
+	DBLoadNonCPU                     *float64
+	FreeableMemory                   *float64
+	FreeStorageSpace                 *float64
+	MaximumUsedTransactionIDs        *float64
+	NetworkReceiveThroughput         *float64
+	NetworkTransmitThroughput        *float64
+	ReadIOPS                         *float64
+	ReadThroughput                   *float64
+	ReplicaLag                       *float64
+	ReplicationSlotDiskUsage         *float64
+	ServerlessDatabaseCapacity       *float64
+	StorageNetworkReceiveThroughput  *float64
+	StorageNetworkTransmitThroughput *float64
+	SwapUsage                        *float64
+	TransactionLogsDiskUsage         *float64
+	WriteIOPS                        *float64
+	WriteThroughput                  *float64
 }
 
 func (m *RdsMetrics) Update(field string, value float64) error {
@@ -62,6 +66,10 @@ func (m *RdsMetrics) Update(field string, value float64) error {
 		m.FreeStorageSpace = &value
 	case "FreeableMemory":
 		m.FreeableMemory = &value
+	case "NetworkReceiveThroughput":
+		m.NetworkReceiveThroughput = &value
+	case "NetworkTransmitThroughput":
+		m.NetworkTransmitThroughput = &value
 	case "SwapUsage":
 		m.SwapUsage = &value
 	case "WriteIOPS":
@@ -82,6 +90,10 @@ func (m *RdsMetrics) Update(field string, value float64) error {
 		m.TransactionLogsDiskUsage = &value
 	case "ServerlessDatabaseCapacity":
 		m.ServerlessDatabaseCapacity = &value
+	case "StorageNetworkReceiveThroughput":
+		m.StorageNetworkReceiveThroughput = &value
+	case "StorageNetworkTransmitThroughput":
+		m.StorageNetworkTransmitThroughput = &value
 	default:
 		return fmt.Errorf("can't process '%s' metrics: %w", field, errUnknownMetric)
 	}
@@ -90,8 +102,8 @@ func (m *RdsMetrics) Update(field string, value float64) error {
 }
 
 // getCloudWatchMetricsName returns names of Cloudwatch metrics to collect
-func getCloudWatchMetricsName() [17]string {
-	return [17]string{
+func getCloudWatchMetricsName() [21]string {
+	return [21]string{
 		"CPUUtilization",
 		"DBLoad",
 		"DBLoadCPU",
@@ -100,12 +112,16 @@ func getCloudWatchMetricsName() [17]string {
 		"FreeStorageSpace",
 		"FreeableMemory",
 		"MaximumUsedTransactionIDs",
+		"NetworkReceiveThroughput",
+		"NetworkTransmitThroughput",
 		"ReadIOPS",
 		"ReadThroughput",
 		"ReplicaLag",
 		"ReplicationSlotDiskUsage",
 		"SwapUsage",
 		"ServerlessDatabaseCapacity",
+		"StorageNetworkReceiveThroughput",
+		"StorageNetworkTransmitThroughput",
 		"TransactionLogsDiskUsage",
 		"WriteIOPS",
 		"WriteThroughput",

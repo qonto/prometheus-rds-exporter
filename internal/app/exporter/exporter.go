@@ -76,55 +76,61 @@ type rdsCollector struct {
 	cloudWatchClient    cloudWatchClient
 	tagClient           resourcegroupstaggingapi.GetResourcesAPIClient
 
-	errors                      *prometheus.Desc
-	DBLoad                      *prometheus.Desc
-	dBLoadCPU                   *prometheus.Desc
-	dBLoadNonCPU                *prometheus.Desc
-	allocatedStorage            *prometheus.Desc
-	allocatedDiskIOPS           *prometheus.Desc
-	allocatedDiskThroughput     *prometheus.Desc
-	information                 *prometheus.Desc
-	clusterInformation          *prometheus.Desc
-	clusterServerLessMaxACU     *prometheus.Desc
-	clusterServerLessMinACU     *prometheus.Desc
-	instanceBaselineIops        *prometheus.Desc
-	instanceMaximumIops         *prometheus.Desc
-	instanceBaselineThroughput  *prometheus.Desc
-	instanceMaximumThroughput   *prometheus.Desc
-	instanceMemory              *prometheus.Desc
-	instanceVCPU                *prometheus.Desc
-	instanceTags                *prometheus.Desc
-	logFilesSize                *prometheus.Desc
-	maxAllocatedStorage         *prometheus.Desc
-	maxIops                     *prometheus.Desc
-	status                      *prometheus.Desc
-	storageThroughput           *prometheus.Desc
-	up                          *prometheus.Desc
-	cpuUtilisation              *prometheus.Desc
-	freeStorageSpace            *prometheus.Desc
-	databaseConnections         *prometheus.Desc
-	freeableMemory              *prometheus.Desc
-	swapUsage                   *prometheus.Desc
-	writeIOPS                   *prometheus.Desc
-	readIOPS                    *prometheus.Desc
-	replicaLag                  *prometheus.Desc
-	replicationSlotDiskUsage    *prometheus.Desc
-	maximumUsedTransactionIDs   *prometheus.Desc
-	apiCall                     *prometheus.Desc
-	readThroughput              *prometheus.Desc
-	writeThroughput             *prometheus.Desc
-	backupRetentionPeriod       *prometheus.Desc
-	quotaDBInstances            *prometheus.Desc
-	quotaTotalStorage           *prometheus.Desc
-	quotaMaxDBInstanceSnapshots *prometheus.Desc
-	usageAllocatedStorage       *prometheus.Desc
-	usageDBInstances            *prometheus.Desc
-	usageManualSnapshots        *prometheus.Desc
-	serverlessDatabaseCapacity  *prometheus.Desc
-	exporterBuildInformation    *prometheus.Desc
-	transactionLogsDiskUsage    *prometheus.Desc
-	certificateValidTill        *prometheus.Desc
-	age                         *prometheus.Desc
+	errors                           *prometheus.Desc
+	DBLoad                           *prometheus.Desc
+	dBLoadCPU                        *prometheus.Desc
+	dBLoadNonCPU                     *prometheus.Desc
+	allocatedStorage                 *prometheus.Desc
+	allocatedDiskIOPS                *prometheus.Desc
+	allocatedDiskThroughput          *prometheus.Desc
+	information                      *prometheus.Desc
+	clusterInformation               *prometheus.Desc
+	clusterServerLessMaxACU          *prometheus.Desc
+	clusterServerLessMinACU          *prometheus.Desc
+	instanceBaselineIops             *prometheus.Desc
+	instanceMaximumIops              *prometheus.Desc
+	instanceBaselineThroughput       *prometheus.Desc
+	instanceMaximumThroughput        *prometheus.Desc
+	instanceBaselineNetworkBandwidth *prometheus.Desc
+	instanceMemory                   *prometheus.Desc
+	instanceVCPU                     *prometheus.Desc
+	instanceTags                     *prometheus.Desc
+	logFilesSize                     *prometheus.Desc
+	maxAllocatedStorage              *prometheus.Desc
+	maxIops                          *prometheus.Desc
+	status                           *prometheus.Desc
+	storageThroughput                *prometheus.Desc
+	maxNetworkThroughput             *prometheus.Desc
+	networkReceiveThroughput         *prometheus.Desc
+	networkTransmitThroughput        *prometheus.Desc
+	up                               *prometheus.Desc
+	cpuUtilisation                   *prometheus.Desc
+	freeStorageSpace                 *prometheus.Desc
+	databaseConnections              *prometheus.Desc
+	freeableMemory                   *prometheus.Desc
+	swapUsage                        *prometheus.Desc
+	writeIOPS                        *prometheus.Desc
+	readIOPS                         *prometheus.Desc
+	replicaLag                       *prometheus.Desc
+	replicationSlotDiskUsage         *prometheus.Desc
+	maximumUsedTransactionIDs        *prometheus.Desc
+	apiCall                          *prometheus.Desc
+	readThroughput                   *prometheus.Desc
+	writeThroughput                  *prometheus.Desc
+	storageNetworkReceiveThroughput  *prometheus.Desc
+	storageNetworkTransmitThroughput *prometheus.Desc
+	backupRetentionPeriod            *prometheus.Desc
+	quotaDBInstances                 *prometheus.Desc
+	quotaTotalStorage                *prometheus.Desc
+	quotaMaxDBInstanceSnapshots      *prometheus.Desc
+	usageAllocatedStorage            *prometheus.Desc
+	usageDBInstances                 *prometheus.Desc
+	usageManualSnapshots             *prometheus.Desc
+	serverlessDatabaseCapacity       *prometheus.Desc
+	exporterBuildInformation         *prometheus.Desc
+	transactionLogsDiskUsage         *prometheus.Desc
+	certificateValidTill             *prometheus.Desc
+	age                              *prometheus.Desc
 }
 
 func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient, tagClient resourcegroupstaggingapi.GetResourcesAPIClient) *rdsCollector {
@@ -192,12 +198,32 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			"Max disk throughput evaluated with disk throughput and EC2 capacity",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
+		maxNetworkThroughput: prometheus.NewDesc("rds_max_network_throughput_bytes",
+			"Maximum network throughput of underlying EC2 instance class",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		networkReceiveThroughput: prometheus.NewDesc("rds_network_receive_throughput_bytes",
+			"Average number of bytes received per second from the network",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		networkTransmitThroughput: prometheus.NewDesc("rds_network_transmit_throughput_bytes",
+			"Average number of bytes transmitted per second to the network",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
 		readThroughput: prometheus.NewDesc("rds_read_throughput_bytes",
 			"Average number of bytes read from disk per second",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		writeThroughput: prometheus.NewDesc("rds_write_throughput_bytes",
 			"Average number of bytes written to disk per second",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		storageNetworkReceiveThroughput: prometheus.NewDesc("rds_storage_network_receive_throughput_bytes",
+			"Average number of bytes received per second from the Aurora storage subsystem (Aurora only)",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		storageNetworkTransmitThroughput: prometheus.NewDesc("rds_storage_network_transmit_throughput_bytes",
+			"Average number of bytes transmitted per second to the Aurora storage subsystem (Aurora only)",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		status: prometheus.NewDesc("rds_instance_status",
@@ -238,6 +264,10 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 		),
 		instanceBaselineIops: prometheus.NewDesc("rds_instance_baseline_iops_average",
 			"Baseline IOPS of underlying EC2 instance class",
+			[]string{"aws_account_id", "aws_region", "instance_class"}, nil,
+		),
+		instanceBaselineNetworkBandwidth: prometheus.NewDesc("rds_instance_baseline_network_bandwidth_bytes",
+			"Baseline network bandwidth of underlying EC2 instance class",
 			[]string{"aws_account_id", "aws_region", "instance_class"}, nil,
 		),
 		freeStorageSpace: prometheus.NewDesc("rds_free_storage_bytes",
@@ -363,12 +393,16 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.instanceMaximumIops
 	ch <- c.instanceBaselineThroughput
 	ch <- c.instanceMaximumThroughput
+	ch <- c.instanceBaselineNetworkBandwidth
 	ch <- c.instanceMemory
 	ch <- c.instanceVCPU
 	ch <- c.logFilesSize
 	ch <- c.maxAllocatedStorage
 	ch <- c.maxIops
 	ch <- c.maximumUsedTransactionIDs
+	ch <- c.maxNetworkThroughput
+	ch <- c.networkReceiveThroughput
+	ch <- c.networkTransmitThroughput
 	ch <- c.quotaDBInstances
 	ch <- c.quotaMaxDBInstanceSnapshots
 	ch <- c.quotaTotalStorage
@@ -378,6 +412,8 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.replicationSlotDiskUsage
 	ch <- c.status
 	ch <- c.storageThroughput
+	ch <- c.storageNetworkReceiveThroughput
+	ch <- c.storageNetworkTransmitThroughput
 	ch <- c.swapUsage
 	ch <- c.transactionLogsDiskUsage
 	ch <- c.up
@@ -670,6 +706,13 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(c.storageThroughput, prometheus.GaugeValue, storageThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
 		}
 
+		// Network throughput from EC2 instance type
+		if ec2Metrics, ok := c.metrics.EC2.Instances[instance.DBInstanceClass]; ok {
+			if ec2Metrics.BaselineNetworkBandwidth > 0 {
+				ch <- prometheus.MustNewConstMetric(c.maxNetworkThroughput, prometheus.GaugeValue, ec2Metrics.BaselineNetworkBandwidth, c.awsAccountID, c.awsRegion, dbidentifier)
+			}
+		}
+
 		if c.configuration.CollectInstanceTags {
 			names, values := c.getInstanceTagLabels(dbidentifier, instance)
 
@@ -738,6 +781,14 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(c.writeThroughput, prometheus.GaugeValue, *instance.WriteThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
 		}
 
+		if instance.StorageNetworkReceiveThroughput != nil {
+			ch <- prometheus.MustNewConstMetric(c.storageNetworkReceiveThroughput, prometheus.GaugeValue, *instance.StorageNetworkReceiveThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.StorageNetworkTransmitThroughput != nil {
+			ch <- prometheus.MustNewConstMetric(c.storageNetworkTransmitThroughput, prometheus.GaugeValue, *instance.StorageNetworkTransmitThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
 		if instance.TransactionLogsDiskUsage != nil {
 			ch <- prometheus.MustNewConstMetric(c.transactionLogsDiskUsage, prometheus.GaugeValue, *instance.TransactionLogsDiskUsage, c.awsAccountID, c.awsRegion, dbidentifier)
 		}
@@ -761,6 +812,14 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		if instance.ServerlessDatabaseCapacity != nil {
 			ch <- prometheus.MustNewConstMetric(c.serverlessDatabaseCapacity, prometheus.GaugeValue, *instance.ServerlessDatabaseCapacity, c.awsAccountID, c.awsRegion, dbidentifier)
 		}
+
+		if instance.NetworkReceiveThroughput != nil {
+			ch <- prometheus.MustNewConstMetric(c.networkReceiveThroughput, prometheus.GaugeValue, *instance.NetworkReceiveThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.NetworkTransmitThroughput != nil {
+			ch <- prometheus.MustNewConstMetric(c.networkTransmitThroughput, prometheus.GaugeValue, *instance.NetworkTransmitThroughput, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
 	}
 
 	// usage metrics
@@ -780,6 +839,9 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(c.instanceMaximumThroughput, prometheus.GaugeValue, instance.MaximumThroughput, c.awsAccountID, c.awsRegion, instanceType)
 		ch <- prometheus.MustNewConstMetric(c.instanceMemory, prometheus.GaugeValue, float64(instance.Memory), c.awsAccountID, c.awsRegion, instanceType)
 		ch <- prometheus.MustNewConstMetric(c.instanceVCPU, prometheus.GaugeValue, float64(instance.Vcpu), c.awsAccountID, c.awsRegion, instanceType)
+		if instance.BaselineNetworkBandwidth > 0 {
+			ch <- prometheus.MustNewConstMetric(c.instanceBaselineNetworkBandwidth, prometheus.GaugeValue, instance.BaselineNetworkBandwidth, c.awsAccountID, c.awsRegion, instanceType)
+		}
 	}
 
 	// serviceQuotas metrics

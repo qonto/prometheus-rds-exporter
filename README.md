@@ -63,6 +63,7 @@ It collects key metrics about:
 | rds_instance_age_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | Time since instance creation |
 | rds_instance_baseline_iops_average | `aws_account_id`, `aws_region`, `instance_class` | Baseline IOPS of underlying EC2 instance class |
 | rds_instance_baseline_throughput_bytes | `aws_account_id`, `aws_region`, `instance_class` | Baseline throughput of underlying EC2 instance class |
+| rds_instance_baseline_network_bandwidth_bytes | `aws_account_id`, `aws_region`, `instance_class` | Baseline network bandwidth of underlying EC2 instance class |
 | rds_instance_info | `arn`, `aws_account_id`, `aws_region`, `dbi_resource_id`, `dbidentifier`, `cluster_identifier`, `deletion_protection`, `engine`, `engine_version`, `instance_class`, `multi_az`, `performance_insights_enabled`, `pending_maintenance`, `pending_modified_values`, `role`, `source_dbidentifier`, `storage_type`, `ca_certificate_identifier` | RDS instance information |
 | rds_instance_log_files_size_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Total of log files on the instance |
 | rds_instance_max_iops_average | `aws_account_id`, `aws_region`, `instance_class` | Maximum IOPS of underlying EC2 instance class |
@@ -74,7 +75,10 @@ It collects key metrics about:
 | rds_max_allocated_storage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Upper limit in gibibytes to which Amazon RDS can automatically scale the storage of the DB instance |
 | rds_max_disk_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Max disk IOPS evaluated with disk IOPS and EC2 capacity |
 | rds_max_storage_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Max disk throughput evaluated with disk throughput and EC2 capacity |
+| rds_max_network_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Maximum network throughput of underlying EC2 instance class |
 | rds_maximum_used_transaction_ids_average | `aws_account_id`, `aws_region`, `dbidentifier` | Maximum transaction IDs that have been used. Applies to only PostgreSQL |
+| rds_network_receive_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of bytes received per second from the network |
+| rds_network_transmit_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of bytes transmitted per second to the network |
 | rds_quota_max_dbinstances_average | `aws_account_id`, `aws_region` | Maximum number of RDS instances allowed in the AWS account |
 | rds_quota_maximum_db_instance_snapshots_average | `aws_account_id`, `aws_region` | Maximum number of manual DB instance snapshots |
 | rds_quota_total_storage_bytes | `aws_account_id`, `aws_region` | Maximum total storage for all DB instances |
@@ -83,6 +87,8 @@ It collects key metrics about:
 | rds_replica_lag_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | For read replica configurations, the amount of time a read replica DB instance lags behind the source DB instance. Applies to MariaDB, Microsoft SQL Server, MySQL, Oracle, and PostgreSQL read replicas |
 | rds_replication_slot_disk_usage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Disk space used by replication slot files. Applies to PostgreSQL |
 | rds_serverless_instance_acu_average | `aws_account_id`, `aws_region`, `dbidentifier` | Current ACU of the Aurora Serverless instance |
+| rds_storage_network_receive_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of bytes received per second from the Aurora storage subsystem (Aurora only) |
+| rds_storage_network_transmit_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of bytes transmitted per second to the Aurora storage subsystem (Aurora only) |
 | rds_swap_usage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Amount of swap space used on the DB instance. This metric is not available for SQL Server |
 | rds_transaction_logs_disk_usage_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Disk space used by transaction logs (only on PostgreSQL) |
 | rds_usage_allocated_storage_bytes | `aws_account_id`, `aws_region` | Total storage used by AWS RDS instances |
