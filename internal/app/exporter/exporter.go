@@ -371,11 +371,11 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
 		standardSupportRemainingDays: prometheus.NewDesc("rds_standard_support_engine_remaining_days",
-			"Remaining days until PostgreSQL engine standard support ends",
+			"Days remaining until standard support ends for the database engine version.",
 			[]string{"aws_account_id", "aws_region", "dbidentifier", "engine", "engine_version"}, nil,
 		),
 		extendedSupportRemainingDays: prometheus.NewDesc("rds_extended_support_engine_remaining_days",
-			"Remaining days until PostgreSQL engine extended support ends",
+			"Days remaining until extended support ends for the database engine version.",
 			[]string{"aws_account_id", "aws_region", "dbidentifier", "engine", "engine_version"}, nil,
 		),
 	}
