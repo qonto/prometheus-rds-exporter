@@ -53,6 +53,7 @@ type exporterConfig struct {
 	CollectLogsSize           bool                `koanf:"collect-logs-size"`
 	CollectServerlessLogsSize bool                `koanf:"collect-serverless-logs-size"`
 	CollectMaintenances       bool                `koanf:"collect-maintenances"`
+	CollectClusterMetrics     bool                `koanf:"collect-cluster-metrics"`
 	CollectQuotas             bool                `koanf:"collect-quotas"`
 	CollectUsages             bool                `koanf:"collect-usages"`
 	CollectEngineSupport      bool                `koanf:"collect-engine-support"`
@@ -100,6 +101,7 @@ func run(configuration exporterConfig) {
 		CollectLogsSize:           configuration.CollectLogsSize,
 		CollectServerlessLogsSize: configuration.CollectServerlessLogsSize,
 		CollectMaintenances:       configuration.CollectMaintenances,
+		CollectClusterMetrics:     configuration.CollectClusterMetrics,
 		CollectQuotas:             configuration.CollectQuotas,
 		CollectUsages:             configuration.CollectUsages,
 		CollectEngineSupport:      configuration.CollectEngineSupport,
@@ -170,6 +172,7 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().BoolP("collect-logs-size", "", true, "Collect AWS instances logs size for non serverless instances")
 	cmd.Flags().BoolP("collect-serverless-logs-size", "", false, "Collect AWS instances logs size for serverless DB instances")
 	cmd.Flags().BoolP("collect-maintenances", "", true, "Collect AWS instances maintenances")
+	cmd.Flags().BoolP("collect-cluster-metrics", "", true, "Collect AWS RDS cluster metrics")
 	cmd.Flags().BoolP("collect-quotas", "", true, "Collect AWS RDS quotas")
 	cmd.Flags().BoolP("collect-engine-support", "", true, "Collect engine version support lifecycle information")
 	cmd.Flags().BoolP("collect-usages", "", true, "Collect AWS RDS usages")

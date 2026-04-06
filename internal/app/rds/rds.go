@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -26,6 +27,7 @@ type Configuration struct {
 	CollectLogsSize           bool
 	CollectServerlessLogsSize bool
 	CollectMaintenances       bool
+	CollectClusterMetrics     bool
 	TagSelections             map[string][]string
 }
 
@@ -416,17 +418,25 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 		}
 	}
 
-	filters, err := r.getDBInstanceFilters(ctx)
+	var clusterMetrics map[string]ClusterMetrics
+	if r.configuration.CollectClusterMetrics {
+		clusterFilters, err := r.getDBClusterFilters(ctx)
+		if err != nil {
+			return Metrics{}, err
+		}
+
+		clusterMetrics, err = r.getClusters(ctx, clusterFilters)
+		if err != nil {
+			return Metrics{}, fmt.Errorf("can't get cluster metrics: %w", err)
+		}
+	}
+
+	instanceFilters, err := r.getDBInstanceFilters(ctx)
 	if err != nil {
 		return Metrics{}, err
 	}
 
-	clusterMetrics, err := r.getClusters(ctx, filters)
-	if err != nil {
-		return Metrics{}, fmt.Errorf("can't get cluster metrics: %w", err)
-	}
-
-	input := &aws_rds.DescribeDBInstancesInput{Filters: filters}
+	input := &aws_rds.DescribeDBInstancesInput{Filters: instanceFilters}
 
 	paginator := aws_rds.NewDescribeDBInstancesPaginator(r.client, input)
 	for paginator.HasMorePages() {
@@ -509,13 +519,103 @@ func (r *RDSFetcher) getDBInstanceFilters(ctx context.Context) ([]aws_rds_types.
 		r.logger.Warn(fmt.Sprintf("no resources any matching tag selection (won't limit which dbs to get metrics for): %v", r.configuration.TagSelections))
 		resourcesSpan.SetStatus(codes.Error, "did not find any RDS instances matching tag selection")
 	} else {
-		id := "db-instance-id"
-		filters = append(filters, aws_rds_types.Filter{
-			Name:   &id,
-			Values: arns,
-		})
+		// Extract instance IDs from ARNs
+		var instanceIDs []string
+		for _, arn := range arns {
+			// ARN format: arn:aws:rds:region:account:db:instance-id
+			parts := strings.Split(arn, ":")
+			if len(parts) >= 7 && parts[5] == "db" {
+				instanceIDs = append(instanceIDs, parts[6])
+			} else {
+				r.logger.Warn(fmt.Sprintf("invalid RDS instance ARN format, skipping: %s", arn))
+			}
+		}
 
-		resourcesSpan.SetStatus(codes.Ok, "found RDS instances matching tag selection")
+		if len(instanceIDs) > 0 {
+			id := "db-instance-id"
+			filters = append(filters, aws_rds_types.Filter{
+				Name:   &id,
+				Values: instanceIDs,
+			})
+
+			resourcesSpan.SetStatus(codes.Ok, "found RDS instances matching tag selection")
+		} else {
+			r.logger.Warn(fmt.Sprintf("failed to extract instance IDs from ARNs, won't limit which dbs to get metrics for"))
+			resourcesSpan.SetStatus(codes.Error, "failed to extract instance IDs from ARNs")
+		}
+	}
+
+	return filters, nil
+}
+
+func (r *RDSFetcher) getDBClusterFilters(ctx context.Context) ([]aws_rds_types.Filter, error) {
+	var filters []aws_rds_types.Filter
+
+	if r.configuration.TagSelections == nil {
+		return filters, nil
+	}
+
+	var tagFilters []tag_types.TagFilter
+
+	for k, v := range r.configuration.TagSelections {
+		keyCopy := k
+		tagFilters = append(tagFilters, tag_types.TagFilter{
+			Key:    &keyCopy,
+			Values: v,
+		})
+	}
+
+	_, resourcesSpan := tracer.Start(ctx, "find-rds-clusters")
+	resourcesInput := &resourcegroupstaggingapi.GetResourcesInput{
+		ResourceTypeFilters: []string{"rds:cluster"},
+		TagFilters:          tagFilters,
+	}
+
+	var arns []string
+
+	resourcesPaginator := resourcegroupstaggingapi.NewGetResourcesPaginator(r.tagClient, resourcesInput)
+
+	for resourcesPaginator.HasMorePages() {
+		r.statistics.TagAPICall++
+
+		resources, err := resourcesPaginator.NextPage(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("can't find clusters for tags %v: %w", r.configuration.TagSelections, err)
+		}
+
+		for _, res := range resources.ResourceTagMappingList {
+			arns = append(arns, *res.ResourceARN)
+		}
+	}
+
+	if len(arns) == 0 {
+		r.logger.Warn(fmt.Sprintf("no resources any matching tag selection (won't limit which clusters to get metrics for): %v", r.configuration.TagSelections))
+		resourcesSpan.SetStatus(codes.Error, "did not find any RDS clusters matching tag selection")
+	} else {
+		// Extract cluster IDs from ARNs
+		var clusterIDs []string
+		for _, arn := range arns {
+			// ARN format: arn:aws:rds:region:account:cluster:cluster-id
+			parts := strings.Split(arn, ":")
+			if len(parts) >= 7 && parts[5] == "cluster" {
+				clusterIDs = append(clusterIDs, parts[6])
+			} else {
+				r.logger.Warn(fmt.Sprintf("invalid RDS cluster ARN format, skipping: %s", arn))
+			}
+		}
+
+		if len(clusterIDs) > 0 {
+			id := "db-cluster-id"
+			filters = append(filters, aws_rds_types.Filter{
+				Name:   &id,
+				Values: clusterIDs,
+			})
+
+			resourcesSpan.SetStatus(codes.Ok, "found RDS clusters matching tag selection")
+		} else {
+			r.logger.Warn(fmt.Sprintf("failed to extract cluster IDs from ARNs, won't limit which clusters to get metrics for"))
+			resourcesSpan.SetStatus(codes.Error, "failed to extract cluster IDs from ARNs")
+		}
 	}
 
 	return filters, nil

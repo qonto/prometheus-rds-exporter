@@ -240,6 +240,7 @@ Configuration could be defined in [prometheus-rds-exporter.yaml](https://github.
 | collect-logs-size            | Collect AWS instances logs size, excluding serverless instances (AWS RDS API)                                                     | true                    |
 | collect-serverless-logs-size | Collect AWS instances logs size for serverless DB instance (AWS RDS API). Prevents RDS serverless DB instances from going to zero | false                   |
 | collect-maintenances         | Collect AWS instances maintenances (AWS RDS API)                                                                                  | true                    |
+| collect-cluster-metrics      | Collect AWS RDS cluster metrics (AWS RDS API)                                 | yes                   |
 | collect-quotas               | Collect AWS RDS quotas (AWS quotas API)                                                                                           | true                    |
 | collect-usages               | Collect AWS RDS usages (AWS Cloudwatch API)                                                                                       | true                    |
 | collect-engine-support       | Collect engine version support lifecycle information (AWS RDS API)                                                                | true                    |
