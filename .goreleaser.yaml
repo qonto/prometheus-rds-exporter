@@ -167,5 +167,17 @@ release:
     owner: qonto
     name: prometheus-rds-exporter
   name_template: "v{{.Version}}"
+  header: |
+    {{ if eq .Tag "0.18.0" }}
+    ## ⚠️ Breaking Change
+
+    This version introduces the `rds:DescribeDBMajorEngineVersions` requirement in the IAM policy
+    to retrieve standard and extended support metrics.
+
+    Please add `rds:DescribeDBMajorEngineVersions` IAM permission (See example in `configs/aws/policy.json`) 
+    or disable `collect-engine-support` feature.
+
+    ---
+    {{ end }}
   footer: |
     **Full Changelog**: https://github.com/qonto/prometheus-rds-exporter/compare/{{ .PreviousTag }}...{{ .Tag }}

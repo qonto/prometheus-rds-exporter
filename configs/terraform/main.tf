@@ -48,10 +48,12 @@ data "aws_iam_policy_document" "prometheus-rds-exporter" {
   }
 
   statement {
-    sid    = "AllowMaintenanceDescriptions"
+    sid    = "AllowRDSDescriptions"
     effect = "Allow"
     actions = [
       "rds:DescribePendingMaintenanceActions",
+      "rds:DescribeAccountAttributes",
+      "rds:DescribeDBMajorEngineVersions",
     ]
     resources = ["*"]
   }
@@ -61,15 +63,6 @@ data "aws_iam_policy_document" "prometheus-rds-exporter" {
     effect = "Allow"
     actions = [
       "cloudwatch:GetMetricData",
-    ]
-    resources = ["*"]
-  }
-
-  statement {
-    sid    = "AllowRDSUsageDescriptions"
-    effect = "Allow"
-    actions = [
-      "rds:DescribeAccountAttributes",
     ]
     resources = ["*"]
   }

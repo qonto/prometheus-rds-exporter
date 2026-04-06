@@ -68,6 +68,52 @@ local variables = import '../variables.libsonnet';
       |||
     ),
 
+  instancesWithStandardSupportEnding:
+    prometheusQuery.new(
+      '$' + variables.datasource.name,
+      |||
+        count(
+          rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 90
+          and
+          rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} > 0
+          )
+      |||
+    ),
+
+  instancesWithStandardSupportEndingTable:
+    prometheusQuery.new(
+      '$' + variables.datasource.name,
+      |||
+        rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 90
+        and
+        rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} > 0
+      |||
+    )
+    + prometheusQuery.withInstant(true)
+    + self.__table,
+
+  instancesWithExtendedSupport:
+    prometheusQuery.new(
+      '$' + variables.datasource.name,
+      |||
+        count(rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 0)
+      |||
+    ),
+
+  instancesWithExtendedSupportTable:
+    prometheusQuery.new(
+      '$' + variables.datasource.name,
+      |||
+        rds_extended_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"}
+        and on (aws_account_id, aws_region, dbidentifier)
+        (
+          rds_standard_support_engine_remaining_days{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} < 0
+        )
+      |||
+    )
+    + prometheusQuery.withInstant(true)
+    + self.__table,
+
   instances: {
     total:
       prometheusQuery.new(

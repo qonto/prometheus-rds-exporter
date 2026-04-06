@@ -102,6 +102,34 @@ local colors = common.colors;
         }),
       ]),
 
+    engineStandardSupportRemainingDays:
+      s.base('Standard support remaining days', 'Days before end of standard support. After the standard support period ends, AWS will continue providing security patches and critical fixes for that engine version during the Extended Support window to give you more time to upgrade. But an additional Extended Support cost will be applied until you upgrade. See https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/extended-support.html', [queries.instance.engineSupport.standardRemainingDays])
+      + standardOptions.withUnit('d')
+      + standardOptions.withDecimals(0)
+      + standardOptions.thresholds.withSteps([
+        step.withValue(0) + step.withColor(colors.danger),
+        step.withValue(30) + step.withColor(colors.warning),
+        step.withValue(90) + step.withColor(colors.ok),
+      ])
+      + standardOptions.withMappings([
+        standardOptions.mapping.RangeMap.withType('range')
+        + standardOptions.mapping.RangeMap.withOptions({
+          from: -1825, /* 5 years */
+          to: 0,
+          result: { index: 0, color: colors.danger, text: 'Expired - instance in extended support' },
+        }),
+      ]),
+
+    engineExtendedSupportRemainingDays:
+      s.base('Extended support remaining days', 'Days before extended support end. RDS Extended Support is available for up to 3 years past the RDS end of standard support date for a major engine version. After this time, if instance has not been upgraded to major engine version to a supported version, then Amazon RDS will automatically upgrade your major engine version. We recommend that you upgrade to a supported major engine version as soon as possible. See https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/extended-support.html', [queries.instance.engineSupport.extendedRemainingDays])
+      + standardOptions.withUnit('d')
+      + standardOptions.withDecimals(0)
+      + standardOptions.thresholds.withSteps([
+        step.withValue(0) + step.withColor(colors.danger),
+        step.withValue(30) + step.withColor(colors.warning),
+        step.withValue(90) + step.withColor(colors.ok),
+      ]),
+
     source:
       s.field('Source database', 'Primary instance name for a replica)', queries.instance.info, 'source_dbidentifier'),
 
@@ -310,6 +338,49 @@ local colors = common.colors;
           standardOptions.withUnit('bytes')
           + color.withMode('fixed')
           + color.withFixedColor(colors.notice)
+          + custom.stacking.withMode('normal')
+        ),
+      ]),
+
+    networkThroughput:
+      ts.base('Network throughput', 'The average number of bytes received/transmitted per second from/to the network. Storage network metrics are specific to Aurora storage subsystem.', [queries.instance.network.throughput.receive, queries.instance.network.throughput.transmit, queries.instance.network.throughput.max, queries.instance.network.throughput.storageReceive, queries.instance.network.throughput.storageTransmit])
+      + standardOptions.withDecimals(0)
+      + standardOptions.withUnit('decbytes')
+      + standardOptions.withOverrides([
+        fieldOverride.byName.new('Max')
+        + standardOptions.override.byType.withPropertiesFromOptions(
+          standardOptions.withUnit('decbytes')
+          + custom.withLineWidth('2')
+          + color.withMode('fixed')
+          + color.withFixedColor(colors.danger)
+          + custom.withFillOpacity(0)
+        ),
+        fieldOverride.byName.new('Receive')
+        + standardOptions.override.byType.withPropertiesFromOptions(
+          standardOptions.withUnit('decbytes')
+          + color.withMode('fixed')
+          + color.withFixedColor(colors.ok)
+          + custom.stacking.withMode('normal')
+        ),
+        fieldOverride.byName.new('Transmit')
+        + standardOptions.override.byType.withPropertiesFromOptions(
+          standardOptions.withUnit('decbytes')
+          + color.withMode('fixed')
+          + color.withFixedColor(colors.notice)
+          + custom.stacking.withMode('normal')
+        ),
+        fieldOverride.byName.new('Storage: Receive')
+        + standardOptions.override.byType.withPropertiesFromOptions(
+          standardOptions.withUnit('decbytes')
+          + color.withMode('fixed')
+          + color.withFixedColor(colors.info)
+          + custom.stacking.withMode('normal')
+        ),
+        fieldOverride.byName.new('Storage: Transmit')
+        + standardOptions.override.byType.withPropertiesFromOptions(
+          standardOptions.withUnit('decbytes')
+          + color.withMode('fixed')
+          + color.withFixedColor('purple')
           + custom.stacking.withMode('normal')
         ),
       ]),

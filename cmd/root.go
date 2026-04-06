@@ -56,6 +56,7 @@ type exporterConfig struct {
 	CollectClusterMetrics     bool                `koanf:"collect-cluster-metrics"`
 	CollectQuotas             bool                `koanf:"collect-quotas"`
 	CollectUsages             bool                `koanf:"collect-usages"`
+	CollectEngineSupport      bool                `koanf:"collect-engine-support"`
 	OTELTracesEnabled         bool                `koanf:"enable-otel-traces"`
 	TagSelections             map[string][]string `koanf:"tag-selections"`
 }
@@ -103,6 +104,7 @@ func run(configuration exporterConfig) {
 		CollectClusterMetrics:     configuration.CollectClusterMetrics,
 		CollectQuotas:             configuration.CollectQuotas,
 		CollectUsages:             configuration.CollectUsages,
+		CollectEngineSupport:      configuration.CollectEngineSupport,
 		TagSelections:             configuration.TagSelections,
 	}
 
@@ -172,6 +174,7 @@ func NewRootCommand() (*cobra.Command, error) {
 	cmd.Flags().BoolP("collect-maintenances", "", true, "Collect AWS instances maintenances")
 	cmd.Flags().BoolP("collect-cluster-metrics", "", true, "Collect AWS RDS cluster metrics")
 	cmd.Flags().BoolP("collect-quotas", "", true, "Collect AWS RDS quotas")
+	cmd.Flags().BoolP("collect-engine-support", "", true, "Collect engine version support lifecycle information")
 	cmd.Flags().BoolP("collect-usages", "", true, "Collect AWS RDS usages")
 
 	return cmd, nil
