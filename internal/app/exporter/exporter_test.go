@@ -33,6 +33,7 @@ func TestWithAllDisabledCollectors(t *testing.T) {
 		CollectInstanceTags:    false,
 		CollectLogsSize:        false,
 		CollectMaintenances:    false,
+		CollectClusterMetrics:  true,
 		CollectQuotas:          false,
 		CollectUsages:          false,
 	}
@@ -68,6 +69,7 @@ func TestCollector(t *testing.T) {
 		CollectInstanceTags:    false,
 		CollectLogsSize:        true,
 		CollectMaintenances:    true,
+		CollectClusterMetrics:  true,
 		CollectQuotas:          true,
 		CollectUsages:          true,
 	}
