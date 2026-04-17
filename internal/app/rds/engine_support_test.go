@@ -235,8 +235,8 @@ func TestGetEngineSupportMetrics(t *testing.T) {
 	client := mock.NewRDSClient()
 
 	// Mock response with PostgreSQL engine versions
-	standardEndDate := time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC)
-	extendedEndDate := time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC)
+	standardEndDate := time.Now().AddDate(1, 0, 0) // 1 year from now
+	extendedEndDate := time.Now().AddDate(2, 0, 0) // 2 years from now
 
 	mockResponse := &aws_rds.DescribeDBMajorEngineVersionsOutput{
 		DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{
