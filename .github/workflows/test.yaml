@@ -70,6 +70,7 @@ jobs:
       - name: Install kubeconform
         run: |
           curl -sSLo /tmp/kubeconform.tar.gz "https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+          && echo "d2a10db6b78d56de8fe9375b9c351bc573aa218a74da04d114767b505a675090  /tmp/kubeconform.tar.gz" | sha256sum --check \
           && tar -C /usr/local/bin/ -xzvf /tmp/kubeconform.tar.gz
       - name: Run Kubeconform test
         run: make kubeconform
