@@ -15,12 +15,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
         with:
           fetch-depth: 0
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a  # v4.3.1
         with:
           aws-region: us-east-1  # ECR Public can only be logged into from the us-east-1 region
           role-to-assume: arn:aws:iam::202662887508:role/ecr-prometheus-rds-exporter
@@ -28,20 +28,20 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr-public
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419  # v2.1.5
         with:
           registry-type: public
 
       - run: git fetch --force --tags
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff  # v5.6.0
         with:
           go-version: '1.24'
 
       - name: Set up QEMU for ARM64 build
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130  # v3.7.0
 
-      - uses: goreleaser/goreleaser-action@v5
+      - uses: goreleaser/goreleaser-action@5742e2a039330cbb23ebf35f046f814d4c6ff811  # v5.1.0
         with:
           distribution: goreleaser
           version: latest
@@ -50,20 +50,21 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure AWS credentials for helm chart
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a  # v4.3.1
         with:
           aws-region: us-east-1  # ECR Public can only be logged into from the us-east-1 region
           role-to-assume: arn:aws:iam::202662887508:role/ecr-prometheus-rds-exporter-chart
           role-session-name: githubActions
 
       - name: Login to Amazon ECR for helm chart
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@fa648b43de3d4d023bcb3f89ed6940096949c419  # v2.1.5
         with:
           registry-type: public
 
       - name: Downgrade Helm  # 1.13.0 has bug that block push charts on OCI
         run: |
           curl -sSLo /tmp/helm.tar.gz "https://get.helm.sh/helm-v3.12.0-linux-amd64.tar.gz" && \
+          echo "da36e117d6dbc57c8ec5bab2283222fbd108db86c83389eebe045ad1ef3e2c3b /tmp/helm.tar.gz" | sha256sum --check && \
           tar --strip-components=1 -C /tmp -xzvf /tmp/helm.tar.gz linux-amd64/helm && \
           mv /tmp/helm /usr/local/bin/helm && \
           rm -f /tmp/helm.tar.gz
