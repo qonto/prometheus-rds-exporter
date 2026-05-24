@@ -3,6 +3,8 @@ FROM alpine:3
 ARG USER=exporter
 ARG HOME=/app
 
+RUN apk add curl
+
 RUN addgroup -g 1001 -S exporter \
     && adduser --home /app -u 1001 -S exporter -G exporter \
     && mkdir -p /app \
