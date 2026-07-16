@@ -80,6 +80,10 @@ type ClusterMetrics struct {
 	// Maximum number of Aurora capacity units (ACUs) for a DB instance in an Aurora Serverless v2 cluster.
 	ServerLessMaxACU float64
 
+	// Enrollment status for Amazon RDS Extended Support.
+	// Values: open-source-rds-extended-support, open-source-rds-extended-support-disabled, or empty when unavailable.
+	EngineLifecycleSupport string
+
 	// AWS tags on the cluster.
 	Tags map[string]string
 }
@@ -120,6 +124,10 @@ type RdsInstanceMetrics struct {
 
 	// The version of the database engine.
 	EngineVersion string
+
+	// Enrollment status for Amazon RDS Extended Support.
+	// Values: open-source-rds-extended-support, open-source-rds-extended-support-disabled, or empty when unavailable.
+	EngineLifecycleSupport string
 
 	// Indicates whether mapping of Amazon Web Services Identity and Access Management
 	// (IAM) accounts to database accounts is enabled for the DB instance.
@@ -201,6 +209,8 @@ const (
 	UnscheduledPendingMaintenanceOperation      string  = "pending"
 	AutoAppliedPendingMaintenanceOperation      string  = "auto-applied"
 	ForcedPendingMaintenanceOperation           string  = "forced"
+	EngineLifecycleSupportExtended              string  = "open-source-rds-extended-support"
+	EngineLifecycleSupportDisabled              string  = "open-source-rds-extended-support-disabled"
 	gp2IOPSMin                                  int64   = 100
 	gp2IOPSMax                                  int64   = 16000
 	gp2IOPSPerGB                                int64   = 3
@@ -382,6 +392,7 @@ func (r *RDSFetcher) getClusters(ctx context.Context, filters []aws_rds_types.Fi
 				Arn:                        *dbCluster.DBClusterArn,
 				Engine:                     *dbCluster.Engine,
 				EngineVersion:              *dbCluster.EngineVersion,
+				EngineLifecycleSupport:     aws.ToString(dbCluster.EngineLifecycleSupport),
 				AllocatedStorage:           converter.GigaBytesToBytes(int64(*dbCluster.AllocatedStorage)),
 				DBClusterIdentifier:        *dbCluster.DBClusterIdentifier,
 				Members:                    members,
@@ -719,6 +730,7 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 		DeletionProtection:         aws.ToBool(dbInstance.DeletionProtection),
 		Engine:                     *dbInstance.Engine,
 		EngineVersion:              *dbInstance.EngineVersion,
+		EngineLifecycleSupport:     aws.ToString(dbInstance.EngineLifecycleSupport),
 		LogFilesSize:               logFilesSize,
 		MaxAllocatedStorage:        converter.GigaBytesToBytes(maxAllocatedStorage),
 		MaxIops:                    iops,
@@ -739,6 +751,19 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 	}
 
 	return metrics, nil
+}
+
+// ExtendedSupportEnabledValue maps AWS EngineLifecycleSupport to a Prometheus gauge value.
+// Returns ok=false when the field is empty/unknown (metric should not be emitted).
+func ExtendedSupportEnabledValue(engineLifecycleSupport string) (value float64, ok bool) {
+	switch engineLifecycleSupport {
+	case EngineLifecycleSupportExtended:
+		return 1, true
+	case EngineLifecycleSupportDisabled:
+		return 0, true
+	default:
+		return 0, false
+	}
 }
 
 // getLogFilesSize returns the size of all logs on the specified instance

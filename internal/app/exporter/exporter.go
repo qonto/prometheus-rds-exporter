@@ -136,6 +136,8 @@ type rdsCollector struct {
 	age                              *prometheus.Desc
 	standardSupportRemainingDays     *prometheus.Desc
 	extendedSupportRemainingDays     *prometheus.Desc
+	instanceExtendedSupportEnabled   *prometheus.Desc
+	clusterExtendedSupportEnabled    *prometheus.Desc
 }
 
 func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient, tagClient resourcegroupstaggingapi.GetResourcesAPIClient) *rdsCollector {
@@ -380,6 +382,14 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			"Days remaining until extended support ends for the database engine version.",
 			[]string{"aws_account_id", "aws_region", "dbidentifier", "engine", "engine_version"}, nil,
 		),
+		instanceExtendedSupportEnabled: prometheus.NewDesc("rds_instance_extended_support_enabled",
+			"Whether the RDS instance is enrolled in Amazon RDS Extended Support (1=enrolled, 0=disabled).",
+			[]string{"aws_account_id", "aws_region", "dbidentifier", "engine_lifecycle_support"}, nil,
+		),
+		clusterExtendedSupportEnabled: prometheus.NewDesc("rds_cluster_extended_support_enabled",
+			"Whether the RDS/Aurora cluster is enrolled in Amazon RDS Extended Support (1=enrolled, 0=disabled).",
+			[]string{"aws_account_id", "aws_region", "cluster_identifier", "engine_lifecycle_support"}, nil,
+		),
 	}
 }
 
@@ -437,6 +447,8 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.serverlessDatabaseCapacity
 	ch <- c.standardSupportRemainingDays
 	ch <- c.extendedSupportRemainingDays
+	ch <- c.instanceExtendedSupportEnabled
+	ch <- c.clusterExtendedSupportEnabled
 	ch <- c.writeIOPS
 	ch <- c.writeThroughput
 }
@@ -647,6 +659,18 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		)
 		ch <- prometheus.MustNewConstMetric(c.clusterServerLessMaxACU, prometheus.GaugeValue, cluster.ServerLessMaxACU, c.awsAccountID, c.awsRegion, clusterIdentifier)
 		ch <- prometheus.MustNewConstMetric(c.clusterServerLessMinACU, prometheus.GaugeValue, cluster.ServerLessMinACU, c.awsAccountID, c.awsRegion, clusterIdentifier)
+
+		if value, ok := rds.ExtendedSupportEnabledValue(cluster.EngineLifecycleSupport); ok {
+			ch <- prometheus.MustNewConstMetric(
+				c.clusterExtendedSupportEnabled,
+				prometheus.GaugeValue,
+				value,
+				c.awsAccountID,
+				c.awsRegion,
+				clusterIdentifier,
+				cluster.EngineLifecycleSupport,
+			)
+		}
 	}
 
 	// Instance metrics
@@ -695,6 +719,18 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 
 		ch <- prometheus.MustNewConstMetric(c.status, prometheus.GaugeValue, float64(instance.Status), c.awsAccountID, c.awsRegion, dbidentifier)
 		ch <- prometheus.MustNewConstMetric(c.backupRetentionPeriod, prometheus.GaugeValue, float64(instance.BackupRetentionPeriod), c.awsAccountID, c.awsRegion, dbidentifier)
+
+		if value, ok := rds.ExtendedSupportEnabledValue(instance.EngineLifecycleSupport); ok {
+			ch <- prometheus.MustNewConstMetric(
+				c.instanceExtendedSupportEnabled,
+				prometheus.GaugeValue,
+				value,
+				c.awsAccountID,
+				c.awsRegion,
+				dbidentifier,
+				instance.EngineLifecycleSupport,
+			)
+		}
 
 		maxIops := instance.MaxIops
 		storageThroughput := float64(instance.StorageThroughput)

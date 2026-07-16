@@ -58,6 +58,8 @@ It collects key metrics about:
 | rds_dbload_cpu_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of active sessions where the wait event type is CPU |
 | rds_dbload_noncpu_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of active sessions where the wait event type is not CPU |
 | rds_extended_support_engine_remaining_days | `aws_account_id`, `aws_region`, `dbidentifier`, `engine`, `engine_version` | Days remaining until extended support ends for the database engine version. |
+| rds_instance_extended_support_enabled | `aws_account_id`, `aws_region`, `dbidentifier`, `engine_lifecycle_support` | Whether the RDS instance is enrolled in Amazon RDS Extended Support (`1` enrolled, `0` disabled). Absent when AWS does not report the field. |
+| rds_cluster_extended_support_enabled | `aws_account_id`, `aws_region`, `cluster_identifier`, `engine_lifecycle_support` | Whether the RDS/Aurora cluster is enrolled in Amazon RDS Extended Support (`1` enrolled, `0` disabled). Absent when AWS does not report the field. |
 | rds_standard_support_engine_remaining_days | `aws_account_id`, `aws_region`, `dbidentifier`, `engine`, `engine_version` | Days remaining until standard support ends for the database engine version. |
 | rds_exporter_build_info | `build_date`, `commit_sha`, `version` | A metric with constant '1' value labeled by version from which exporter was built |
 | rds_exporter_errors_total | | Total number of errors encountered by the exporter |
