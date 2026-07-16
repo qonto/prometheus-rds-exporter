@@ -57,14 +57,24 @@ func NewEngineSupportServiceWithCache(client RDSClient, logger slog.Logger, cach
 	}
 }
 
-// extractMajorVersion extracts the major version from a full version string
-// e.g., "13.7" -> "13", "14.9" -> "14"
-func (s *EngineSupportService) extractMajorVersion(fullVersion string) string {
+// extractMajorVersion extracts the AWS major engine version from a full version string.
+// PostgreSQL / Aurora PostgreSQL use a single component (e.g. "13.7" -> "13").
+// MySQL / Aurora MySQL / MariaDB use two components (e.g. "8.0.35" -> "8.0").
+func (s *EngineSupportService) extractMajorVersion(engine, fullVersion string) string {
 	parts := strings.Split(fullVersion, ".")
-	if len(parts) > 0 {
+	if len(parts) == 0 || parts[0] == "" {
+		return fullVersion
+	}
+
+	switch strings.ToLower(engine) {
+	case "mysql", "aurora-mysql", "mariadb":
+		if len(parts) >= 2 {
+			return parts[0] + "." + parts[1]
+		}
+		return parts[0]
+	default:
 		return parts[0]
 	}
-	return fullVersion
 }
 
 // GetEngineSupportMetrics retrieves engine support metrics for a given engine and version
@@ -89,8 +99,8 @@ func (s *EngineSupportService) GetEngineSupportMetrics(ctx context.Context, engi
 		return EngineSupportMetrics{}, fmt.Errorf("failed to fetch engine lifecycle data: %w", err)
 	}
 
-	// Extract major version from full version (e.g., "13.7" -> "13")
-	majorVersion := s.extractMajorVersion(version)
+	// Extract major version matching AWS DescribeDBMajorEngineVersions format
+	majorVersion := s.extractMajorVersion(engine, version)
 
 	// Find the lifecycle data for the specific major version
 	var targetLifecycle *EngineVersionLifecycle

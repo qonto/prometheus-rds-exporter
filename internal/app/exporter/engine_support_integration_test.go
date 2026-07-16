@@ -116,41 +116,69 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 			},
 		},
 		{
-			name: "mixed engine types - only PostgreSQL should have metrics",
+			name: "mixed engine types - PostgreSQL MySQL and MariaDB emit metrics",
 			instances: []aws_rds_types.DBInstance{
 				createPostgreSQLInstance("postgres-instance", "14.9"),
 				createMySQLInstance("mysql-instance", "8.0.35"),
 				createMariaDBInstance("mariadb-instance", "10.6.14"),
 			},
-			engineVersionsResponse: createEngineVersionsResponse("postgres", []engineVersionData{
-				{
-					version:           "14",
-					standardEndDate:   time.Now().AddDate(0, 8, 0),
-					hasStandardSupport: true,
-					hasExtendedSupport: false,
+			// Mock returns the same payload for every engine request; include all major versions.
+			engineVersionsResponse: &aws_rds.DescribeDBMajorEngineVersionsOutput{
+				DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{
+					{
+						Engine:             aws.String("postgres"),
+						MajorEngineVersion: aws.String("14"),
+						SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{
+							{
+								LifecycleSupportName:    aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
+								LifecycleSupportEndDate: aws.Time(time.Now().AddDate(0, 8, 0)),
+							},
+						},
+					},
+					{
+						Engine:             aws.String("mysql"),
+						MajorEngineVersion: aws.String("8.0"),
+						SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{
+							{
+								LifecycleSupportName:    aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
+								LifecycleSupportEndDate: aws.Time(time.Now().AddDate(0, 8, 0)),
+							},
+							{
+								LifecycleSupportName:    aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
+								LifecycleSupportEndDate: aws.Time(time.Now().AddDate(2, 0, 0)),
+							},
+						},
+					},
+					{
+						Engine:             aws.String("mariadb"),
+						MajorEngineVersion: aws.String("10.6"),
+						SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{
+							{
+								LifecycleSupportName:    aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
+								LifecycleSupportEndDate: aws.Time(time.Now().AddDate(0, 8, 0)),
+							},
+						},
+					},
 				},
-			}),
-			expectedStandardMetrics: 1, // Only PostgreSQL instance
-			expectedExtendedMetrics: 0, // No extended support for this version
-			expectedAPICallCount:    1, // Only called for PostgreSQL
+			},
+			expectedStandardMetrics: 3,
+			expectedExtendedMetrics: 1, // MySQL only
+			expectedAPICallCount:    3, // One call per engine (cache miss)
 			validateMetricValues: func(t *testing.T, standardMetrics, extendedMetrics []*dto.Metric) {
-				// Verify only PostgreSQL instance has metrics
-				assert.Len(t, standardMetrics, 1)
-				assert.Len(t, extendedMetrics, 0)
-				
-				// Verify the metric is for the PostgreSQL instance
-				labels := standardMetrics[0].GetLabel()
-				var engine, dbidentifier string
-				for _, label := range labels {
-					switch label.GetName() {
-					case "engine":
-						engine = label.GetValue()
-					case "dbidentifier":
-						dbidentifier = label.GetValue()
+				assert.Len(t, standardMetrics, 3)
+				assert.Len(t, extendedMetrics, 1)
+
+				engines := map[string]bool{}
+				for _, metric := range standardMetrics {
+					for _, label := range metric.GetLabel() {
+						if label.GetName() == "engine" {
+							engines[label.GetValue()] = true
+						}
 					}
 				}
-				assert.Equal(t, "postgres", engine)
-				assert.Equal(t, "postgres-instance", dbidentifier)
+				assert.True(t, engines["postgres"])
+				assert.True(t, engines["mysql"])
+				assert.True(t, engines["mariadb"])
 			},
 		},
 		{
@@ -231,6 +259,7 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 				CollectMaintenances:    false,
 				CollectQuotas:          false,
 				CollectUsages:          false,
+				CollectEngineSupport:   true,
 			}
 
 			collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
@@ -309,6 +338,7 @@ func TestEngineSupport_CacheExpirationAndRefresh(t *testing.T) {
 		CollectMaintenances:    false,
 		CollectQuotas:          false,
 		CollectUsages:          false,
+		CollectEngineSupport:   true,
 	}
 
 	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
@@ -401,6 +431,7 @@ func TestEngineSupport_APIErrorHandling(t *testing.T) {
 				CollectMaintenances:    false,
 				CollectQuotas:          false,
 				CollectUsages:          false,
+				CollectEngineSupport:   true,
 			}
 
 			collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
@@ -586,6 +617,7 @@ func TestEngineSupport_ComplexAPIResponses(t *testing.T) {
 				CollectMaintenances:    false,
 				CollectQuotas:          false,
 				CollectUsages:          false,
+				CollectEngineSupport:   true,
 			}
 
 			collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
@@ -700,7 +732,7 @@ func verifyMetricLabels(t *testing.T, metric *dto.Metric, expectedAccountID, exp
 	// Verify label values
 	assert.Equal(t, expectedAccountID, labels["aws_account_id"], "aws_account_id label mismatch")
 	assert.Equal(t, expectedRegion, labels["aws_region"], "aws_region label mismatch")
-	assert.Equal(t, "postgres", labels["engine"], "engine label should be postgres")
+	assert.NotEmpty(t, labels["engine"], "engine label should not be empty")
 	assert.NotEmpty(t, labels["dbidentifier"], "dbidentifier should not be empty")
 	assert.NotEmpty(t, labels["engine_version"], "engine_version should not be empty")
 }

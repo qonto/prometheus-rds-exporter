@@ -748,7 +748,7 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 			ch <- prometheus.MustNewConstMetric(c.logFilesSize, prometheus.GaugeValue, float64(*instance.LogFilesSize), c.awsAccountID, c.awsRegion, dbidentifier)
 		}
 
-		// Engine support metrics for PostgreSQL instances
+		// Engine support metrics (PostgreSQL, MySQL, MariaDB, Aurora)
 		if c.configuration.CollectEngineSupport {
 			c.collectEngineSupportMetrics(ch, dbidentifier, instance.Engine, instance.EngineVersion)
 		}
@@ -882,7 +882,7 @@ func (c *rdsCollector) GetMetrics() metrics {
 	return c.metrics
 }
 
-// collectEngineSupportMetrics collects engine support metrics for PostgreSQL instances
+// collectEngineSupportMetrics collects engine support remaining-days metrics for an instance.
 func (c *rdsCollector) collectEngineSupportMetrics(ch chan<- prometheus.Metric, dbidentifier, engine, engineVersion string) {
 	// Validate input parameters
 	if dbidentifier == "" || engine == "" || engineVersion == "" {
