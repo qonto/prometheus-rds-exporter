@@ -78,28 +78,6 @@ func checkRDSCluster(t *testing.T, cluster *aws_rds_types.DBCluster, result rds.
 	assert.Equal(t, "sre", result.Tags["Team"], "Team tag mismatch")
 }
 
-func TestExtendedSupportEnabledValue(t *testing.T) {
-	tests := []struct {
-		name  string
-		input string
-		value float64
-		ok    bool
-	}{
-		{name: "enrolled", input: rds.EngineLifecycleSupportExtended, value: 1, ok: true},
-		{name: "disabled", input: rds.EngineLifecycleSupportDisabled, value: 0, ok: true},
-		{name: "empty", input: "", value: 0, ok: false},
-		{name: "unknown", input: "something-else", value: 0, ok: false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			value, ok := rds.ExtendedSupportEnabledValue(tt.input)
-			assert.Equal(t, tt.ok, ok)
-			assert.Equal(t, tt.value, value)
-		})
-	}
-}
-
 func TestGP2StorageType(t *testing.T) {
 	rdsInstanceWithSmallDisk := mock.NewRdsInstance()
 	rdsInstanceWithSmallDisk.StorageType = aws.String("gp2")

@@ -48,18 +48,15 @@ It collects key metrics about:
 | rds_api_call_total | `api`, `aws_account_id`, `aws_region` | Number of call to AWS API |
 | rds_backup_retention_period_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | Automatic DB snapshots retention period |
 | rds_ca_certificate_valid_until | `aws_account_id`, `aws_region`, `dbidentifier` | Timestamp of the expiration of the Instance certificate |
-| rds_cluster_info | `aws_account_id`, `aws_region`, `cluster_identifier`, `cluster_resource_id`, `engine`, `engine_version`, `arn` | RDS cluster information |
+| rds_cluster_info | `aws_account_id`, `aws_region`, `cluster_identifier`, `cluster_resource_id`, `engine`, `engine_version`, `engine_lifecycle_support`, `arn` | RDS cluster information |
 | rds_cluster_acu_max_average | `aws_account_id`, `aws_region`, `cluster_identifier` | Maximum number of ACU |
 | rds_cluster_acu_min_average | `aws_account_id`, `aws_region`, `cluster_identifier` | Minimum number of ACU |
-| rds_cluster_info | `aws_account_id`, `aws_region`, `cluster_identifier`, `cluster_resource_id`, `engine`, `engine_version`, `arn` | RDS cluster information |
 | rds_cpu_usage_percent_average | `aws_account_id`, `aws_region`, `dbidentifier` | Instance CPU used |
 | rds_database_connections_average | `aws_account_id`, `aws_region`, `dbidentifier` | The number of client network connections to the database instance |
 | rds_dbload_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of active sessions for the DB engine |
 | rds_dbload_cpu_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of active sessions where the wait event type is CPU |
 | rds_dbload_noncpu_average | `aws_account_id`, `aws_region`, `dbidentifier` | Number of active sessions where the wait event type is not CPU |
 | rds_extended_support_engine_remaining_days | `aws_account_id`, `aws_region`, `dbidentifier`, `engine`, `engine_version` | Days remaining until extended support ends for the database engine version. |
-| rds_instance_extended_support_enabled | `aws_account_id`, `aws_region`, `dbidentifier`, `engine_lifecycle_support` | Whether the RDS instance is enrolled in Amazon RDS Extended Support (`1` enrolled, `0` disabled). Absent when AWS does not report the field. |
-| rds_cluster_extended_support_enabled | `aws_account_id`, `aws_region`, `cluster_identifier`, `engine_lifecycle_support` | Whether the RDS/Aurora cluster is enrolled in Amazon RDS Extended Support (`1` enrolled, `0` disabled). Absent when AWS does not report the field. |
 | rds_standard_support_engine_remaining_days | `aws_account_id`, `aws_region`, `dbidentifier`, `engine`, `engine_version` | Days remaining until standard support ends for the database engine version. |
 | rds_exporter_build_info | `build_date`, `commit_sha`, `version` | A metric with constant '1' value labeled by version from which exporter was built |
 | rds_exporter_errors_total | | Total number of errors encountered by the exporter |
@@ -69,7 +66,7 @@ It collects key metrics about:
 | rds_instance_baseline_iops_average | `aws_account_id`, `aws_region`, `instance_class` | Baseline IOPS of underlying EC2 instance class |
 | rds_instance_baseline_throughput_bytes | `aws_account_id`, `aws_region`, `instance_class` | Baseline throughput of underlying EC2 instance class |
 | rds_instance_baseline_network_bandwidth_bytes | `aws_account_id`, `aws_region`, `instance_class` | Baseline network bandwidth of underlying EC2 instance class |
-| rds_instance_info | `arn`, `aws_account_id`, `aws_region`, `dbi_resource_id`, `dbidentifier`, `cluster_identifier`, `deletion_protection`, `engine`, `engine_version`, `instance_class`, `multi_az`, `performance_insights_enabled`, `pending_maintenance`, `pending_modified_values`, `role`, `source_dbidentifier`, `storage_type`, `ca_certificate_identifier` | RDS instance information |
+| rds_instance_info | `arn`, `aws_account_id`, `aws_region`, `dbi_resource_id`, `dbidentifier`, `cluster_identifier`, `deletion_protection`, `engine`, `engine_version`, `engine_lifecycle_support`, `instance_class`, `multi_az`, `performance_insights_enabled`, `pending_maintenance`, `pending_modified_values`, `role`, `source_dbidentifier`, `storage_type`, `ca_certificate_identifier` | RDS instance information (`engine_lifecycle_support`: `open-source-rds-extended-support`, `open-source-rds-extended-support-disabled`, or empty when unset) |
 | rds_instance_log_files_size_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Total of log files on the instance |
 | rds_instance_max_iops_average | `aws_account_id`, `aws_region`, `instance_class` | Maximum IOPS of underlying EC2 instance class |
 | rds_instance_max_throughput_bytes | `aws_account_id`, `aws_region`, `instance_class` | Maximum throughput of underlying EC2 instance class |

@@ -753,19 +753,6 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 	return metrics, nil
 }
 
-// ExtendedSupportEnabledValue maps AWS EngineLifecycleSupport to a Prometheus gauge value.
-// Returns ok=false when the field is empty/unknown (metric should not be emitted).
-func ExtendedSupportEnabledValue(engineLifecycleSupport string) (value float64, ok bool) {
-	switch engineLifecycleSupport {
-	case EngineLifecycleSupportExtended:
-		return 1, true
-	case EngineLifecycleSupportDisabled:
-		return 0, true
-	default:
-		return 0, false
-	}
-}
-
 // getLogFilesSize returns the size of all logs on the specified instance
 func (r *RDSFetcher) getLogFilesSize(ctx context.Context, dbidentifier string) (*int64, error) {
 	_, span := tracer.Start(ctx, "collect-instance-log")
