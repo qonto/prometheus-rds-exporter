@@ -235,8 +235,8 @@ func TestGetEngineSupportMetrics(t *testing.T) {
 	client := mock.NewRDSClient()
 
 	// Mock response with PostgreSQL engine versions
-	standardEndDate := time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC)
-	extendedEndDate := time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC)
+	standardEndDate := time.Now().AddDate(0, 6, 0)
+	extendedEndDate := time.Now().AddDate(1, 0, 0)
 
 	mockResponse := &aws_rds.DescribeDBMajorEngineVersionsOutput{
 		DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{
@@ -299,6 +299,78 @@ func TestGetEngineSupportMetrics(t *testing.T) {
 		require.NoError(t, err)
 		assert.Nil(t, metrics.StandardSupportRemainingDays)
 		assert.Nil(t, metrics.ExtendedSupportRemainingDays)
+	})
+}
+
+func TestGetEngineSupportMetricsMySQL(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.Default()
+
+	standardEndDate := time.Now().AddDate(0, 6, 0)
+	extendedEndDate := time.Now().AddDate(3, 0, 0)
+
+	client := mock.NewRDSClient()
+	client.WithDescribeDBMajorEngineVersionsOutput(&aws_rds.DescribeDBMajorEngineVersionsOutput{
+		DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{
+			{
+				Engine:             aws.String("mysql"),
+				MajorEngineVersion: aws.String("8.0"),
+				SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{
+					{
+						LifecycleSupportName:    aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
+						LifecycleSupportEndDate: &standardEndDate,
+					},
+					{
+						LifecycleSupportName:    aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
+						LifecycleSupportEndDate: &extendedEndDate,
+					},
+				},
+			},
+			{
+				Engine:             aws.String("mysql"),
+				MajorEngineVersion: aws.String("5.7"),
+				SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{
+					{
+						LifecycleSupportName:    aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
+						LifecycleSupportEndDate: &standardEndDate,
+					},
+					{
+						LifecycleSupportName:    aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
+						LifecycleSupportEndDate: &extendedEndDate,
+					},
+				},
+			},
+		},
+	})
+
+	service := rds.NewEngineSupportService(client, logger)
+
+	t.Run("matches MySQL 8.0.x full version to major 8.0", func(t *testing.T) {
+		metrics, err := service.GetEngineSupportMetrics(ctx, "mysql", "8.0.35")
+
+		require.NoError(t, err)
+		require.NotNil(t, metrics.StandardSupportRemainingDays)
+		require.NotNil(t, metrics.ExtendedSupportRemainingDays)
+		assert.Greater(t, *metrics.StandardSupportRemainingDays, int64(0))
+		assert.Greater(t, *metrics.ExtendedSupportRemainingDays, int64(0))
+	})
+
+	t.Run("matches MySQL 5.7.x full version to major 5.7", func(t *testing.T) {
+		metrics, err := service.GetEngineSupportMetrics(ctx, "mysql", "5.7.44")
+
+		require.NoError(t, err)
+		require.NotNil(t, metrics.StandardSupportRemainingDays)
+		require.NotNil(t, metrics.ExtendedSupportRemainingDays)
+	})
+
+	t.Run("matches aurora-mysql two-component major version", func(t *testing.T) {
+		metrics, err := service.GetEngineSupportMetrics(ctx, "aurora-mysql", "8.0.mysql_aurora.3.05.2")
+
+		// AWS MajorEngineVersion for aurora-mysql is typically "8.0" / "5.7".
+		// extractMajorVersion must return "8.0", not "8".
+		require.NoError(t, err)
+		require.NotNil(t, metrics.StandardSupportRemainingDays)
+		require.NotNil(t, metrics.ExtendedSupportRemainingDays)
 	})
 }
 
