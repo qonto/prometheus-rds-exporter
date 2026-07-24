@@ -47,6 +47,7 @@ func TestGetMetrics(t *testing.T) {
 	assert.Equal(t, *rdsInstance.MultiAZ, m.MultiAZ, "MultiAZ mismatch")
 	assert.Equal(t, *rdsInstance.Engine, m.Engine, "Engine mismatch")
 	assert.Equal(t, *rdsInstance.EngineVersion, m.EngineVersion, "Engine version mismatch")
+	assert.Equal(t, *rdsInstance.EngineLifecycleSupport, m.EngineLifecycleSupport, "EngineLifecycleSupport mismatch")
 	assert.Equal(t, *rdsInstance.PerformanceInsightsEnabled, m.PerformanceInsightsEnabled, "PerformanceInsights enabled mismatch")
 	assert.Equal(t, *rdsInstance.PubliclyAccessible, m.PubliclyAccessible, "PubliclyAccessible mismatch")
 	assert.Equal(t, *rdsInstance.DbiResourceId, m.DbiResourceID, "DbiResourceId mismatch")
@@ -72,6 +73,7 @@ func checkRDSCluster(t *testing.T, cluster *aws_rds_types.DBCluster, result rds.
 	assert.Equal(t, *cluster.DbClusterResourceId, result.DBClusterResourceID, "DBClusterResourceID mismatch")
 	assert.Equal(t, *cluster.Engine, result.Engine, "Engine mismatch")
 	assert.Equal(t, *cluster.EngineVersion, result.EngineVersion, "Engine version mismatch")
+	assert.Equal(t, aws.ToString(cluster.EngineLifecycleSupport), result.EngineLifecycleSupport, "EngineLifecycleSupport mismatch")
 	assert.Equal(t, int(time.Since(*cluster.ClusterCreateTime).Seconds()), int(result.Age), "Age should match expected age")
 	assert.Equal(t, "sre", result.Tags["Team"], "Team tag mismatch")
 }
