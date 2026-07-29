@@ -22,9 +22,9 @@ import (
 
 // Helper function to check if a string contains a substring
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || (len(s) > len(substr) && 
-		(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr || 
-		 findSubstring(s, substr))))
+	return len(s) >= len(substr) && (s == substr || (len(s) > len(substr) &&
+		(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr ||
+			findSubstring(s, substr))))
 }
 
 func findSubstring(s, substr string) bool {
@@ -56,7 +56,7 @@ func TestEngineSupport_MetricDescriptors(t *testing.T) {
 		CollectUsages:          false,
 	}
 
-	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
+	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil, make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}))
 
 	// Test that metric descriptors are properly registered
 	ch := make(chan *prometheus.Desc, 100)
@@ -104,13 +104,13 @@ func TestEngineSupport_PostgreSQLEngineFiltering(t *testing.T) {
 				MajorEngineVersion: aws.String("14.9"), // Match the full version for now
 				SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{
 					{
-						LifecycleSupportName:     aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
-						LifecycleSupportEndDate:  &standardEndDate,
+						LifecycleSupportName:      aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
+						LifecycleSupportEndDate:   &standardEndDate,
 						LifecycleSupportStartDate: aws.Time(time.Now().AddDate(-1, 0, 0)),
 					},
 					{
-						LifecycleSupportName:     aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
-						LifecycleSupportEndDate:  &extendedEndDate,
+						LifecycleSupportName:      aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
+						LifecycleSupportEndDate:   &extendedEndDate,
 						LifecycleSupportStartDate: aws.Time(time.Now().AddDate(-1, 0, 0)),
 					},
 				},
@@ -137,7 +137,7 @@ func TestEngineSupport_PostgreSQLEngineFiltering(t *testing.T) {
 		CollectUsages:          false,
 	}
 
-	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
+	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil, make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}))
 
 	// Collect metrics
 	registry := prometheus.NewRegistry()
@@ -216,13 +216,13 @@ func TestEngineSupport_MetricEmission(t *testing.T) {
 				MajorEngineVersion: aws.String("13.7"), // Match the full version for now
 				SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{
 					{
-						LifecycleSupportName:     aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
-						LifecycleSupportEndDate:  &standardEndDate,
+						LifecycleSupportName:      aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
+						LifecycleSupportEndDate:   &standardEndDate,
 						LifecycleSupportStartDate: aws.Time(time.Now().AddDate(-2, 0, 0)),
 					},
 					{
-						LifecycleSupportName:     aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
-						LifecycleSupportEndDate:  &extendedEndDate,
+						LifecycleSupportName:      aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
+						LifecycleSupportEndDate:   &extendedEndDate,
 						LifecycleSupportStartDate: aws.Time(time.Now().AddDate(-2, 0, 0)),
 					},
 				},
@@ -249,7 +249,7 @@ func TestEngineSupport_MetricEmission(t *testing.T) {
 		CollectUsages:          false,
 	}
 
-	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
+	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil, make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}))
 
 	// Test metric emission
 	registry := prometheus.NewRegistry()
@@ -271,7 +271,7 @@ func TestEngineSupport_MetricEmission(t *testing.T) {
 	require.Len(t, standardSupportMetric.GetMetric(), 1, "Should have one metric for the PostgreSQL instance")
 
 	metric := standardSupportMetric.GetMetric()[0]
-	
+
 	// Verify labels
 	labelMap := make(map[string]string)
 	for _, label := range metric.GetLabel() {
@@ -302,7 +302,7 @@ func TestEngineSupport_MetricEmission(t *testing.T) {
 	require.Len(t, extendedSupportMetric.GetMetric(), 1, "Should have one metric for the PostgreSQL instance")
 
 	extMetric := extendedSupportMetric.GetMetric()[0]
-	
+
 	// Verify extended support metric value is reasonable (should be around 260 days)
 	extValue := extMetric.GetGauge().GetValue()
 	assert.Greater(t, extValue, 250.0, "Extended support should have more than 250 days remaining")
@@ -311,11 +311,11 @@ func TestEngineSupport_MetricEmission(t *testing.T) {
 
 func TestEngineSupport_ErrorScenarios(t *testing.T) {
 	tests := []struct {
-		name                    string
-		setupMock              func(*rds_mock.RDSClient)
-		expectMetrics          bool
-		expectAPICall          bool
-		expectedErrorCount     float64
+		name               string
+		setupMock          func(*rds_mock.RDSClient)
+		expectMetrics      bool
+		expectAPICall      bool
+		expectedErrorCount float64
 	}{
 		{
 			name: "API call failure",
@@ -323,7 +323,7 @@ func TestEngineSupport_ErrorScenarios(t *testing.T) {
 				postgresInstance := rds_mock.NewRdsInstance()
 				postgresInstance.Engine = aws.String("postgres")
 				postgresInstance.EngineVersion = aws.String("14.9")
-				
+
 				client.WithDBInstances(*postgresInstance).
 					WithDescribeDBMajorEngineVersionsError(assert.AnError)
 			},
@@ -337,18 +337,18 @@ func TestEngineSupport_ErrorScenarios(t *testing.T) {
 				postgresInstance := rds_mock.NewRdsInstance()
 				postgresInstance.Engine = aws.String("postgres")
 				postgresInstance.EngineVersion = aws.String("14.9")
-				
+
 				// Empty response - no lifecycle data
 				engineVersionsOutput := &aws_rds.DescribeDBMajorEngineVersionsOutput{
 					DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{
 						{
-							Engine:             aws.String("postgres"),
-							MajorEngineVersion: aws.String("14.9"), // Match the full version for now
+							Engine:                    aws.String("postgres"),
+							MajorEngineVersion:        aws.String("14.9"), // Match the full version for now
 							SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{},
 						},
 					},
 				}
-				
+
 				client.WithDBInstances(*postgresInstance).
 					WithDescribeDBMajorEngineVersionsOutput(engineVersionsOutput)
 			},
@@ -362,9 +362,9 @@ func TestEngineSupport_ErrorScenarios(t *testing.T) {
 				postgresInstance := rds_mock.NewRdsInstance()
 				postgresInstance.Engine = aws.String("postgres")
 				postgresInstance.EngineVersion = aws.String("14.9")
-				
+
 				standardEndDate := time.Now().AddDate(0, 6, 0)
-				
+
 				engineVersionsOutput := &aws_rds.DescribeDBMajorEngineVersionsOutput{
 					DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{
 						{
@@ -380,7 +380,7 @@ func TestEngineSupport_ErrorScenarios(t *testing.T) {
 						},
 					},
 				}
-				
+
 				client.WithDBInstances(*postgresInstance).
 					WithDescribeDBMajorEngineVersionsOutput(engineVersionsOutput)
 			},
@@ -394,7 +394,7 @@ func TestEngineSupport_ErrorScenarios(t *testing.T) {
 				mysqlInstance := rds_mock.NewRdsInstance()
 				mysqlInstance.Engine = aws.String("mysql")
 				mysqlInstance.EngineVersion = aws.String("8.0.35")
-				
+
 				client.WithDBInstances(*mysqlInstance)
 			},
 			expectMetrics:      false,
@@ -426,7 +426,7 @@ func TestEngineSupport_ErrorScenarios(t *testing.T) {
 				CollectUsages:          false,
 			}
 
-			collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
+			collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil, make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}))
 
 			// Collect metrics
 			registry := prometheus.NewRegistry()
@@ -488,13 +488,13 @@ func TestEngineSupport_NegativeValues(t *testing.T) {
 				MajorEngineVersion: aws.String("11.20"), // Match the full version for now
 				SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{
 					{
-						LifecycleSupportName:     aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
-						LifecycleSupportEndDate:  &standardEndDate,
+						LifecycleSupportName:      aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
+						LifecycleSupportEndDate:   &standardEndDate,
 						LifecycleSupportStartDate: aws.Time(time.Now().AddDate(-3, 0, 0)),
 					},
 					{
-						LifecycleSupportName:     aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
-						LifecycleSupportEndDate:  &extendedEndDate,
+						LifecycleSupportName:      aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
+						LifecycleSupportEndDate:   &extendedEndDate,
 						LifecycleSupportStartDate: aws.Time(time.Now().AddDate(-3, 0, 0)),
 					},
 				},
@@ -521,7 +521,7 @@ func TestEngineSupport_NegativeValues(t *testing.T) {
 		CollectUsages:          false,
 	}
 
-	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
+	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil, make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}))
 
 	// Test metric emission with negative values
 	registry := prometheus.NewRegistry()
@@ -597,7 +597,7 @@ func TestEngineSupport_MetricsDisabled(t *testing.T) {
 		CollectUsages:          false,
 	}
 
-	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
+	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil, make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}))
 
 	// Collect metrics
 	registry := prometheus.NewRegistry()

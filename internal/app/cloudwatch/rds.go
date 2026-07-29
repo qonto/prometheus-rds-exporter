@@ -48,6 +48,9 @@ type RdsMetrics struct {
 	TransactionLogsDiskUsage         *float64
 	WriteIOPS                        *float64
 	WriteThroughput                  *float64
+
+	// The AWS region this metric comes from
+	Region string
 }
 
 func (m *RdsMetrics) Update(field string, value float64) error {

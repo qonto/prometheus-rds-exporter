@@ -24,6 +24,7 @@ import (
 )
 
 type Configuration struct {
+	Regions                   []string
 	CollectLogsSize           bool
 	CollectServerlessLogsSize bool
 	CollectMaintenances       bool
@@ -82,6 +83,9 @@ type ClusterMetrics struct {
 
 	// AWS tags on the cluster.
 	Tags map[string]string
+
+	// The AWS region this cluster is in
+	Region string
 }
 
 type RdsInstanceMetrics struct {
@@ -166,6 +170,9 @@ type RdsInstanceMetrics struct {
 
 	// AWS tags on the cluster.
 	Tags map[string]string
+
+	// The AWS region this instance is in
+	Region string
 }
 
 // DBRole defines the type for database instance roles such as primary, replica, writer or reader.
@@ -265,16 +272,23 @@ func NewFetcher(ctx context.Context, client RDSClient, tagClient resourcegroupst
 		tagClient:     tagClient,
 		logger:        logger,
 		configuration: configuration,
+		regionClients: make(map[string]interface{}),
 	}
 }
 
 type RDSFetcher struct {
 	ctx           context.Context
-	client        RDSClient
+	client        RDSClient              // Default/primary client
+	regionClients map[string]interface{} // Per-region clients (using interface{} for flexibility)
 	statistics    Statistics
 	configuration Configuration
 	tagClient     resourcegroupstaggingapi.GetResourcesAPIClient
 	logger        slog.Logger
+}
+
+// SetRegionClients sets the map of region-specific RDS clients
+func (r *RDSFetcher) SetRegionClients(clients map[string]interface{}) {
+	r.regionClients = clients
 }
 
 func (r *RDSFetcher) GetStatistics() Statistics {
@@ -327,12 +341,12 @@ func (r *RDSFetcher) getPendingMaintenances(ctx context.Context) (map[string]str
 	return instances, nil
 }
 
-func (r *RDSFetcher) getClusters(ctx context.Context, filters []aws_rds_types.Filter) (map[string]ClusterMetrics, error) {
+func (r *RDSFetcher) getClusters(ctx context.Context, filters []aws_rds_types.Filter, client RDSClient) (map[string]ClusterMetrics, error) {
 	clusterMetrics := make(map[string]ClusterMetrics)
 
 	inputCluster := &aws_rds.DescribeDBClustersInput{Filters: filters}
 
-	paginatorCluster := aws_rds.NewDescribeDBClustersPaginator(r.client, inputCluster)
+	paginatorCluster := aws_rds.NewDescribeDBClustersPaginator(client, inputCluster)
 	for paginatorCluster.HasMorePages() {
 		_, span := tracer.Start(ctx, "describe-rds-clusters")
 		defer span.End()
@@ -403,6 +417,7 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 	defer span.End()
 
 	metrics := make(map[string]RdsInstanceMetrics)
+	clusterMetrics := make(map[string]ClusterMetrics)
 
 	var err error
 
@@ -418,16 +433,11 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 		}
 	}
 
-	var clusterMetrics map[string]ClusterMetrics
+	var clusterFilters []aws_rds_types.Filter
 	if r.configuration.CollectClusterMetrics {
-		clusterFilters, err := r.getDBClusterFilters(ctx)
+		clusterFilters, err = r.getDBClusterFilters(ctx)
 		if err != nil {
 			return Metrics{}, err
-		}
-
-		clusterMetrics, err = r.getClusters(ctx, clusterFilters)
-		if err != nil {
-			return Metrics{}, fmt.Errorf("can't get cluster metrics: %w", err)
 		}
 	}
 
@@ -436,38 +446,94 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 		return Metrics{}, err
 	}
 
-	input := &aws_rds.DescribeDBInstancesInput{Filters: instanceFilters}
+	// Determine which regions to scan
+	regionsToScan := r.configuration.Regions
+	if len(regionsToScan) == 0 {
+		// Fall back to current client's region (single region mode)
+		regionsToScan = []string{""}
+	}
 
-	paginator := aws_rds.NewDescribeDBInstancesPaginator(r.client, input)
-	for paginator.HasMorePages() {
-		instanceCtx, instanceSpan := tracer.Start(ctx, "collect-rds-instances")
-		defer instanceSpan.End()
+	// Iterate through each region
+	for _, region := range regionsToScan {
+		clientToUse := r.client
 
-		r.statistics.RdsAPICall++
+		// If region-specific clients are available, use the one for this region
+		if region != "" && len(r.regionClients) > 0 {
+			if regionClientInterface, exists := r.regionClients[region]; exists {
+				// Cast interface{} to RDSClient
+				if regionClient, ok := regionClientInterface.(RDSClient); ok {
+					clientToUse = regionClient
+					r.logger.Debug("scanning region", "region", region)
+				} else {
+					r.logger.Warn("failed to cast region client, skipping region", "region", region)
 
-		output, err := paginator.NextPage(context.TODO())
-		if err != nil {
-			span.SetStatus(codes.Error, "can't get RDS instances")
-			span.RecordError(err)
+					continue
+				}
+			} else {
+				r.logger.Warn("region client not available, skipping region", "region", region)
 
-			return Metrics{}, fmt.Errorf("can't get RDS instances: %w", err)
+				continue
+			}
 		}
 
-		for _, dbInstance := range output.DBInstances {
-			dbIdentifier := dbInstance.DBInstanceIdentifier
-
-			instanceMetrics, err := r.computeInstanceMetrics(instanceCtx, dbInstance, instanceMaintenances, &clusterMetrics)
+		if r.configuration.CollectClusterMetrics {
+			regionClusterMetrics, err := r.getClusters(ctx, clusterFilters, clientToUse)
 			if err != nil {
-				span.SetStatus(codes.Error, "can't compute instance metrics")
 				span.RecordError(err)
+				r.logger.Warn("can't get cluster metrics for region", "region", region, "error", err)
 
-				return Metrics{}, fmt.Errorf("can't compute instance metrics for %s: %w", *dbIdentifier, err)
+				continue
 			}
 
-			metrics[*dbIdentifier] = instanceMetrics
+			// Merge cluster metrics and set region
+			for k, v := range regionClusterMetrics {
+				if region != "" {
+					v.Region = region
+				}
+
+				clusterMetrics[k] = v
+			}
 		}
 
-		instanceSpan.SetStatus(codes.Ok, "instance metrics fetch")
+		input := &aws_rds.DescribeDBInstancesInput{Filters: instanceFilters}
+
+		paginator := aws_rds.NewDescribeDBInstancesPaginator(clientToUse, input)
+		for paginator.HasMorePages() {
+			instanceCtx, instanceSpan := tracer.Start(ctx, "collect-rds-instances")
+			defer instanceSpan.End()
+
+			r.statistics.RdsAPICall++
+
+			output, err := paginator.NextPage(context.TODO())
+			if err != nil {
+				span.RecordError(err)
+				r.logger.Warn("can't get RDS instances for region", "region", region, "error", err)
+				instanceSpan.SetStatus(codes.Error, "can't get RDS instances")
+
+				break
+			}
+
+			for _, dbInstance := range output.DBInstances {
+				dbIdentifier := dbInstance.DBInstanceIdentifier
+
+				instanceMetrics, err := r.computeInstanceMetrics(instanceCtx, dbInstance, instanceMaintenances, &clusterMetrics)
+				if err != nil {
+					span.RecordError(err)
+					r.logger.Warn("can't compute instance metrics", "instance", *dbIdentifier, "region", region, "error", err)
+
+					continue
+				}
+
+				// Set the region for this instance
+				if region != "" {
+					instanceMetrics.Region = region
+				}
+
+				metrics[*dbIdentifier] = instanceMetrics
+			}
+
+			instanceSpan.SetStatus(codes.Ok, "instance metrics fetch")
+		}
 	}
 
 	span.SetStatus(codes.Ok, "metrics fetched")

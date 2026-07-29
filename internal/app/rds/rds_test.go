@@ -491,3 +491,67 @@ func TestServerlessMetrics(t *testing.T) {
 	assert.Equal(t, *cluster.ServerlessV2ScalingConfiguration.MaxCapacity, metrics.Clusters[*clusterIdentifier].ServerLessMaxACU, "unexpected max ACU value")
 	assert.Equal(t, *cluster.ServerlessV2ScalingConfiguration.MinCapacity, metrics.Clusters[*clusterIdentifier].ServerLessMinACU, "unexpected min ACU value")
 }
+
+func TestMultiRegionInstancesAreTaggedWithTheirOwnRegion(t *testing.T) {
+	primaryInstance := mock.NewRdsInstance()
+	secondaryInstance := mock.NewRdsInstance()
+
+	ctx := context.TODO()
+	primaryClient := mock.NewRDSClient().WithDBInstances(*primaryInstance)
+	secondaryClient := mock.NewRDSClient().WithDBInstances(*secondaryInstance)
+
+	configuration := rds.Configuration{
+		Regions:         []string{"eu-west-3", "us-east-1"},
+		CollectLogsSize: true,
+	}
+	fetcher := rds.NewFetcher(ctx, primaryClient, nil, *slog.Default(), configuration)
+	fetcher.SetRegionClients(map[string]interface{}{
+		"eu-west-3": primaryClient,
+		"us-east-1": secondaryClient,
+	})
+
+	metrics, err := fetcher.GetInstancesMetrics()
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+
+	assert.Equal(t, "eu-west-3", metrics.Instances[*primaryInstance.DBInstanceIdentifier].Region, "primary region instance should be tagged with its own region")
+	assert.Equal(t, "us-east-1", metrics.Instances[*secondaryInstance.DBInstanceIdentifier].Region, "secondary region instance should be tagged with its own region")
+}
+
+func TestMultiRegionClustersAreTaggedWithTheirOwnRegion(t *testing.T) {
+	primaryCluster := mock.NewRdsCluster()
+	secondaryCluster := mock.NewRdsCluster()
+
+	ctx := context.TODO()
+	primaryClient := mock.NewRDSClient().WithDBClusters(*primaryCluster)
+	secondaryClient := mock.NewRDSClient().WithDBClusters(*secondaryCluster)
+
+	configuration := rds.Configuration{
+		Regions:               []string{"eu-west-3", "us-east-1"},
+		CollectClusterMetrics: true,
+	}
+	fetcher := rds.NewFetcher(ctx, primaryClient, nil, *slog.Default(), configuration)
+	fetcher.SetRegionClients(map[string]interface{}{
+		"eu-west-3": primaryClient,
+		"us-east-1": secondaryClient,
+	})
+
+	metrics, err := fetcher.GetInstancesMetrics()
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+
+	assert.Equal(t, "eu-west-3", metrics.Clusters[*primaryCluster.DBClusterIdentifier].Region, "primary region cluster should be tagged with its own region")
+	assert.Equal(t, "us-east-1", metrics.Clusters[*secondaryCluster.DBClusterIdentifier].Region, "secondary region cluster should be tagged with its own region")
+}
+
+func TestSingleRegionFallbackLeavesRegionEmpty(t *testing.T) {
+	rdsInstance := mock.NewRdsInstance()
+
+	ctx := context.TODO()
+	client := mock.NewRDSClient().WithDBInstances(*rdsInstance)
+
+	configuration := rds.Configuration{CollectLogsSize: true}
+	fetcher := rds.NewFetcher(ctx, client, nil, slog.Logger{}, configuration)
+	metrics, err := fetcher.GetInstancesMetrics()
+
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+	assert.Empty(t, metrics.Instances[*rdsInstance.DBInstanceIdentifier].Region, "single-region (no Regions configured) should leave Region empty, matching upstream behavior")
+}

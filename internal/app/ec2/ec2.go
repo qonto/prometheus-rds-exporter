@@ -28,6 +28,9 @@ type EC2InstanceMetrics struct {
 	Memory                   int64
 	Vcpu                     int32
 	BaselineNetworkBandwidth float64
+
+	// The AWS region this instance type information comes from
+	Region string
 }
 
 type Metrics struct {
@@ -61,7 +64,7 @@ func (e *EC2Fetcher) GetStatistics() Statistics {
 
 // GetDBInstanceTypeInformation returns information about specified AWS EC2 instance types
 // AWS RDS API use "db." prefix while AWS EC2 API don't so we must remove it to obtains instance type information
-func (e *EC2Fetcher) GetDBInstanceTypeInformation(instanceTypes []string) (Metrics, error) {
+func (e *EC2Fetcher) GetDBInstanceTypeInformation(region string, instanceTypes []string) (Metrics, error) {
 	ctx, span := tracer.Start(e.ctx, "collect-ec2-metrics")
 	defer span.End()
 
@@ -115,6 +118,11 @@ func (e *EC2Fetcher) GetDBInstanceTypeInformation(instanceTypes []string) (Metri
 				if i.NetworkInfo.NetworkCards[0].BaselineBandwidthInGbps != nil {
 					instanceMetrics.BaselineNetworkBandwidth = converter.GigaBytesToBytesSI(aws.ToFloat64(i.NetworkInfo.NetworkCards[0].BaselineBandwidthInGbps))
 				}
+			}
+
+			// Set region for this instance type
+			if region != "" {
+				instanceMetrics.Region = region
 			}
 
 			instanceName := addDBPrefix(string(i.InstanceType))

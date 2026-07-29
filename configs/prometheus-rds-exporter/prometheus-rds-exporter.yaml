@@ -34,6 +34,12 @@
 # AWS assume role session name
 # aws-assume-role-session: prometheus-rds-exporter
 
+# AWS regions to scan for RDS metrics. Defaults to the exporter's own deployment region when omitted.
+# regions:
+#   - eu-west-1
+#   - eu-west-3
+#   - us-east-1
+
 #
 # Metrics
 #
