@@ -38,7 +38,7 @@ func TestWithAllDisabledCollectors(t *testing.T) {
 		CollectUsages:          false,
 	}
 
-	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
+	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil, make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}))
 
 	testutil.CollectAndCount(collector)
 
@@ -74,7 +74,7 @@ func TestCollector(t *testing.T) {
 		CollectUsages:          true,
 	}
 
-	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
+	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil, make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}), make(map[string]interface{}))
 
 	testutil.CollectAndCount(collector)
 
@@ -96,7 +96,72 @@ func TestCollector(t *testing.T) {
 	assert.Equal(t, "14.9", metrics.RDS.Instances[*instanceName].EngineVersion, "Version should match")
 
 	// Check serviceQuota information
-	assert.Equal(t, servicequotas_mock.DBinstancesQuota, metrics.ServiceQuota.DBinstances, "DBinstance quota should match")
-	assert.Equal(t, servicequotas_mock.ManualDBInstanceSnapshots, metrics.ServiceQuota.ManualDBInstanceSnapshots, "Manual instance snapshot quota should match")
-	assert.Equal(t, converter.GigaBytesToBytes(servicequotas_mock.TotalStorage), metrics.ServiceQuota.TotalStorage, "TotalStorage quota should match")
+	quota := metrics.ServiceQuota[awsRegion]
+	assert.Equal(t, servicequotas_mock.DBinstancesQuota, quota.DBinstances, "DBinstance quota should match")
+	assert.Equal(t, servicequotas_mock.ManualDBInstanceSnapshots, quota.ManualDBInstanceSnapshots, "Manual instance snapshot quota should match")
+	assert.Equal(t, converter.GigaBytesToBytes(servicequotas_mock.TotalStorage), quota.TotalStorage, "TotalStorage quota should match")
+}
+
+func TestCollectorMultiRegion(t *testing.T) {
+	awsAccountID := "123456789012"
+	awsRegion := "eu-west-3"
+	secondaryRegion := "us-east-1"
+
+	primaryInstance := rds_mock.NewRdsInstance()
+	secondaryInstance := rds_mock.NewRdsInstance()
+
+	logger, _ := logger.New(true, "text")
+
+	rdsClient := rds_mock.NewRDSClient().WithDBInstances(*primaryInstance)
+	secondaryRDSClient := rds_mock.NewRDSClient().WithDBInstances(*secondaryInstance)
+
+	ec2Client := ec2_mock.EC2Client{}
+	cloudWatchClient := cloudwatch_mock.CloudwatchClient{}
+	servicequotasClient := servicequotas_mock.ServiceQuotasClient{}
+
+	configuration := exporter.Configuration{
+		Regions:                []string{awsRegion, secondaryRegion},
+		CollectInstanceMetrics: true,
+		CollectInstanceTypes:   true,
+		CollectInstanceTags:    false,
+		CollectLogsSize:        true,
+		CollectMaintenances:    true,
+		CollectClusterMetrics:  true,
+		CollectQuotas:          true,
+		CollectUsages:          true,
+	}
+
+	rdsRegionClients := map[string]interface{}{
+		awsRegion:       rdsClient,
+		secondaryRegion: secondaryRDSClient,
+	}
+	cloudWatchRegionClients := map[string]interface{}{
+		awsRegion:       cloudWatchClient,
+		secondaryRegion: cloudWatchClient,
+	}
+	ec2RegionClients := map[string]interface{}{
+		awsRegion:       ec2Client,
+		secondaryRegion: ec2Client,
+	}
+	servicequotasRegionClients := map[string]interface{}{
+		awsRegion:       servicequotasClient,
+		secondaryRegion: servicequotasClient,
+	}
+
+	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil, rdsRegionClients, cloudWatchRegionClients, ec2RegionClients, servicequotasRegionClients)
+
+	testutil.CollectAndCount(collector)
+
+	counter := collector.GetStatistics()
+	assert.Equal(t, float64(0), counter.Errors, "should not have any error")
+
+	metrics := collector.GetMetrics()
+
+	// Each region's instance should be tagged with its own region
+	assert.Equal(t, awsRegion, metrics.RDS.Instances[*primaryInstance.DBInstanceIdentifier].Region, "primary region instance should be tagged with its own region")
+	assert.Equal(t, secondaryRegion, metrics.RDS.Instances[*secondaryInstance.DBInstanceIdentifier].Region, "secondary region instance should be tagged with its own region")
+
+	// Quotas should be aggregated per region
+	assert.Contains(t, metrics.ServiceQuota, awsRegion, "quotas should include the primary region")
+	assert.Contains(t, metrics.ServiceQuota, secondaryRegion, "quotas should include the secondary region")
 }

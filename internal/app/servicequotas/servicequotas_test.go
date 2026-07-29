@@ -22,11 +22,12 @@ func TestGetRDSQuotas(t *testing.T) {
 		context := context.TODO()
 		client := mock.ServiceQuotasClient{}
 
-		result, err := servicequotas.NewFetcher(context, client, *logger).GetRDSQuotas()
+		result, err := servicequotas.NewFetcher(context, client, *logger).GetRDSQuotas("us-east-1")
 		require.NoError(t, err, "GetRDSQuotas must succeed")
 		assert.Equal(t, mock.DBinstancesQuota, result.DBinstances, "DbInstance quota is incorrect")
 		assert.Equal(t, converter.GigaBytesToBytes(mock.TotalStorage), result.TotalStorage, "Total storage quota is incorrect")
 		assert.Equal(t, mock.ManualDBInstanceSnapshots, result.ManualDBInstanceSnapshots, "Manual db instance snapshot quota is incorrect")
+		assert.Equal(t, "us-east-1", result.Region, "Region is incorrect")
 	})
 
 	t.Run("GetRDSQuotasErrorFetchingQuotaNilErrorMessage", func(t *testing.T) {
@@ -42,7 +43,7 @@ func TestGetRDSQuotas(t *testing.T) {
 			},
 		}
 
-		_, err := servicequotas.NewFetcher(context, client, *logger).GetRDSQuotas()
+		_, err := servicequotas.NewFetcher(context, client, *logger).GetRDSQuotas("us-east-1")
 		require.EqualError(t, err, "can't fetch DBinstance quota: AWS return error for this quota")
 	})
 }

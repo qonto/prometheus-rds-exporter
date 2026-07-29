@@ -234,6 +234,7 @@ Configuration could be defined in [prometheus-rds-exporter.yaml](https://github.
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
 | aws-assume-role-arn          | AWS IAM ARN role to assume to fetch metrics                                                                                       |                         |
 | aws-assume-role-session      | AWS assume role session name                                                                                                      | prometheus-rds-exporter |
+| regions                      | AWS regions to scan for RDS metrics. Refer to [dedicated section on multi-region configuration](#multi-region-configuration)      | current AWS region      |
 | collect-instance-metrics     | Collect AWS instances metrics (AWS Cloudwatch API)                                                                                | true                    |
 | collect-instance-tags        | Collect AWS RDS tags                                                                                                              | true                    |
 | collect-instance-types       | Collect AWS instance types information (AWS EC2 API)                                                                              | true                    |
@@ -275,6 +276,24 @@ _Refer to [AWS configuration on TagFilters field](https://docs.aws.amazon.com/re
 
 > [!IMPORTANT]
 > Tag selection cannot be setup using environment variables configuration.
+
+### Multi-region configuration
+
+By default, the exporter only scans the AWS region it is deployed in (auto-detected via IMDS, or from the AWS SDK configuration). To scan multiple regions from a single exporter process, set `regions`:
+
+```yaml
+regions:
+  - eu-west-1
+  - eu-west-3
+  - us-east-1
+```
+
+Or via environment variable: `PROMETHEUS_RDS_EXPORTER_REGIONS=eu-west-1,eu-west-3,us-east-1`.
+
+The exporter creates a dedicated AWS client per configured region (reusing the credentials/assumed role from `aws-assume-role-arn`, only the region changes) and aggregates metrics across all of them. Every emitted metric's `aws_region` label reflects the region the underlying resource actually lives in, not the exporter's deployment region.
+
+> [!IMPORTANT]
+> The IAM role/credentials used by the exporter must have the required permissions (see [AWS authentication](#aws-authentication)) in every configured region.
 
 ### AWS authentication
 

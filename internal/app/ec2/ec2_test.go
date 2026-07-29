@@ -60,7 +60,7 @@ func TestGetDBInstanceTypeInformation(t *testing.T) {
 	}
 
 	fetcher := ec2.NewFetcher(context, client)
-	result, err := fetcher.GetDBInstanceTypeInformation(instanceTypes)
+	result, err := fetcher.GetDBInstanceTypeInformation("us-east-1", instanceTypes)
 
 	require.NoError(t, err, "GetDBInstanceTypeInformation must succeed")
 	assert.Equal(t, expectedAPICalls, fetcher.GetStatistics().EC2ApiCall, "EC2 API calls don't match")

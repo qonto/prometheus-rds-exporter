@@ -2,6 +2,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,7 +12,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/cloudwatch"
 	"github.com/aws/aws-sdk-go-v2/service/ec2"
-	"github.com/aws/aws-sdk-go-v2/service/rds"
+	aws_rds "github.com/aws/aws-sdk-go-v2/service/rds"
 	"github.com/aws/aws-sdk-go-v2/service/servicequotas"
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/env"
@@ -47,6 +48,7 @@ type exporterConfig struct {
 	ListenAddress             string              `koanf:"listen-address"`
 	AWSAssumeRoleSession      string              `koanf:"aws-assume-role-session"`
 	AWSAssumeRoleArn          string              `koanf:"aws-assume-role-arn"`
+	Regions                   []string            `koanf:"regions"`
 	CollectInstanceMetrics    bool                `koanf:"collect-instance-metrics"`
 	CollectInstanceTags       bool                `koanf:"collect-instance-tags"`
 	CollectInstanceTypes      bool                `koanf:"collect-instance-types"`
@@ -82,7 +84,7 @@ func run(configuration exporterConfig) {
 		os.Exit(awsErrorExitCode)
 	}
 
-	rdsClient := rds.NewFromConfig(cfg)
+	rdsClient := aws_rds.NewFromConfig(cfg)
 
 	var tagClient *resourcegroupstaggingapi.Client
 
@@ -94,7 +96,95 @@ func run(configuration exporterConfig) {
 	cloudWatchClient := cloudwatch.NewFromConfig(cfg)
 	servicequotasClient := servicequotas.NewFromConfig(cfg)
 
+	regionsToScan := configuration.Regions
+	if len(regionsToScan) == 0 {
+		regionsToScan = []string{awsRegion}
+	}
+
+	logger.Info("Configured regions", "regions", regionsToScan)
+
+	// Create per-region RDS clients for multi-region support
+	// Using exporter.rdsClient interface type to support the collector
+	type rdsClientInterface interface {
+		DescribeDBInstances(ctx context.Context, params *aws_rds.DescribeDBInstancesInput, optFns ...func(*aws_rds.Options)) (*aws_rds.DescribeDBInstancesOutput, error)
+		DescribeDBClusters(ctx context.Context, params *aws_rds.DescribeDBClustersInput, optFns ...func(*aws_rds.Options)) (*aws_rds.DescribeDBClustersOutput, error)
+		DescribePendingMaintenanceActions(context.Context, *aws_rds.DescribePendingMaintenanceActionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribePendingMaintenanceActionsOutput, error)
+		DescribeDBLogFiles(context.Context, *aws_rds.DescribeDBLogFilesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBLogFilesOutput, error)
+		DescribeDBEngineVersions(ctx context.Context, params *aws_rds.DescribeDBEngineVersionsInput, optFns ...func(*aws_rds.Options)) (*aws_rds.DescribeDBEngineVersionsOutput, error)
+		DescribeDBMajorEngineVersions(ctx context.Context, params *aws_rds.DescribeDBMajorEngineVersionsInput, optFns ...func(*aws_rds.Options)) (*aws_rds.DescribeDBMajorEngineVersionsOutput, error)
+	}
+
+	rdsRegionClientsTyped := make(map[string]rdsClientInterface)
+
+	for _, region := range regionsToScan {
+		if region != awsRegion {
+			// Create a new config for this region
+			regionCfg := createRegionConfig(cfg, region)
+			rdsRegionClientsTyped[region] = aws_rds.NewFromConfig(regionCfg)
+			logger.Debug("created RDS client for region", "region", region)
+		} else {
+			// Always add current region to map to ensure consistent region handling
+			rdsRegionClientsTyped[region] = rdsClient
+			logger.Debug("using default RDS client for current region", "region", region)
+		}
+	}
+
+	// Convert to map[string]interface{} for passing to collector
+	rdsRegionClients := make(map[string]interface{})
+	for region, client := range rdsRegionClientsTyped {
+		rdsRegionClients[region] = client
+	}
+
+	// Create per-region CloudWatch clients for multi-region support
+	cloudWatchRegionClients := make(map[string]interface{})
+
+	for _, region := range regionsToScan {
+		if region != awsRegion {
+			// Create a new config for this region
+			regionCfg := createRegionConfig(cfg, region)
+			cloudWatchRegionClients[region] = cloudwatch.NewFromConfig(regionCfg)
+			logger.Debug("created CloudWatch client for region", "region", region)
+		} else {
+			// Always add current region to map to ensure consistent region handling
+			cloudWatchRegionClients[region] = cloudWatchClient
+			logger.Debug("using default CloudWatch client for current region", "region", region)
+		}
+	}
+
+	// Create per-region EC2 clients for multi-region support
+	ec2RegionClients := make(map[string]interface{})
+
+	for _, region := range regionsToScan {
+		if region != awsRegion {
+			// Create a new config for this region
+			regionCfg := createRegionConfig(cfg, region)
+			ec2RegionClients[region] = ec2.NewFromConfig(regionCfg)
+			logger.Debug("created EC2 client for region", "region", region)
+		} else {
+			// Always add current region to map to ensure consistent region handling
+			ec2RegionClients[region] = ec2Client
+			logger.Debug("using default EC2 client for current region", "region", region)
+		}
+	}
+
+	// Create per-region ServiceQuotas clients for multi-region support
+	servicequotasRegionClients := make(map[string]interface{})
+
+	for _, region := range regionsToScan {
+		if region != awsRegion {
+			// Create a new config for this region
+			regionCfg := createRegionConfig(cfg, region)
+			servicequotasRegionClients[region] = servicequotas.NewFromConfig(regionCfg)
+			logger.Debug("created ServiceQuotas client for region", "region", region)
+		} else {
+			// Always add current region to map to ensure consistent region handling
+			servicequotasRegionClients[region] = servicequotasClient
+			logger.Debug("using default ServiceQuotas client for current region", "region", region)
+		}
+	}
+
 	collectorConfiguration := exporter.Configuration{
+		Regions:                   regionsToScan,
 		CollectInstanceMetrics:    configuration.CollectInstanceMetrics,
 		CollectInstanceTypes:      configuration.CollectInstanceTypes,
 		CollectInstanceTags:       configuration.CollectInstanceTags,
@@ -108,7 +198,7 @@ func run(configuration exporterConfig) {
 		TagSelections:             configuration.TagSelections,
 	}
 
-	collector := exporter.NewCollector(*logger, collectorConfiguration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, tagClient)
+	collector := exporter.NewCollector(*logger, collectorConfiguration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, tagClient, rdsRegionClients, cloudWatchRegionClients, ec2RegionClients, servicequotasRegionClients)
 
 	prometheus.MustRegister(collector)
 
