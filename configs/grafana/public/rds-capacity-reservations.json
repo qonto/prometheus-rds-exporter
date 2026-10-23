@@ -1,0 +1,625 @@
+{
+   "description": "RDS On-Demand Capacity Reservations usage and inventory",
+   "editable": false,
+   "graphTooltip": 1,
+   "links": [
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "server"
+         ],
+         "title": "Server",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "database"
+         ],
+         "title": "Database",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "table"
+         ],
+         "title": "Table",
+         "type": "dashboards"
+      },
+      {
+         "asDropdown": true,
+         "includeVars": true,
+         "keepTime": true,
+         "tags": [
+            "dmf",
+            "misc"
+         ],
+         "title": "More",
+         "type": "dashboards"
+      }
+   ],
+   "panels": [
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 0,
+            "y": 0
+         },
+         "id": 1,
+         "title": "Overview",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of active On-Demand Capacity Reservations in selected AWS account(s) and region(s)",
+         "fieldConfig": {
+            "defaults": {
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 0,
+            "y": 1
+         },
+         "id": 2,
+         "options": {
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(rds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",state=\"active\"})\n"
+            }
+         ],
+         "title": "Capacity reservations",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of DB instances reserved by active On-Demand Capacity Reservations and not used by any RDS instance",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "noValue": "0",
+               "thresholds": {
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 2
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 3,
+            "y": 1
+         },
+         "id": 3,
+         "options": {
+            "colorMode": "background",
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(rds_capacity_reservation_available_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n"
+            }
+         ],
+         "title": "Unused capacity reservations",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Total number of active On-Demand Capacity Reservations ending in less than 30 days",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "noValue": "0",
+               "thresholds": {
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 1
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 6,
+            "y": 1
+         },
+         "id": 4,
+         "options": {
+            "colorMode": "background",
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(\n  ((rds_capacity_reservation_end_timestamp_seconds{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} - time()) / 86400 < 30 > 0)\n  and on (aws_account_id, aws_region, capacity_reservation_id)\n  rds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",state=\"active\"}\n)\n"
+            }
+         ],
+         "title": "Capacity reservation ending soon",
+         "type": "stat"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 9,
+            "y": 4
+         },
+         "id": 5,
+         "title": "Usage",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Percentage of reserved DB instances used by RDS instances, per AWS account, region, engine, instance class and availability zone",
+         "fieldConfig": {
+            "defaults": {
+               "color": {
+                  "mode": "thresholds"
+               },
+               "decimals": 0,
+               "max": 100,
+               "min": 0,
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "red",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 50
+                     },
+                     {
+                        "color": "green",
+                        "value": 90
+                     }
+                  ]
+               },
+               "unit": "percent"
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 5
+         },
+         "id": 6,
+         "options": {
+            "rowHeight": 0.90000000000000002,
+            "showValue": "auto"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "100 * (\n  sum by (aws_account_id, aws_region, engine, instance_class, availability_zone) (rds_capacity_reservation_reserved_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n  - sum by (aws_account_id, aws_region, engine, instance_class, availability_zone) (rds_capacity_reservation_available_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n)\n/ sum by (aws_account_id, aws_region, engine, instance_class, availability_zone) (rds_capacity_reservation_reserved_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n",
+               "legendFormat": "{{ aws_account_id }}:{{ aws_region }} {{ engine }} {{ instance_class }} {{ availability_zone }}"
+            }
+         ],
+         "title": "Capacity reservations usage",
+         "type": "status-history"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Current percentage of reserved DB instances used by RDS instances, per AWS account, region, engine, instance class and availability zone",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "max": 100,
+               "min": 0,
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "red",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 50
+                     },
+                     {
+                        "color": "green",
+                        "value": 90
+                     }
+                  ]
+               },
+               "unit": "percent"
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 13
+         },
+         "id": 7,
+         "options": {
+            "displayMode": "basic",
+            "orientation": "horizontal",
+            "reduceOptions": {
+               "calcs": [
+                  "lastNotNull"
+               ]
+            },
+            "showUnfilled": true
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "100 * (\n  sum by (aws_account_id, aws_region, engine, instance_class, availability_zone) (rds_capacity_reservation_reserved_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n  - sum by (aws_account_id, aws_region, engine, instance_class, availability_zone) (rds_capacity_reservation_available_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n)\n/ sum by (aws_account_id, aws_region, engine, instance_class, availability_zone) (rds_capacity_reservation_reserved_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n",
+               "legendFormat": "{{ aws_account_id }}:{{ aws_region }} {{ engine }} {{ instance_class }} {{ availability_zone }}"
+            }
+         ],
+         "title": "Current capacity reservations usage",
+         "type": "bargauge"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of reserved DB instances not used by any RDS instance, per AWS account, region, engine, instance class and availability zone",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "fillOpacity": 10
+               },
+               "decimals": 0,
+               "min": 0
+            }
+         },
+         "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 13
+         },
+         "id": 8,
+         "options": {
+            "legend": {
+               "calcs": [
+                  "min",
+                  "mean",
+                  "max"
+               ],
+               "displayMode": "table",
+               "placement": "right"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum by (aws_account_id, aws_region, engine, instance_class, availability_zone) (rds_capacity_reservation_available_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n",
+               "legendFormat": "{{ aws_account_id }}:{{ aws_region }} {{ engine }} {{ instance_class }} {{ availability_zone }}"
+            }
+         ],
+         "title": "Unused reserved DB instances",
+         "type": "timeseries"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 24,
+            "y": 21
+         },
+         "id": 9,
+         "title": "Inventory",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "List of On-Demand Capacity Reservations in selected AWS account(s) and region(s)",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "displayMode": "color-text"
+               },
+               "noValue": "No capacity reservation",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "state"
+                  },
+                  "properties": [
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "active": {
+                                    "color": "green",
+                                    "index": 0
+                                 },
+                                 "assessing": {
+                                    "color": "blue",
+                                    "index": 1
+                                 },
+                                 "cancelled": {
+                                    "color": "white",
+                                    "index": 8
+                                 },
+                                 "delayed": {
+                                    "color": "orange",
+                                    "index": 4
+                                 },
+                                 "expired": {
+                                    "color": "white",
+                                    "index": 7
+                                 },
+                                 "failed": {
+                                    "color": "red",
+                                    "index": 5
+                                 },
+                                 "pending": {
+                                    "color": "yellow",
+                                    "index": 3
+                                 },
+                                 "scheduled": {
+                                    "color": "blue",
+                                    "index": 2
+                                 },
+                                 "unsupported": {
+                                    "color": "red",
+                                    "index": 6
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Value"
+                  },
+                  "properties": [
+                     {
+                        "id": "displayName",
+                        "value": "End date"
+                     },
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "0": {
+                                    "index": 0,
+                                    "text": "No end date"
+                                 }
+                              },
+                              "type": "value"
+                           }
+                        ]
+                     },
+                     {
+                        "id": "unit",
+                        "value": "dateTimeAsIso"
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 7,
+            "w": 24,
+            "x": 0,
+            "y": 22
+         },
+         "id": 10,
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\"}\n* on (aws_account_id, aws_region, capacity_reservation_id) group_left ()\nmax by (aws_account_id, aws_region, capacity_reservation_id) (\n  rds_capacity_reservation_end_timestamp_seconds{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} * 1000\n  or on (aws_account_id, aws_region, capacity_reservation_id)\n  0 * rds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"}\n)\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Capacity reservations",
+         "transformations": [
+            {
+               "id": "organize",
+               "options": {
+                  "excludeByName": {
+                     "Time": true,
+                     "__name__": true,
+                     "container": true,
+                     "context": true,
+                     "endpoint": true,
+                     "environment": true,
+                     "instance": true,
+                     "job": true,
+                     "kubernetes_cluster": true,
+                     "namespace": true,
+                     "pod": true,
+                     "prometheus": true,
+                     "service": true
+                  },
+                  "indexByName": {
+                     "Value": 7,
+                     "arn": 8,
+                     "aws_account_id": 0,
+                     "aws_region": 1,
+                     "capacity_reservation_id": 2,
+                     "capacity_reservation_name": 3,
+                     "engine": 4,
+                     "instance_class": 5,
+                     "state": 6
+                  }
+               }
+            }
+         ],
+         "type": "table"
+      }
+   ],
+   "schemaVersion": 36,
+   "tags": [
+      "dmf",
+      "server"
+   ],
+   "templating": {
+      "list": [
+         {
+            "description": "Prometheus data source",
+            "label": "Data source",
+            "name": "datasource",
+            "query": "prometheus",
+            "type": "datasource"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "description": "AWS Account ID",
+            "includeAll": true,
+            "label": "Account",
+            "multi": true,
+            "name": "aws_account_id",
+            "query": "label_values(rds_instance_info, aws_account_id)",
+            "refresh": 2,
+            "type": "query"
+         },
+         {
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "description": "AWS region",
+            "includeAll": true,
+            "label": "Region",
+            "multi": true,
+            "name": "aws_region",
+            "query": "label_values(rds_instance_info{aws_account_id=~\"$aws_account_id\"}, aws_region)",
+            "refresh": 2,
+            "type": "query"
+         },
+         {
+            "allValue": ".*",
+            "datasource": {
+               "type": "prometheus",
+               "uid": "${datasource}"
+            },
+            "description": "AWS RDS On-Demand Capacity Reservation",
+            "includeAll": true,
+            "label": "Capacity reservation",
+            "multi": true,
+            "name": "capacity_reservation_id",
+            "query": "label_values(rds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\", aws_region=~\"$aws_region\"}, capacity_reservation_id)",
+            "refresh": 2,
+            "type": "query"
+         }
+      ]
+   },
+   "time": {
+      "from": "now-6h",
+      "to": "now"
+   },
+   "timezone": "utc",
+   "title": "RDS capacity reservations",
+   "uid": "77e8e390-55ba-4cee-96e7-5efd92ab8102"
+}
