@@ -16,6 +16,7 @@ type rdsClient interface {
 	DescribeDBLogFiles(context.Context, *aws_rds.DescribeDBLogFilesInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBLogFilesOutput, error)
 	DescribeDBEngineVersions(context.Context, *aws_rds.DescribeDBEngineVersionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBEngineVersionsOutput, error)
 	DescribeDBMajorEngineVersions(context.Context, *aws_rds.DescribeDBMajorEngineVersionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBMajorEngineVersionsOutput, error)
+	DescribeDBCapacityReservations(context.Context, *aws_rds.DescribeDBCapacityReservationsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBCapacityReservationsOutput, error)
 }
 
 type EC2Client interface {

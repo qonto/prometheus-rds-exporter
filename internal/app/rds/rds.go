@@ -100,6 +100,9 @@ type RdsInstanceMetrics struct {
 	// The identifier of the CA certificate for this DB instance.
 	CACertificateIdentifier string
 
+	// The identifier of the On-Demand Capacity Reservation used by the DB instance, empty if none.
+	CapacityReservationID string
+
 	// Certificate expiration date
 	CertificateValidTill *time.Time
 
@@ -733,6 +736,7 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 		StorageThroughput:          converter.MegaBytesToBytes(storageThroughput),
 		StorageType:                aws.ToString(dbInstance.StorageType),
 		CACertificateIdentifier:    aws.ToString(dbInstance.CACertificateIdentifier),
+		CapacityReservationID:      aws.ToString(dbInstance.DBCapacityReservationIdentifier),
 		CertificateValidTill:       certificateValidTill,
 		Age:                        age,
 		Tags:                       ConvertRDSTagsToMap(dbInstance.TagList),
