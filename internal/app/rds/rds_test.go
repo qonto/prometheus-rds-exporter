@@ -56,6 +56,7 @@ func TestGetMetrics(t *testing.T) {
 	assert.Equal(t, "unittest", m.Tags["Environment"], "Environment tag mismatch")
 	assert.Equal(t, "sre", m.Tags["Team"], "Team tag mismatch")
 	assert.Equal(t, m.DBClusterIdentifier, "", "unexpected cluster identifier")
+	assert.Equal(t, *rdsInstance.AvailabilityZone, m.AvailabilityZone, "AvailabilityZone mismatch")
 
 	// Check cluster
 	result := metrics.Clusters[*rdsCluster.DBClusterIdentifier]
