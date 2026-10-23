@@ -35,6 +35,9 @@ local colors = common.colors;
     ca:
       s.field('CA certificate identifier', 'Certificate Authority bundle used by this RDS instance for TLS connections', queries.instance.info, 'ca_certificate_identifier'),
 
+    availabilityZone:
+      s.field('Availability zone', 'Availability zone of the RDS instance (primary availability zone for Multi-AZ deployments)', queries.instance.info, 'availability_zone'),
+
     capacityReservation:
       s.field('Capacity reservation', 'On-Demand Capacity Reservation used by this RDS instance', queries.instance.capacityReservation, 'capacity_reservation_id')
       + standardOptions.withNoValue('None')
