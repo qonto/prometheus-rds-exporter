@@ -507,6 +507,23 @@
                {
                   "matcher": {
                      "id": "byName",
+                     "options": "capacity_reservation_id"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/77e8e390-55ba-4cee-96e7-5efd92ab8102/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-capacity_reservation_id=${__data.fields.capacity_reservation_id}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
                      "options": "Value"
                   },
                   "properties": [
@@ -772,6 +789,23 @@
                            {
                               "title": "",
                               "url": "/d/0197d764-40cc-7042-a4df-f2e3146275a6/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-cluster_identifier=${__data.fields.cluster_identifier}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "capacity_reservation_id"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/77e8e390-55ba-4cee-96e7-5efd92ab8102/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-capacity_reservation_id=${__data.fields.capacity_reservation_id}"
                            }
                         ]
                      }
@@ -1296,6 +1330,24 @@
                {
                   "matcher": {
                      "id": "byName",
+                     "options": "capacity_reservation_name"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "targetBlank": true,
+                              "title": "Open in AWS console",
+                              "url": "https://${__data.fields.aws_region}.console.aws.amazon.com/rds/home?region=${__data.fields.aws_region}#capacity-reservation:id=${__data.fields.capacity_reservation_id}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
                      "options": "Value"
                   },
                   "properties": [
@@ -1447,6 +1499,23 @@
                            {
                               "title": "",
                               "url": "/d/0197d764-40cc-7042-a4df-f2e3146275a6/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-cluster_identifier=${__data.fields.cluster_identifier}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "capacity_reservation_id"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "title": "",
+                              "url": "/d/77e8e390-55ba-4cee-96e7-5efd92ab8102/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-capacity_reservation_id=${__data.fields.capacity_reservation_id}"
                            }
                         ]
                      }

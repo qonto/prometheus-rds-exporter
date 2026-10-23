@@ -417,6 +417,24 @@
                {
                   "matcher": {
                      "id": "byName",
+                     "options": "capacity_reservation_name"
+                  },
+                  "properties": [
+                     {
+                        "id": "links",
+                        "value": [
+                           {
+                              "targetBlank": true,
+                              "title": "Open in AWS console",
+                              "url": "https://${__data.fields.aws_region}.console.aws.amazon.com/rds/home?region=${__data.fields.aws_region}#capacity-reservation:id=${__data.fields.capacity_reservation_id}"
+                           }
+                        ]
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
                      "options": "state"
                   },
                   "properties": [
@@ -540,15 +558,15 @@
                      "service": true
                   },
                   "indexByName": {
-                     "Value": 7,
-                     "arn": 8,
+                     "Value": 8,
+                     "arn": 7,
                      "aws_account_id": 0,
                      "aws_region": 1,
-                     "capacity_reservation_id": 2,
-                     "capacity_reservation_name": 3,
-                     "engine": 4,
-                     "instance_class": 5,
-                     "state": 6
+                     "capacity_reservation_id": 6,
+                     "capacity_reservation_name": 5,
+                     "engine": 2,
+                     "instance_class": 3,
+                     "state": 4
                   }
                }
             }
