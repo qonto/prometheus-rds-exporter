@@ -776,11 +776,16 @@ To report a security issue, please visit [SECURITY.md](SECURITY.md)
 
 ### Development environment
 
-You can start a simple development environment using the Docker compose configuration in `/scripts/prometheus`.
-
-It will start Grafana (with the dashboards), Prometheus, and the RDS exporter:
+You can start a simple development environment using the Docker compose configuration in `/scripts/prometheus`. It starts the exporter, Prometheus, Grafana (with dashboards), and Grafana Tempo.
 
 1. Connect on AWS using the AWS CLI
+
+1. Set the Grafana admin password in `scripts/prometheus/.env` (see [local development environment](CONTRIBUTING.md#local-development-environment))
+
+    ```bash
+    cd scripts/prometheus
+    cp .env.example .env # Then edit GF_SECURITY_ADMIN_PASSWORD in .env
+    ```
 
 1. Launch development stack
 
@@ -789,11 +794,14 @@ It will start Grafana (with the dashboards), Prometheus, and the RDS exporter:
     docker compose up --build
     ```
 
+   Tips: As the exporter is running in container, you MUST run `docker compose up rds-exporter --build` after each change
+
 1. Connect on the services
 
-    - Grafana: <http://localhost:3000> (credential: admin/hackme)
+    - Grafana: <http://localhost:3000> (credential: `admin` and the password set in `.env`)
     - Prometheus: <http://localhost:9090>
     - Prometheus RDS exporter: <http://localhost:9043>
+    - Grafana Tempo: exporter traces are available in Grafana, in `Explore` with the `Tempo` datasource
 
 ### Running the tests
 
@@ -830,3 +838,9 @@ Traces can be forwarded to any OpenTelemetry server using gRPC protocol.
     ```bash
     prometheus-rds-exporter --enable-otel-traces
     ```
+
+The local development environment (`scripts/prometheus`) includes Grafana Tempo and enables traces by default. Tempo receives OTLP gRPC traces on `localhost:4317`, so you can also send traces from an exporter running on your host:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 make run args="--enable-otel-traces --debug --log-format text"
+```

@@ -6,3 +6,12 @@ datasources:
     type: prometheus
     url: http://prometheus:9090
     uid: P8C31E6E7223097E2
+  - name: Tempo
+    type: tempo
+    url: http://tempo:3200
+    uid: tempo
+    jsonData:
+      serviceMap:
+        datasourceUid: P8C31E6E7223097E2
+      nodeGraph:
+        enabled: true

@@ -16,13 +16,15 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
       - ./.prometheus_data:/prometheus
     ports:
-      - 9090:9090
+      - 127.0.0.1:9090:9090
     command:
       - --config.file=/etc/prometheus/prometheus.yml  # Default
       - --storage.tsdb.path=/prometheus  # Default
       - --web.console.libraries=/usr/share/prometheus/console_libraries  # Default
       - --web.console.templates=/usr/share/prometheus/consoles  # Default
       - --web.enable-lifecycle  # Enable HTTP reloads and shutdowns of Prometheus
+      - --web.enable-remote-write-receiver  # Receive Tempo metrics generator series (service graphs, span metrics)
+      - --enable-feature=exemplar-storage
 
   grafana:
     image: grafana/grafana:10.2.2
@@ -31,7 +33,7 @@ services:
       - no-new-privileges:true
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=hackme
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:?set in scripts/prometheus/.env, see .env.example}
     volumes:
       - ./.grafana_data:/var/lib/grafana  # Grafana persistent storage
       - ./../../configs/grafana/public:/var/tmp/prometheus-rds-exporter-dashboards  # Grafana dashboards folder is used for dashboard provisioning
@@ -41,8 +43,27 @@ services:
     tmpfs:
       - /var/tmp
     ports:
-      - 3000:3000
+      - 127.0.0.1:3000:3000
     entrypoint: ["/usr/share/grafana/entrypoint.sh"]
+    depends_on:
+      - prometheus
+      - tempo
+
+  tempo:
+    image: grafana/tempo:3.1.1
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - -target=all
+      - -config.file=/etc/tempo.yaml
+    volumes:
+      - ./configuration/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - ./.tempo_data:/var/tempo  # Tempo persistent storage
+    tmpfs:
+      - /tmp
+    ports:
+      - 127.0.0.1:4317:4317  # OTLP gRPC, to send traces from an exporter running on the host
     depends_on:
       - prometheus
 
@@ -58,11 +79,13 @@ services:
       - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN-}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY-}
       - PROMETHEUS_RDS_EXPORTER_LOG_FORMAT=text
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
     volumes:
       - $HOME/.aws:/app/.aws:ro
       - ./../../rds_exporter:/mnt/rds_exporprometheus-rds-exporterter
-    command: ["./prometheus-rds-exporter", "--debug"]
+    command: ["./prometheus-rds-exporter", "--debug", "--enable-otel-traces"]
     ports:
-      - 9043:9043
+      - 127.0.0.1:9043:9043
     depends_on:
       - prometheus
+      - tempo
