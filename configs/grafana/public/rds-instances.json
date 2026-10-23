@@ -341,14 +341,110 @@
          "type": "stat"
       },
       {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Number of DB instances reserved by active On-Demand Capacity Reservations and not used by any RDS instance",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "noValue": "0",
+               "thresholds": {
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 2
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 18,
+            "y": 1
+         },
+         "id": 8,
+         "options": {
+            "colorMode": "background",
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "sum(rds_capacity_reservation_available_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n"
+            }
+         ],
+         "title": "Unused capacity reservations",
+         "type": "stat"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Total number of active On-Demand Capacity Reservations ending in less than 30 days",
+         "fieldConfig": {
+            "defaults": {
+               "decimals": 0,
+               "noValue": "0",
+               "thresholds": {
+                  "steps": [
+                     {
+                        "color": "green",
+                        "value": 0
+                     },
+                     {
+                        "color": "orange",
+                        "value": 1
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 3,
+            "w": 3,
+            "x": 21,
+            "y": 1
+         },
+         "id": 9,
+         "options": {
+            "colorMode": "background",
+            "graphMode": "area"
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "count(\n  ((rds_capacity_reservation_end_timestamp_seconds{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} - time()) / 86400 < 30 > 0)\n  and on (aws_account_id, aws_region, capacity_reservation_id)\n  rds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",state=\"active\"}\n)\n"
+            }
+         ],
+         "title": "Capacity reservation ending soon",
+         "type": "stat"
+      },
+      {
          "collapsed": false,
          "gridPos": {
             "h": 1,
             "w": 0,
-            "x": 18,
+            "x": 24,
             "y": 4
          },
-         "id": 8,
+         "id": 10,
          "title": "Pending operations",
          "type": "row"
       },
@@ -566,7 +662,7 @@
             "x": 0,
             "y": 5
          },
-         "id": 9,
+         "id": 11,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -838,7 +934,7 @@
             "x": 12,
             "y": 5
          },
-         "id": 10,
+         "id": 12,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -904,7 +1000,7 @@
             "x": 24,
             "y": 10
          },
-         "id": 11,
+         "id": 13,
          "title": "Standard and extended support",
          "type": "row"
       },
@@ -993,7 +1089,7 @@
             "x": 0,
             "y": 11
          },
-         "id": 12,
+         "id": 14,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -1123,7 +1219,7 @@
             "x": 12,
             "y": 11
          },
-         "id": 13,
+         "id": 15,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -1176,7 +1272,125 @@
             "x": 24,
             "y": 16
          },
-         "id": 14,
+         "id": 16,
+         "title": "Capacity reservations",
+         "type": "row"
+      },
+      {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "Active On-Demand Capacity Reservations ending in less than 30 days",
+         "fieldConfig": {
+            "defaults": {
+               "custom": {
+                  "displayMode": "color-text"
+               },
+               "decimals": 0,
+               "noValue": "No capacity reservation"
+            },
+            "overrides": [
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "Value"
+                  },
+                  "properties": [
+                     {
+                        "id": "displayName",
+                        "value": "Days remaining"
+                     },
+                     {
+                        "id": "thresholds",
+                        "value": {
+                           "mode": "absolute",
+                           "steps": [
+                              {
+                                 "color": "red",
+                                 "value": 0
+                              },
+                              {
+                                 "color": "orange",
+                                 "value": 7
+                              },
+                              {
+                                 "color": "green",
+                                 "value": 30
+                              }
+                           ]
+                        }
+                     },
+                     {
+                        "id": "unit",
+                        "value": "d"
+                     }
+                  ]
+               }
+            ]
+         },
+         "gridPos": {
+            "h": 5,
+            "w": 24,
+            "x": 0,
+            "y": 17
+         },
+         "id": 17,
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "((rds_capacity_reservation_end_timestamp_seconds{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} - time()) / 86400 < 30 > 0)\n* on (aws_account_id, aws_region, capacity_reservation_id) group_left (capacity_reservation_name, engine, instance_class)\nrds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",state=\"active\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Capacity reservations ending soon",
+         "transformations": [
+            {
+               "id": "organize",
+               "options": {
+                  "excludeByName": {
+                     "Time": true,
+                     "__name__": true,
+                     "container": true,
+                     "context": true,
+                     "endpoint": true,
+                     "environment": true,
+                     "instance": true,
+                     "job": true,
+                     "kubernetes_cluster": true,
+                     "namespace": true,
+                     "pod": true,
+                     "prometheus": true,
+                     "service": true
+                  },
+                  "indexByName": {
+                     "Value": 4,
+                     "aws_account_id": 0,
+                     "aws_region": 1,
+                     "capacity_reservation_id": 2,
+                     "capacity_reservation_name": 3,
+                     "engine": 5,
+                     "instance_class": 6
+                  }
+               }
+            }
+         ],
+         "type": "table"
+      },
+      {
+         "collapsed": false,
+         "gridPos": {
+            "h": 1,
+            "w": 0,
+            "x": 24,
+            "y": 22
+         },
+         "id": 18,
          "title": "Inventory",
          "type": "row"
       },
@@ -1392,9 +1606,9 @@
             "h": 7,
             "w": 24,
             "x": 0,
-            "y": 17
+            "y": 23
          },
-         "id": 15,
+         "id": 19,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -1461,9 +1675,9 @@
             "h": 1,
             "w": 0,
             "x": 24,
-            "y": 24
+            "y": 30
          },
-         "id": 16,
+         "id": 20,
          "title": "AWS Quota",
          "type": "row"
       },
@@ -1513,9 +1727,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 25
+            "y": 31
          },
-         "id": 17,
+         "id": 21,
          "options": {
             "legend": {
                "calcs": [
@@ -1587,9 +1801,9 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 25
+            "y": 31
          },
-         "id": 18,
+         "id": 22,
          "options": {
             "legend": {
                "calcs": [
@@ -1670,9 +1884,9 @@
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 33
+            "y": 39
          },
-         "id": 19,
+         "id": 23,
          "options": {
             "legend": {
                "calcs": [
@@ -1762,9 +1976,9 @@
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 33
+            "y": 39
          },
-         "id": 20,
+         "id": 24,
          "options": {
             "legend": {
                "calcs": [
