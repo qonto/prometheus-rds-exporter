@@ -244,6 +244,7 @@ Configuration could be defined in [prometheus-rds-exporter.yaml](https://github.
 | collect-quotas               | Collect AWS RDS quotas (AWS quotas API)                                                                                           | true                    |
 | collect-usages               | Collect AWS RDS usages (AWS Cloudwatch API)                                                                                       | true                    |
 | collect-engine-support       | Collect engine version support lifecycle information (AWS RDS API)                                                                | true                    |
+| collect-capacity-reservations | Collect On-Demand Capacity Reservations (AWS RDS API)                                                                            | true                    |
 | tag-selections               | Tags to select database instances with. Refer to [dedicated section on tag configuration](#tag-configuration)                     |                         |
 | debug                        | Enable debug mode                                                                                                                 |                         |
 | enable-otel-traces           | Enable OpenTelemetry traces. See [configuration](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/)        | false                   |

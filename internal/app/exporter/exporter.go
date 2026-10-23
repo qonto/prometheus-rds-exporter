@@ -31,17 +31,18 @@ const (
 var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/exporter")
 
 type Configuration struct {
-	CollectInstanceMetrics    bool
-	CollectInstanceTags       bool
-	CollectInstanceTypes      bool
-	CollectLogsSize           bool
-	CollectServerlessLogsSize bool
-	CollectMaintenances       bool
-	CollectClusterMetrics     bool
-	CollectQuotas             bool
-	CollectUsages             bool
-	CollectEngineSupport      bool
-	TagSelections             map[string][]string
+	CollectInstanceMetrics      bool
+	CollectInstanceTags         bool
+	CollectInstanceTypes        bool
+	CollectLogsSize             bool
+	CollectServerlessLogsSize   bool
+	CollectMaintenances         bool
+	CollectClusterMetrics       bool
+	CollectQuotas               bool
+	CollectUsages               bool
+	CollectEngineSupport        bool
+	CollectCapacityReservations bool
+	TagSelections               map[string][]string
 }
 
 type counters struct {
