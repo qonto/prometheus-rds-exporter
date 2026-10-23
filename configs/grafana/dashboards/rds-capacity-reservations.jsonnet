@@ -25,9 +25,9 @@ dashboard.new(title)
   g.util.grid.wrapPanels(
     [
       g.panel.row.new('Overview'),
-      r.stat.count { gridPos+: { w: 3, h: 3 } },
-      r.stat.unused { gridPos+: { w: 3, h: 3 } },
-      r.stat.ending { gridPos+: { w: 3, h: 3 } },
+      r.stat.byReservation.count { gridPos+: { w: 3, h: 3 } },
+      r.stat.byReservation.unused { gridPos+: { w: 3, h: 3 } },
+      r.stat.byReservation.ending { gridPos+: { w: 3, h: 3 } },
 
       g.panel.row.new('Usage'),
       r.statusHistory.usage { gridPos+: { w: 24, h: 8 } },
