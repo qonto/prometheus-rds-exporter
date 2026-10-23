@@ -103,6 +103,9 @@ type RdsInstanceMetrics struct {
 	// The identifier of the On-Demand Capacity Reservation used by the DB instance, empty if none.
 	CapacityReservationID string
 
+	// The Availability Zone of the DB instance (primary Availability Zone for Multi-AZ deployments).
+	AvailabilityZone string
+
 	// Certificate expiration date
 	CertificateValidTill *time.Time
 
@@ -737,6 +740,7 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 		StorageType:                aws.ToString(dbInstance.StorageType),
 		CACertificateIdentifier:    aws.ToString(dbInstance.CACertificateIdentifier),
 		CapacityReservationID:      aws.ToString(dbInstance.DBCapacityReservationIdentifier),
+		AvailabilityZone:           aws.ToString(dbInstance.AvailabilityZone),
 		CertificateValidTill:       certificateValidTill,
 		Age:                        age,
 		Tags:                       ConvertRDSTagsToMap(dbInstance.TagList),

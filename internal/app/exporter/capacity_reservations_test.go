@@ -130,7 +130,7 @@ up 1
 	assert.Equal(t, 0, testutil.CollectAndCount(collector, "rds_capacity_reservation_info"), "should not export capacity reservation metrics on error")
 }
 
-func TestInstanceCapacityReservationLabel(t *testing.T) {
+func TestInstanceInformationLabels(t *testing.T) {
 	instance := rds_mock.NewRdsInstance()
 	instance.DBCapacityReservationIdentifier = aws.String("dbcr-postgres")
 
@@ -159,4 +159,5 @@ func TestInstanceCapacityReservationLabel(t *testing.T) {
 
 	require.NotNil(t, labels, "rds_instance_info must be exported")
 	assert.Equal(t, "dbcr-postgres", labels["capacity_reservation_id"], "capacity_reservation_id label mismatch")
+	assert.Equal(t, "eu-west-3a", labels["availability_zone"], "availability_zone label mismatch")
 }

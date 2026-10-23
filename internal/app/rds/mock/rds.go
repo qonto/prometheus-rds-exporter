@@ -257,6 +257,7 @@ func NewRdsInstance() *aws_rds_types.DBInstance {
 		CACertificateIdentifier:    aws.String("rds-ca-2019"),
 		CertificateDetails:         newRdsCertificateDetails(),
 		InstanceCreateTime:         &now,
+		AvailabilityZone:           aws.String("eu-west-3a"),
 		TagList:                    []aws_rds_types.Tag{{Key: aws.String("Environment"), Value: aws.String("unittest")}, {Key: aws.String("Team"), Value: aws.String("sre")}},
 	}
 }
