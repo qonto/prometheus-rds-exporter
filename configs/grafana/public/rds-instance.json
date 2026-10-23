@@ -840,7 +840,7 @@
          },
          "gridPos": {
             "h": 2,
-            "w": 10,
+            "w": 8,
             "x": 0,
             "y": 5
          },
@@ -895,8 +895,8 @@
          },
          "gridPos": {
             "h": 2,
-            "w": 10,
-            "x": 10,
+            "w": 8,
+            "x": 8,
             "y": 5
          },
          "id": 18,
@@ -925,6 +925,23 @@
          "description": "On-Demand Capacity Reservation used by this RDS instance",
          "fieldConfig": {
             "defaults": {
+               "links": [
+                  {
+                     "title": "Capacity reservation",
+                     "url": "/d/77e8e390-55ba-4cee-96e7-5efd92ab8102/?${datasource:queryparam}&${__url_time_range}&${aws_account_id:queryparam}&${aws_region:queryparam}&var-capacity_reservation_id=${__value.raw}"
+                  }
+               ],
+               "mappings": [
+                  {
+                     "options": {
+                        "pattern": ".+",
+                        "result": {
+                           "color": "green"
+                        }
+                     },
+                     "type": "regex"
+                  }
+               ],
                "noValue": "None",
                "thresholds": {
                   "mode": "absolute",
@@ -939,8 +956,8 @@
          },
          "gridPos": {
             "h": 2,
-            "w": 4,
-            "x": 20,
+            "w": 8,
+            "x": 16,
             "y": 5
          },
          "id": 19,

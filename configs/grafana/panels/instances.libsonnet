@@ -94,6 +94,15 @@ local colors = common.colors;
             },
           ])
         ),
+        fieldOverride.byName.new('capacity_reservation_id')
+        + table.standardOptions.override.byType.withPropertiesFromOptions(
+          table.standardOptions.withLinks([
+            {
+              title: '',
+              url: '/d/' + common.uuids.rdsCapacityReservations + '/?${datasource:queryparam}&${__url_time_range}&var-' + variables.aws_account_id.name + '=${__data.fields.aws_account_id}&var-' + variables.aws_region.name + '=${__data.fields.aws_region}&var-' + variables.capacity_reservation_id.name + '=${__data.fields.capacity_reservation_id}',
+            },
+          ])
+        ),
         fieldOverride.byName.new('Value')
         + table.standardOptions.override.byType.withPropertiesFromOptions(
           table.standardOptions.withUnit('bytes')

@@ -80,6 +80,19 @@ local colors = common.colors;
     local t = generic.table,
     local table = g.panel.table,
     local fieldOverride = g.panel.table.fieldOverride,
+
+    // Open the capacity reservation in the AWS console
+    __consoleLink:
+      fieldOverride.byName.new('capacity_reservation_name')
+      + table.standardOptions.override.byType.withPropertiesFromOptions(
+        table.standardOptions.withLinks([
+          {
+            title: 'Open in AWS console',
+            url: 'https://${__data.fields.aws_region}.console.aws.amazon.com/rds/home?region=${__data.fields.aws_region}#capacity-reservation:id=${__data.fields.capacity_reservation_id}',
+            targetBlank: true,
+          },
+        ])
+      ),
     local thresholds = table.standardOptions.thresholds,
     local step = table.standardOptions.threshold.step,
     local mapping = table.standardOptions.mapping,
@@ -90,6 +103,7 @@ local colors = common.colors;
       + table.standardOptions.withNoValue('No capacity reservation')
       + table.standardOptions.withDecimals(0)
       + table.standardOptions.withOverrides([
+        self.__consoleLink,
         fieldOverride.byName.new('Value')
         + table.standardOptions.override.byType.withPropertiesFromOptions(
           table.standardOptions.withUnit('d')
@@ -143,6 +157,7 @@ local colors = common.colors;
         step.withValue(0) + step.withColor(colors.default),
       ])
       + table.standardOptions.withOverrides([
+        self.__consoleLink,
         fieldOverride.byName.new('state')
         + table.standardOptions.override.byType.withPropertiesFromOptions(
           table.standardOptions.withMappings([
@@ -195,13 +210,13 @@ local colors = common.colors;
             indexByName: {
               aws_account_id: 0,
               aws_region: 1,
-              capacity_reservation_id: 2,
-              capacity_reservation_name: 3,
-              engine: 4,
-              instance_class: 5,
-              state: 6,
-              Value: 7,
-              arn: 8,
+              engine: 2,
+              instance_class: 3,
+              state: 4,
+              capacity_reservation_name: 5,
+              capacity_reservation_id: 6,
+              arn: 7,
+              Value: 8,
             },
           },
         },
