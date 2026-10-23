@@ -124,6 +124,9 @@ func (m RDSClient) DescribeDBEngineVersions(context.Context, *aws_rds.DescribeDB
 
 func (m *RDSClient) DescribeDBMajorEngineVersions(context.Context, *aws_rds.DescribeDBMajorEngineVersionsInput, ...func(*aws_rds.Options)) (*aws_rds.DescribeDBMajorEngineVersionsOutput, error) {
 	m.DescribeDBMajorEngineVersionsCallCount++
+	if m.DescribeDBMajorEngineVersionsOutput == nil && m.DescribeDBMajorEngineVersionsError == nil {
+		return nil, fmt.Errorf("received nil response from AWS API")
+	}
 	return m.DescribeDBMajorEngineVersionsOutput, m.DescribeDBMajorEngineVersionsError
 }
 
