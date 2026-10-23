@@ -11,6 +11,13 @@ local variables = import '../variables.libsonnet';
       '$' + variables.datasource.name,
       |||
         rds_instance_info{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"} * on (dbidentifier) group_left max(rds_allocated_storage_bytes{}) by (dbidentifier)
+        * on (aws_account_id, aws_region, capacity_reservation_id) group_left (capacity_reservation_name)
+        (
+          group by (aws_account_id, aws_region, capacity_reservation_id, capacity_reservation_name) (rds_capacity_reservation_info{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"})
+          # Keep instances without capacity reservation, or whose reservation is not collected
+          or on (aws_account_id, aws_region, capacity_reservation_id)
+          group by (aws_account_id, aws_region, capacity_reservation_id) (rds_instance_info{aws_account_id=~"$aws_account_id",aws_region=~"$aws_region"})
+        )
       |||
     )
     + prometheusQuery.withInstant(true)

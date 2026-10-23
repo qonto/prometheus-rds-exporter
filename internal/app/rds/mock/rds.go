@@ -5,11 +5,17 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	aws_rds "github.com/aws/aws-sdk-go-v2/service/rds"
 	aws_rds_types "github.com/aws/aws-sdk-go-v2/service/rds/types"
+)
+
+const (
+	mockAWSRegion    = "eu-west-3"
+	mockAWSAccountID = "123456789012"
 )
 
 type RDSClient struct {
@@ -22,6 +28,8 @@ type RDSClient struct {
 	DescribeDBMajorEngineVersionsOutput     *aws_rds.DescribeDBMajorEngineVersionsOutput
 	DescribeDBMajorEngineVersionsError      error
 	DescribeDBMajorEngineVersionsCallCount  int
+	DescribeDBCapacityReservationsPages     [][]aws_rds_types.DBCapacityReservation
+	DescribeDBCapacityReservationsError     error
 	Error                                   error
 }
 
@@ -96,6 +104,26 @@ func (m *RDSClient) GetDescribeDBMajorEngineVersionsCallCount() int {
 	return m.DescribeDBMajorEngineVersionsCallCount
 }
 
+// WithDBCapacityReservations returns the reservations in a single page
+func (m *RDSClient) WithDBCapacityReservations(reservations ...aws_rds_types.DBCapacityReservation) *RDSClient {
+	m.DescribeDBCapacityReservationsPages = [][]aws_rds_types.DBCapacityReservation{reservations}
+
+	return m
+}
+
+// WithDBCapacityReservationsPages returns each list of reservations in a separate page
+func (m *RDSClient) WithDBCapacityReservationsPages(pages ...[]aws_rds_types.DBCapacityReservation) *RDSClient {
+	m.DescribeDBCapacityReservationsPages = pages
+
+	return m
+}
+
+func (m *RDSClient) WithDBCapacityReservationsError(err error) *RDSClient {
+	m.DescribeDBCapacityReservationsError = err
+
+	return m
+}
+
 func (m RDSClient) DescribeDBClusters(ctx context.Context, params *aws_rds.DescribeDBClustersInput, optFns ...func(*aws_rds.Options)) (*aws_rds.DescribeDBClustersOutput, error) {
 	return m.DescribeDBClustersOutput, nil
 }
@@ -127,6 +155,57 @@ func (m *RDSClient) DescribeDBMajorEngineVersions(context.Context, *aws_rds.Desc
 	return m.DescribeDBMajorEngineVersionsOutput, m.DescribeDBMajorEngineVersionsError
 }
 
+// DescribeDBCapacityReservations paginates over DescribeDBCapacityReservationsPages, the marker being the next page index
+func (m RDSClient) DescribeDBCapacityReservations(_ context.Context, input *aws_rds.DescribeDBCapacityReservationsInput, _ ...func(*aws_rds.Options)) (*aws_rds.DescribeDBCapacityReservationsOutput, error) {
+	if m.DescribeDBCapacityReservationsError != nil {
+		return nil, m.DescribeDBCapacityReservationsError
+	}
+
+	page := 0
+	if input.Marker != nil {
+		page, _ = strconv.Atoi(*input.Marker)
+	}
+
+	output := &aws_rds.DescribeDBCapacityReservationsOutput{}
+
+	if page < len(m.DescribeDBCapacityReservationsPages) {
+		output.DBCapacityReservations = m.DescribeDBCapacityReservationsPages[page]
+	}
+
+	if page+1 < len(m.DescribeDBCapacityReservationsPages) {
+		output.Marker = aws.String(strconv.Itoa(page + 1))
+	}
+
+	return output, nil
+}
+
+//nolint:golint,mnd
+func NewDBCapacityReservation(engine string, instanceClass string, reservedPerAZ int32, availableByAZ map[string]int32) aws_rds_types.DBCapacityReservation {
+	awsRegion := mockAWSRegion
+	awsAccountID := mockAWSAccountID
+	identifier := "dbcr-" + RandomString(10)
+
+	availability := make([]aws_rds_types.AvailableCapacityPerAvailabilityZone, 0, len(availableByAZ))
+	for az, available := range availableByAZ {
+		availability = append(availability, aws_rds_types.AvailableCapacityPerAvailabilityZone{
+			AvailabilityZone:  aws.String(az),
+			AvailableCapacity: aws.Int32(available),
+		})
+	}
+
+	return aws_rds_types.DBCapacityReservation{
+		AvailableCapacityPerAvailabilityZoneList: availability,
+		CreateDate:                               aws.Time(time.Now()),
+		DBCapacityReservationArn:                 aws.String(fmt.Sprintf("arn:aws:rds:%s:%s:db-capacity-reservation:%s", awsRegion, awsAccountID, identifier)),
+		DBCapacityReservationIdentifier:          aws.String(identifier),
+		DBCapacityReservationName:                aws.String("reservation-" + RandomString(4)),
+		DBInstanceClass:                          aws.String(instanceClass),
+		Engine:                                   aws.String(engine),
+		ReservedCapacityPerAvailabilityZone:      aws.Int32(reservedPerAZ),
+		State:                                    aws_rds_types.DBCapacityReservationStateActive,
+	}
+}
+
 // RandomString returns a random alphanumeric string of the specified length
 func RandomString(length int) string {
 	buf := make([]byte, length)
@@ -151,8 +230,8 @@ func newRdsCertificateDetails() *aws_rds_types.CertificateDetails {
 
 //nolint:golint,mnd
 func NewRdsInstance() *aws_rds_types.DBInstance {
-	awsRegion := "eu-west-3"
-	awsAccountID := "123456789012"
+	awsRegion := mockAWSRegion
+	awsAccountID := mockAWSAccountID
 	DBInstanceIdentifier := RandomString(10)
 	arn := fmt.Sprintf("arn:aws:rds:%s:%s:db:%s", awsRegion, awsAccountID, DBInstanceIdentifier)
 
@@ -178,14 +257,15 @@ func NewRdsInstance() *aws_rds_types.DBInstance {
 		CACertificateIdentifier:    aws.String("rds-ca-2019"),
 		CertificateDetails:         newRdsCertificateDetails(),
 		InstanceCreateTime:         &now,
+		AvailabilityZone:           aws.String("eu-west-3a"),
 		TagList:                    []aws_rds_types.Tag{{Key: aws.String("Environment"), Value: aws.String("unittest")}, {Key: aws.String("Team"), Value: aws.String("sre")}},
 	}
 }
 
 //nolint:golint,mnd
 func NewRdsCluster() *aws_rds_types.DBCluster {
-	awsRegion := "eu-west-3"
-	awsAccountID := "123456789012"
+	awsRegion := mockAWSRegion
+	awsAccountID := mockAWSAccountID
 	DBClusterIdentifier := RandomString(10)
 	DBClusterResourceID := RandomString(10)
 	arn := fmt.Sprintf("arn:aws:rds:%s:%s:db:%s", awsRegion, awsAccountID, DBClusterIdentifier)

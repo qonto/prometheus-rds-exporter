@@ -94,6 +94,26 @@ local colors = common.colors;
             },
           ])
         ),
+        // Hidden but kept for the capacity reservation link
+        fieldOverride.byName.new('capacity_reservation_id')
+        + table.standardOptions.override.byType.withPropertiesFromOptions(
+          table.fieldConfig.defaults.custom.withHidden(true)
+        ),
+        fieldOverride.byName.new('capacity_reservation_name')
+        + table.standardOptions.override.byType.withPropertiesFromOptions(
+          // Green when the instance uses a capacity reservation: its capacity is guaranteed
+          table.standardOptions.withMappings([
+            mapping.RegexMap.withType('regex')
+            + mapping.RegexMap.options.withPattern('.+')
+            + mapping.RegexMap.options.result.withColor(colors.ok),
+          ])
+          + table.standardOptions.withLinks([
+            {
+              title: '',
+              url: '/d/' + common.uuids.rdsCapacityReservations + '/?${datasource:queryparam}&${__url_time_range}&var-' + variables.aws_account_id.name + '=${__data.fields.aws_account_id}&var-' + variables.aws_region.name + '=${__data.fields.aws_region}&var-' + variables.capacity_reservation_id.name + '=${__data.fields.capacity_reservation_id}',
+            },
+          ])
+        ),
         fieldOverride.byName.new('Value')
         + table.standardOptions.override.byType.withPropertiesFromOptions(
           table.standardOptions.withUnit('bytes')
@@ -136,33 +156,43 @@ local colors = common.colors;
               service: true,
             },
             indexByName: {
-              Time: 2,
-              Value: 19,
+              Time: 3,
+              Value: 21,
               aws_account_id: 0,
               aws_region: 1,
-              ca_certificate_identifier: 16,
-              dbi_resource_id: 18,
-              dbidentifier: 4,
-              cluster_identifier: 3,
-              deletion_protection: 12,
-              engine: 5,
-              engine_version: 7,
-              instance: 8,
-              instance_class: 9,
-              job: 10,
-              multi_az: 11,
-              pending_maintenance: 13,
-              pending_modified_values: 14,
-              performance_insights_enabled: 15,
-              role: 6,
-              storage_type: 17,
+              availability_zone: 2,
+              ca_certificate_identifier: 18,
+              dbi_resource_id: 20,
+              dbidentifier: 5,
+              cluster_identifier: 4,
+              deletion_protection: 13,
+              engine: 6,
+              engine_version: 8,
+              instance: 9,
+              instance_class: 10,
+              job: 11,
+              multi_az: 12,
+              pending_maintenance: 14,
+              pending_modified_values: 15,
+              performance_insights_enabled: 16,
+              capacity_reservation_name: 17,
+              capacity_reservation_id: 22,
+              role: 7,
+              storage_type: 19,
             },
           },
         },
       ]),
 
     instances:
-      self.__table('RDS instances', 'List of RDS instances in selected AWS account(s) and region(s)', [queries.all]),
+      self.__table('RDS instances', 'List of RDS instances in selected AWS account(s) and region(s)', [queries.all])
+      // The region is already part of availability_zone, hidden but kept for links
+      + table.standardOptions.withOverridesMixin([
+        fieldOverride.byName.new('aws_region')
+        + table.standardOptions.override.byType.withPropertiesFromOptions(
+          table.fieldConfig.defaults.custom.withHidden(true)
+        ),
+      ]),
 
     pendingMaintenances:
       self.__table('Instances with pending maintenance', 'RDS instances with pending maintenance', [queries.instancesWithPendingMaintenanceTable])
@@ -198,6 +228,8 @@ local colors = common.colors;
               engine: true,
               engine_version: true,
               multi_az: true,
+              capacity_reservation_id: true,
+              availability_zone: true,
             },
             indexByName: {
               aws_account_id: 1,
@@ -243,6 +275,8 @@ local colors = common.colors;
               engine: true,
               engine_version: true,
               multi_az: true,
+              capacity_reservation_id: true,
+              availability_zone: true,
             },
             indexByName: {
               aws_account_id: 1,

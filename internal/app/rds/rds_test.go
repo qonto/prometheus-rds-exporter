@@ -56,6 +56,7 @@ func TestGetMetrics(t *testing.T) {
 	assert.Equal(t, "unittest", m.Tags["Environment"], "Environment tag mismatch")
 	assert.Equal(t, "sre", m.Tags["Team"], "Team tag mismatch")
 	assert.Equal(t, m.DBClusterIdentifier, "", "unexpected cluster identifier")
+	assert.Equal(t, *rdsInstance.AvailabilityZone, m.AvailabilityZone, "AvailabilityZone mismatch")
 
 	// Check cluster
 	result := metrics.Clusters[*rdsCluster.DBClusterIdentifier]
@@ -490,4 +491,20 @@ func TestServerlessMetrics(t *testing.T) {
 
 	assert.Equal(t, *cluster.ServerlessV2ScalingConfiguration.MaxCapacity, metrics.Clusters[*clusterIdentifier].ServerLessMaxACU, "unexpected max ACU value")
 	assert.Equal(t, *cluster.ServerlessV2ScalingConfiguration.MinCapacity, metrics.Clusters[*clusterIdentifier].ServerLessMinACU, "unexpected min ACU value")
+}
+
+func TestGetMetricsCapacityReservation(t *testing.T) {
+	reservedInstance := mock.NewRdsInstance()
+	reservedInstance.DBCapacityReservationIdentifier = aws.String("dbcr-abc123example")
+
+	onDemandInstance := mock.NewRdsInstance()
+
+	client := mock.NewRDSClient().WithDBInstances(*reservedInstance, *onDemandInstance)
+
+	fetcher := rds.NewFetcher(context.TODO(), client, nil, slog.Logger{}, rds.Configuration{})
+	metrics, err := fetcher.GetInstancesMetrics()
+
+	require.NoError(t, err, "GetInstancesMetrics must succeed")
+	assert.Equal(t, "dbcr-abc123example", metrics.Instances[*reservedInstance.DBInstanceIdentifier].CapacityReservationID, "Capacity reservation mismatch")
+	assert.Empty(t, metrics.Instances[*onDemandInstance.DBInstanceIdentifier].CapacityReservationID, "Instance without capacity reservation")
 }

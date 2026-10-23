@@ -31,35 +31,38 @@ const (
 var tracer = otel.Tracer("github/qonto/prometheus-rds-exporter/internal/app/exporter")
 
 type Configuration struct {
-	CollectInstanceMetrics    bool
-	CollectInstanceTags       bool
-	CollectInstanceTypes      bool
-	CollectLogsSize           bool
-	CollectServerlessLogsSize bool
-	CollectMaintenances       bool
-	CollectClusterMetrics     bool
-	CollectQuotas             bool
-	CollectUsages             bool
-	CollectEngineSupport      bool
-	TagSelections             map[string][]string
+	CollectInstanceMetrics      bool
+	CollectInstanceTags         bool
+	CollectInstanceTypes        bool
+	CollectLogsSize             bool
+	CollectServerlessLogsSize   bool
+	CollectMaintenances         bool
+	CollectClusterMetrics       bool
+	CollectQuotas               bool
+	CollectUsages               bool
+	CollectEngineSupport        bool
+	CollectCapacityReservations bool
+	TagSelections               map[string][]string
 }
 
 type counters struct {
-	CloudwatchAPICalls    float64
-	EC2APIcalls           float64
-	Errors                float64
-	RDSAPIcalls           float64
-	ServiceQuotasAPICalls float64
-	UsageAPIcalls         float64
-	TagAPICalls           float64
+	CapacityReservationAPICalls float64
+	CloudwatchAPICalls          float64
+	EC2APIcalls                 float64
+	Errors                      float64
+	RDSAPIcalls                 float64
+	ServiceQuotasAPICalls       float64
+	UsageAPIcalls               float64
+	TagAPICalls                 float64
 }
 
 type metrics struct {
-	ServiceQuota        servicequotas.Metrics
-	RDS                 rds.Metrics
-	EC2                 ec2.Metrics
-	CloudwatchInstances cloudwatch.CloudWatchMetrics
-	CloudWatchUsage     cloudwatch.UsageMetrics
+	ServiceQuota         servicequotas.Metrics
+	RDS                  rds.Metrics
+	EC2                  ec2.Metrics
+	CloudwatchInstances  cloudwatch.CloudWatchMetrics
+	CloudWatchUsage      cloudwatch.UsageMetrics
+	CapacityReservations rds.CapacityReservationMetrics
 }
 
 type rdsCollector struct {
@@ -136,6 +139,11 @@ type rdsCollector struct {
 	age                              *prometheus.Desc
 	standardSupportRemainingDays     *prometheus.Desc
 	extendedSupportRemainingDays     *prometheus.Desc
+	capacityReservationReserved      *prometheus.Desc
+	capacityReservationAvailable     *prometheus.Desc
+	capacityReservationInfo          *prometheus.Desc
+	capacityReservationStart         *prometheus.Desc
+	capacityReservationEnd           *prometheus.Desc
 }
 
 func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsAccountID string, awsRegion string, rdsClient rdsClient, ec2Client EC2Client, cloudWatchClient cloudWatchClient, servicequotasClient servicequotasClient, tagClient resourcegroupstaggingapi.GetResourcesAPIClient) *rdsCollector {
@@ -174,7 +182,7 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 		),
 		information: prometheus.NewDesc("rds_instance_info",
 			"RDS instance information",
-			[]string{"aws_account_id", "aws_region", "dbidentifier", "dbi_resource_id", "cluster_identifier", "instance_class", "engine", "engine_version", "storage_type", "multi_az", "deletion_protection", "role", "source_dbidentifier", "pending_modified_values", "pending_maintenance", "performance_insights_enabled", "ca_certificate_identifier", "arn"}, nil,
+			[]string{"aws_account_id", "aws_region", "dbidentifier", "dbi_resource_id", "cluster_identifier", "instance_class", "engine", "engine_version", "storage_type", "multi_az", "deletion_protection", "role", "source_dbidentifier", "pending_modified_values", "pending_maintenance", "performance_insights_enabled", "ca_certificate_identifier", "arn", "capacity_reservation_id", "availability_zone"}, nil,
 		),
 		clusterInformation: prometheus.NewDesc("rds_cluster_info",
 			"RDS cluster information",
@@ -380,6 +388,26 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			"Days remaining until extended support ends for the database engine version.",
 			[]string{"aws_account_id", "aws_region", "dbidentifier", "engine", "engine_version"}, nil,
 		),
+		capacityReservationReserved: prometheus.NewDesc("rds_capacity_reservation_reserved_average",
+			"Number of DB instances reserved by the active On-Demand Capacity Reservation in the availability zone",
+			[]string{"aws_account_id", "aws_region", "capacity_reservation_id", "engine", "instance_class", "availability_zone"}, nil,
+		),
+		capacityReservationAvailable: prometheus.NewDesc("rds_capacity_reservation_available_average",
+			"Number of DB instances reserved by the active On-Demand Capacity Reservation in the availability zone and not used by any DB instance",
+			[]string{"aws_account_id", "aws_region", "capacity_reservation_id", "engine", "instance_class", "availability_zone"}, nil,
+		),
+		capacityReservationInfo: prometheus.NewDesc("rds_capacity_reservation_info",
+			"On-Demand Capacity Reservation information",
+			[]string{"aws_account_id", "aws_region", "capacity_reservation_id", "capacity_reservation_name", "engine", "instance_class", "state", "arn"}, nil,
+		),
+		capacityReservationStart: prometheus.NewDesc("rds_capacity_reservation_start_timestamp_seconds",
+			"Timestamp when the future-dated On-Demand Capacity Reservation becomes active",
+			[]string{"aws_account_id", "aws_region", "capacity_reservation_id"}, nil,
+		),
+		capacityReservationEnd: prometheus.NewDesc("rds_capacity_reservation_end_timestamp_seconds",
+			"Timestamp when the On-Demand Capacity Reservation expires",
+			[]string{"aws_account_id", "aws_region", "capacity_reservation_id"}, nil,
+		),
 	}
 }
 
@@ -392,6 +420,11 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.apiCall
 	ch <- c.apiCall
 	ch <- c.backupRetentionPeriod
+	ch <- c.capacityReservationAvailable
+	ch <- c.capacityReservationEnd
+	ch <- c.capacityReservationInfo
+	ch <- c.capacityReservationReserved
+	ch <- c.capacityReservationStart
 	ch <- c.certificateValidTill
 	ch <- c.cpuUtilisation
 	ch <- c.dBLoadCPU
@@ -455,6 +488,12 @@ func (c *rdsCollector) fetchMetrics() error {
 	if c.configuration.CollectUsages {
 		go c.getUsagesMetrics(c.cloudWatchClient)
 		c.wg.Add(1)
+	}
+
+	// Fetch On-Demand Capacity Reservations
+	if c.configuration.CollectCapacityReservations {
+		c.wg.Add(1)
+		go c.getCapacityReservationMetrics(c.rdsClient)
 	}
 
 	// Fetch RDS instances metrics
@@ -579,6 +618,24 @@ func (c *rdsCollector) getQuotasMetrics(client servicequotas.ServiceQuotasClient
 	span.SetStatus(codes.Ok, "quota fetched")
 }
 
+func (c *rdsCollector) getCapacityReservationMetrics(client rds.CapacityReservationClient) {
+	defer c.wg.Done()
+	c.logger.Debug("fetch capacity reservations")
+
+	fetcher := rds.NewCapacityReservationFetcher(c.ctx, client, c.logger)
+
+	metrics, err := fetcher.GetCapacityReservations()
+	if err != nil {
+		c.counters.Errors++
+		c.logger.Error(fmt.Sprintf("can't fetch capacity reservations: %s", err))
+	}
+
+	c.counters.CapacityReservationAPICalls += fetcher.GetStatistics().RdsAPICall
+	c.metrics.CapacityReservations = metrics
+
+	c.logger.Debug("capacity reservations fetched", "metrics", metrics)
+}
+
 func (c *rdsCollector) getInstanceTagLabels(dbidentifier string, instance rds.RdsInstanceMetrics) (keys []string, values []string) {
 	labels := map[string]string{
 		"aws_account_id": c.awsAccountID,
@@ -679,6 +736,8 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 			strconv.FormatBool(instance.PerformanceInsightsEnabled),
 			instance.CACertificateIdentifier,
 			instance.Arn,
+			instance.CapacityReservationID,
+			instance.AvailabilityZone,
 		)
 
 		if instance.MaxAllocatedStorage > 0 {
@@ -865,12 +924,50 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		}
 	}
 
+	// On-Demand Capacity Reservations metrics
+	if c.configuration.CollectCapacityReservations {
+		c.collectCapacityReservationMetrics(ch)
+	}
+
 	// serviceQuotas metrics
 	if c.configuration.CollectQuotas {
 		ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.ServiceQuotasAPICalls, c.awsAccountID, c.awsRegion, "servicequotas")
 		ch <- prometheus.MustNewConstMetric(c.quotaDBInstances, prometheus.GaugeValue, c.metrics.ServiceQuota.DBinstances, c.awsAccountID, c.awsRegion)
 		ch <- prometheus.MustNewConstMetric(c.quotaTotalStorage, prometheus.GaugeValue, c.metrics.ServiceQuota.TotalStorage, c.awsAccountID, c.awsRegion)
 		ch <- prometheus.MustNewConstMetric(c.quotaMaxDBInstanceSnapshots, prometheus.GaugeValue, c.metrics.ServiceQuota.ManualDBInstanceSnapshots, c.awsAccountID, c.awsRegion)
+	}
+}
+
+func (c *rdsCollector) collectCapacityReservationMetrics(ch chan<- prometheus.Metric) {
+	ch <- prometheus.MustNewConstMetric(c.apiCall, prometheus.CounterValue, c.counters.CapacityReservationAPICalls, c.awsAccountID, c.awsRegion, "capacity_reservations")
+
+	for key, usage := range c.metrics.CapacityReservations.Capacity {
+		ch <- prometheus.MustNewConstMetric(c.capacityReservationReserved, prometheus.GaugeValue, usage.Reserved, c.awsAccountID, c.awsRegion, key.CapacityReservationID, key.Engine, key.DBInstanceClass, key.AvailabilityZone)
+		ch <- prometheus.MustNewConstMetric(c.capacityReservationAvailable, prometheus.GaugeValue, usage.Available, c.awsAccountID, c.awsRegion, key.CapacityReservationID, key.Engine, key.DBInstanceClass, key.AvailabilityZone)
+	}
+
+	for identifier, reservation := range c.metrics.CapacityReservations.Reservations {
+		ch <- prometheus.MustNewConstMetric(
+			c.capacityReservationInfo,
+			prometheus.GaugeValue,
+			1,
+			c.awsAccountID,
+			c.awsRegion,
+			identifier,
+			reservation.Name,
+			reservation.Engine,
+			reservation.DBInstanceClass,
+			reservation.State,
+			reservation.Arn,
+		)
+
+		if reservation.StartDate != nil {
+			ch <- prometheus.MustNewConstMetric(c.capacityReservationStart, prometheus.GaugeValue, float64(reservation.StartDate.Unix()), c.awsAccountID, c.awsRegion, identifier)
+		}
+
+		if reservation.EndDate != nil {
+			ch <- prometheus.MustNewConstMetric(c.capacityReservationEnd, prometheus.GaugeValue, float64(reservation.EndDate.Unix()), c.awsAccountID, c.awsRegion, identifier)
+		}
 	}
 }
 

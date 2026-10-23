@@ -507,6 +507,7 @@
                      "Time": true,
                      "Value": true,
                      "__name__": true,
+                     "availability_zone": true,
                      "cluster_identifier": true,
                      "container": true,
                      "context": true,
@@ -522,23 +523,24 @@
                      "service": true
                   },
                   "indexByName": {
-                     "arn": 17,
+                     "arn": 18,
                      "aws_account_id": 0,
                      "aws_region": 1,
-                     "ca_certificate_identifier": 15,
-                     "dbi_resource_id": 16,
+                     "ca_certificate_identifier": 16,
+                     "capacity_reservation_id": 9,
+                     "dbi_resource_id": 17,
                      "dbidentifier": 3,
-                     "deletion_protection": 13,
+                     "deletion_protection": 14,
                      "engine": 5,
                      "engine_version": 6,
                      "instance": 7,
                      "instance_class": 8,
-                     "multi_az": 9,
-                     "pending_maintenance": 11,
-                     "pending_modified_values": 10,
-                     "performance_insights_enabled": 12,
+                     "multi_az": 10,
+                     "pending_maintenance": 12,
+                     "pending_modified_values": 11,
+                     "performance_insights_enabled": 13,
                      "role": 4,
-                     "storage_type": 14
+                     "storage_type": 15
                   }
                }
             }

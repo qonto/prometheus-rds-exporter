@@ -15,7 +15,7 @@ tests:
       - isKind:
           of: GrafanaDashboard
       - hasDocuments:
-          count: 5
+          count: 6
       - documentIndex: 0
         equal:
           path: metadata.name
@@ -23,16 +23,20 @@ tests:
       - documentIndex: 1
         equal:
           path: metadata.name
-          value: rds-cluster
+          value: rds-capacity-reservations
       - documentIndex: 2
         equal:
           path: metadata.name
-          value: rds-clusters
+          value: rds-cluster
       - documentIndex: 3
         equal:
           path: metadata.name
-          value: rds-instance
+          value: rds-clusters
       - documentIndex: 4
+        equal:
+          path: metadata.name
+          value: rds-instance
+      - documentIndex: 5
         equal:
           path: metadata.name
           value: rds-instances

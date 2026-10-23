@@ -41,6 +41,14 @@
             "Resource": "*"
         },
         {
+            "Sid": "AllowCapacityReservationDescriptions",
+            "Effect": "Allow",
+            "Action": [
+                "rds:DescribeDBCapacityReservations"
+            ],
+            "Resource": "*"
+        },
+        {
             "Sid": "AllowGettingCloudWatchMetrics",
             "Effect": "Allow",
             "Action": [

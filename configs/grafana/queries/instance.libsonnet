@@ -14,6 +14,16 @@ local variables = import '../variables.libsonnet';
       + prometheusQuery.withFormat('table')
       + prometheusQuery.withInstant(true),
 
+    capacityReservation:
+      prometheusQuery.new(
+        '$' + variables.datasource.name,
+        |||
+          rds_instance_info{aws_account_id="$aws_account_id",aws_region="$aws_region",dbidentifier="$dbidentifier",capacity_reservation_id!=""}
+        |||
+      )
+      + prometheusQuery.withFormat('table')
+      + prometheusQuery.withInstant(true),
+
     age:
       prometheusQuery.new(
         '$' + variables.datasource.name,

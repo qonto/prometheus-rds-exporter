@@ -68,6 +68,19 @@ local RefreshOnTime = 2;
     )
     + var.query.withRefresh(RefreshOnTime),
 
+  capacity_reservation_id:
+    var.query.new('capacity_reservation_id')
+    + var.datasource.generalOptions.withLabel('Capacity reservation')
+    + var.custom.generalOptions.withDescription('AWS RDS On-Demand Capacity Reservation')
+    + var.query.withDatasourceFromVariable(self.datasource)
+    + var.query.queryTypes.withLabelValues(
+      'capacity_reservation_id',
+      'rds_capacity_reservation_info{aws_account_id=~"$aws_account_id", aws_region=~"$aws_region"}',
+    )
+    + var.query.selectionOptions.withIncludeAll(true, '.*')
+    + var.query.selectionOptions.withMulti(true)
+    + var.query.withRefresh(RefreshOnTime),
+
   exporter:
     var.query.new('instance')
     + var.datasource.generalOptions.withLabel('Instance')
