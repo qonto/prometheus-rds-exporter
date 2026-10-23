@@ -14,9 +14,8 @@ Steps:
     > This step is required to avoid dashboard regression
 
     ```bash
-    cd scripts/prometheus/
     docker compose rm grafana --stop --force # Stop container
-    rm -rf .grafana_data # Remove local storage
+    rm -rf dev/.grafana_data # Remove local storage
     ```
 
 1. Start local development environment

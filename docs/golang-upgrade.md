@@ -39,7 +39,7 @@ Update the Go version in all workflow files:
 
 ### 3. Local development environment
 
-- Update golang base image version (`FROM`) in the `scripts/prometheus/Dockerfile`
+- Update golang base image version (`FROM`) in the `dev/Dockerfile`
 
 ## Upgrade Process
 
