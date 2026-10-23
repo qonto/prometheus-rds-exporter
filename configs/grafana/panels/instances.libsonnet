@@ -94,9 +94,20 @@ local colors = common.colors;
             },
           ])
         ),
+        // Hidden but kept for the capacity reservation link
         fieldOverride.byName.new('capacity_reservation_id')
         + table.standardOptions.override.byType.withPropertiesFromOptions(
-          table.standardOptions.withLinks([
+          table.fieldConfig.defaults.custom.withHidden(true)
+        ),
+        fieldOverride.byName.new('capacity_reservation_name')
+        + table.standardOptions.override.byType.withPropertiesFromOptions(
+          // Green when the instance uses a capacity reservation: its capacity is guaranteed
+          table.standardOptions.withMappings([
+            mapping.RegexMap.withType('regex')
+            + mapping.RegexMap.options.withPattern('.+')
+            + mapping.RegexMap.options.result.withColor(colors.ok),
+          ])
+          + table.standardOptions.withLinks([
             {
               title: '',
               url: '/d/' + common.uuids.rdsCapacityReservations + '/?${datasource:queryparam}&${__url_time_range}&var-' + variables.aws_account_id.name + '=${__data.fields.aws_account_id}&var-' + variables.aws_region.name + '=${__data.fields.aws_region}&var-' + variables.capacity_reservation_id.name + '=${__data.fields.capacity_reservation_id}',
@@ -153,17 +164,18 @@ local colors = common.colors;
               dbi_resource_id: 19,
               dbidentifier: 4,
               cluster_identifier: 3,
-              deletion_protection: 13,
+              deletion_protection: 12,
               engine: 5,
               engine_version: 7,
               instance: 8,
               instance_class: 9,
-              capacity_reservation_id: 10,
-              job: 11,
-              multi_az: 12,
-              pending_maintenance: 14,
-              pending_modified_values: 15,
-              performance_insights_enabled: 16,
+              job: 10,
+              multi_az: 11,
+              pending_maintenance: 13,
+              pending_modified_values: 14,
+              performance_insights_enabled: 15,
+              capacity_reservation_name: 16,
+              capacity_reservation_id: 21,
               role: 6,
               storage_type: 18,
             },
