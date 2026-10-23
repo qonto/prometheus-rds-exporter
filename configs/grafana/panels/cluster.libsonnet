@@ -131,6 +131,7 @@ local colors = common.colors;
               __name__: true,
               Time: true,
               Value: true,
+              availability_zone: true,
               cluster_identifier: true,
               container: true,
               context: true,

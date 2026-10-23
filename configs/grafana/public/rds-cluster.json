@@ -507,6 +507,7 @@
                      "Time": true,
                      "Value": true,
                      "__name__": true,
+                     "availability_zone": true,
                      "cluster_identifier": true,
                      "container": true,
                      "context": true,
