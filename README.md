@@ -228,6 +228,12 @@ RDS cluster details</br>
 <a href="configs/grafana/public/rds-cluster.json">JSON</a>
 
 </td>
+<td>
+
+RDS capacity reservations</br>
+<a href="configs/grafana/public/rds-capacity-reservations.json">JSON</a>
+
+</td>
 </tr>
 </table>
 
