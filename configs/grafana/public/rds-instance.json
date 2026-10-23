@@ -928,7 +928,7 @@
                "links": [
                   {
                      "title": "Capacity reservation",
-                     "url": "/d/77e8e390-55ba-4cee-96e7-5efd92ab8102/?${datasource:queryparam}&${__url_time_range}&${aws_account_id:queryparam}&${aws_region:queryparam}&var-capacity_reservation_id=${__value.raw}"
+                     "url": "/d/77e8e390-55ba-4cee-96e7-5efd92ab8102/?${datasource:queryparam}&${__url_time_range}&${aws_account_id:queryparam}&${aws_region:queryparam}&var-capacity_reservation_id=${__value.text}"
                   }
                ],
                "mappings": [

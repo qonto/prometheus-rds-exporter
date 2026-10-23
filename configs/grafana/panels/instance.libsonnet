@@ -46,7 +46,7 @@ local colors = common.colors;
       + standardOptions.withLinks([
         {
           title: 'Capacity reservation',
-          url: '/d/' + common.uuids.rdsCapacityReservations + '/?${datasource:queryparam}&${__url_time_range}&${' + variables.aws_account_id.name + ':queryparam}&${' + variables.aws_region.name + ':queryparam}&var-' + variables.capacity_reservation_id.name + '=${__value.raw}',
+          url: '/d/' + common.uuids.rdsCapacityReservations + '/?${datasource:queryparam}&${__url_time_range}&${' + variables.aws_account_id.name + ':queryparam}&${' + variables.aws_region.name + ':queryparam}&var-' + variables.capacity_reservation_id.name + '=${__value.text}',
         },
       ]),
 
