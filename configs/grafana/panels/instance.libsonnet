@@ -34,6 +34,10 @@ local colors = common.colors;
     ca:
       s.field('CA certificate identifier', 'Certificate Authority bundle used by this RDS instance for TLS connections', queries.instance.info, 'ca_certificate_identifier'),
 
+    capacityReservation:
+      s.field('Capacity reservation', 'On-Demand Capacity Reservation used by this RDS instance', queries.instance.capacityReservation, 'capacity_reservation_id')
+      + standardOptions.withNoValue('None'),
+
     dbi:
       s.field('DBI resource ID', 'AWS RDS instance internal reference', queries.instance.info, 'dbi_resource_id'),
 
