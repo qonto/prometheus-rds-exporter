@@ -96,7 +96,7 @@ You can customize the Grafana connection using these environment variables:
 
 - `GRAFANA_URL`: Grafana server URL (default: <http://localhost:3000>)
 - `GRAFANA_USERNAME`: Grafana username (default: admin)
-- `GRAFANA_PASSWORD`: Grafana password (default: hackme)
+- `GRAFANA_PASSWORD`: Grafana password (default: `GF_SECURITY_ADMIN_PASSWORD` value from `scripts/prometheus/.env`, see [local development environment](../../CONTRIBUTING.md#local-development-environment))
 
 Example:
 

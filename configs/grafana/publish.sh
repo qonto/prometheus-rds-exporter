@@ -2,12 +2,18 @@
 
 set -e
 
+# Use the local development environment Grafana password when GRAFANA_PASSWORD is not set
+LOCAL_ENV_FILE="$(dirname "$0")/../../scripts/prometheus/.env"
+if [ -z "${GRAFANA_PASSWORD}" ] && [ -f "${LOCAL_ENV_FILE}" ]; then
+    GRAFANA_PASSWORD=$(sed -n 's/^GF_SECURITY_ADMIN_PASSWORD=//p' "${LOCAL_ENV_FILE}")
+fi
+
 upload_dashboard() {
     DASHBOARD_FILENAME=$1
 
     GRAFANA_URL=${GRAFANA_URL-http://localhost:3000}
     GRAFANA_USERNAME=${GRAFANA_USERNAME-admin}
-    GRAFANA_PASSWORD=${GRAFANA_PASSWORD-hackme}
+    GRAFANA_PASSWORD=${GRAFANA_PASSWORD:?set GRAFANA_PASSWORD or GF_SECURITY_ADMIN_PASSWORD in scripts/prometheus/.env}
 
     GRAFANA_API_DASHBOARD_UPDATE_PAYLOAD="grafana-api.update-dashboard.json"
     GRAFANA_API_REQUEST_FILE=/tmp/dashboard.json

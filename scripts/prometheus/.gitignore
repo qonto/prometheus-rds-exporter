@@ -1,3 +1,4 @@
 .grafana_data
 .prometheus_data
 .tempo_data
+.env
