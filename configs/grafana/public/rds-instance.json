@@ -840,7 +840,7 @@
          },
          "gridPos": {
             "h": 2,
-            "w": 12,
+            "w": 10,
             "x": 0,
             "y": 5
          },
@@ -895,8 +895,8 @@
          },
          "gridPos": {
             "h": 2,
-            "w": 12,
-            "x": 12,
+            "w": 10,
+            "x": 10,
             "y": 5
          },
          "id": 18,
@@ -918,6 +918,54 @@
          "type": "stat"
       },
       {
+         "datasource": {
+            "type": "datasource",
+            "uid": "-- Mixed --"
+         },
+         "description": "On-Demand Capacity Reservation used by this RDS instance",
+         "fieldConfig": {
+            "defaults": {
+               "noValue": "None",
+               "thresholds": {
+                  "mode": "absolute",
+                  "steps": [
+                     {
+                        "color": "white",
+                        "value": 0
+                     }
+                  ]
+               }
+            }
+         },
+         "gridPos": {
+            "h": 2,
+            "w": 4,
+            "x": 20,
+            "y": 5
+         },
+         "id": 19,
+         "options": {
+            "graphMode": "none",
+            "reduceOptions": {
+               "fields": "capacity_reservation_id"
+            }
+         },
+         "pluginVersion": "v10.2.0",
+         "targets": [
+            {
+               "datasource": {
+                  "type": "prometheus",
+                  "uid": "$datasource"
+               },
+               "expr": "rds_instance_info{aws_account_id=\"$aws_account_id\",aws_region=\"$aws_region\",dbidentifier=\"$dbidentifier\",capacity_reservation_id!=\"\"}\n",
+               "format": "table",
+               "instant": true
+            }
+         ],
+         "title": "Capacity reservation",
+         "type": "stat"
+      },
+      {
          "collapsed": false,
          "gridPos": {
             "h": 1,
@@ -925,7 +973,7 @@
             "x": 24,
             "y": 7
          },
-         "id": 19,
+         "id": 20,
          "title": "Main",
          "type": "row"
       },
@@ -966,7 +1014,7 @@
             "x": 0,
             "y": 8
          },
-         "id": 20,
+         "id": 21,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -1018,7 +1066,7 @@
             "x": 3,
             "y": 8
          },
-         "id": 21,
+         "id": 22,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -1070,7 +1118,7 @@
             "x": 6,
             "y": 8
          },
-         "id": 22,
+         "id": 23,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -1122,7 +1170,7 @@
             "x": 9,
             "y": 8
          },
-         "id": 23,
+         "id": 24,
          "pluginVersion": "v10.2.0",
          "targets": [
             {
@@ -1173,7 +1221,7 @@
             "x": 12,
             "y": 8
          },
-         "id": 24,
+         "id": 25,
          "options": {
             "graphMode": "area"
          },
@@ -1308,7 +1356,7 @@
             "x": 15,
             "y": 8
          },
-         "id": 25,
+         "id": 26,
          "options": {
             "graphMode": "none"
          },
@@ -1359,7 +1407,7 @@
             "x": 18,
             "y": 8
          },
-         "id": 26,
+         "id": 27,
          "options": {
             "graphMode": "none",
             "reduceOptions": {
@@ -1424,7 +1472,7 @@
             "x": 21,
             "y": 8
          },
-         "id": 27,
+         "id": 28,
          "options": {
             "graphMode": "none",
             "reduceOptions": {
@@ -1533,7 +1581,7 @@
             "x": 0,
             "y": 16
          },
-         "id": 28,
+         "id": 29,
          "options": {
             "legend": {
                "calcs": [
@@ -1623,7 +1671,7 @@
             "x": 12,
             "y": 16
          },
-         "id": 29,
+         "id": 30,
          "options": {
             "legend": {
                "calcs": [
@@ -1670,7 +1718,7 @@
             "x": 0,
             "y": 24
          },
-         "id": 30,
+         "id": 31,
          "options": {
             "legend": {
                "calcs": [
@@ -1792,7 +1840,7 @@
             "x": 12,
             "y": 24
          },
-         "id": 31,
+         "id": 32,
          "options": {
             "legend": {
                "calcs": [
@@ -1935,7 +1983,7 @@
             "x": 0,
             "y": 32
          },
-         "id": 32,
+         "id": 33,
          "options": {
             "legend": {
                "calcs": [
@@ -2088,7 +2136,7 @@
             "x": 12,
             "y": 32
          },
-         "id": 33,
+         "id": 34,
          "options": {
             "legend": {
                "calcs": [
@@ -2152,7 +2200,7 @@
             "x": 0,
             "y": 40
          },
-         "id": 34,
+         "id": 35,
          "options": {
             "legend": {
                "calcs": [
@@ -2329,7 +2377,7 @@
             "x": 12,
             "y": 40
          },
-         "id": 35,
+         "id": 36,
          "options": {
             "legend": {
                "calcs": [
@@ -2555,7 +2603,7 @@
             "x": 0,
             "y": 48
          },
-         "id": 36,
+         "id": 37,
          "options": {
             "legend": {
                "calcs": [
@@ -2781,7 +2829,7 @@
             "x": 12,
             "y": 48
          },
-         "id": 37,
+         "id": 38,
          "options": {
             "legend": {
                "calcs": [
@@ -2855,7 +2903,7 @@
             "x": 0,
             "y": 56
          },
-         "id": 38,
+         "id": 39,
          "options": {
             "legend": {
                "calcs": [
@@ -2889,7 +2937,7 @@
             "x": 12,
             "y": 64
          },
-         "id": 39,
+         "id": 40,
          "title": "PostgreSQL",
          "type": "row"
       },
@@ -2936,7 +2984,7 @@
             "x": 0,
             "y": 65
          },
-         "id": 40,
+         "id": 41,
          "options": {
             "legend": {
                "calcs": [
@@ -2984,7 +3032,7 @@
             "x": 12,
             "y": 65
          },
-         "id": 41,
+         "id": 42,
          "options": {
             "legend": {
                "calcs": [
@@ -3018,7 +3066,7 @@
             "x": 24,
             "y": 73
          },
-         "id": 42,
+         "id": 43,
          "title": "Scaling capacity",
          "type": "row"
       },
@@ -3113,7 +3161,7 @@
             "x": 0,
             "y": 74
          },
-         "id": 43,
+         "id": 44,
          "options": {
             "legend": {
                "calcs": [
@@ -3214,7 +3262,7 @@
             "x": 12,
             "y": 74
          },
-         "id": 44,
+         "id": 45,
          "options": {
             "legend": {
                "calcs": [
@@ -3331,7 +3379,7 @@
             "x": 0,
             "y": 82
          },
-         "id": 45,
+         "id": 46,
          "options": {
             "legend": {
                "calcs": [
