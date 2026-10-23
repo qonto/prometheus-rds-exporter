@@ -11,21 +11,32 @@ local colors = common.colors;
     local thresholds = standardOptions.thresholds,
     local step = standardOptions.threshold.step,
 
-    count:
-      stat.graph('Capacity reservations', 'Number of active On-Demand Capacity Reservations in selected AWS account(s) and region(s)', [queries.count])
+    __count(query):
+      stat.graph('Capacity reservations', 'Number of active On-Demand Capacity Reservations in selected AWS account(s) and region(s)', [query])
       + stat.reset,
 
-    unused:
-      stat.alert('Unused capacity reservations', 'Number of DB instances reserved by active On-Demand Capacity Reservations and not used by any RDS instance', [queries.unused])
+    __unused(query):
+      stat.alert('Unused capacity reservations', 'Number of DB instances reserved by active On-Demand Capacity Reservations and not used by any RDS instance', [query])
       + standardOptions.withDecimals(0)
       + thresholds.withSteps([
         step.withValue(0) + step.withColor(colors.ok),
         step.withValue(2) + step.withColor(colors.warning),
       ]),
 
-    ending:
-      stat.alert('Capacity reservation ending soon', 'Total number of active On-Demand Capacity Reservations ending in less than 30 days', [queries.ending])
+    __ending(query):
+      stat.alert('Capacity reservation ending soon', 'Total number of active On-Demand Capacity Reservations ending in less than 30 days', [query])
       + standardOptions.withDecimals(0),
+
+    count: self.__count(queries.count),
+    unused: self.__unused(queries.unused),
+    ending: self.__ending(queries.ending),
+
+    // Stats filtered by the capacity_reservation_id variable
+    byReservation: {
+      count: $.stat.__count(queries.byReservation.count),
+      unused: $.stat.__unused(queries.byReservation.unused),
+      ending: $.stat.__ending(queries.byReservation.ending),
+    },
   },
   // Usage of reserved capacity: low usage means paying for unused capacity
   __usageThresholds(standardOptions):
@@ -46,7 +57,7 @@ local colors = common.colors;
 
     usage:
       statusHistory.new('Capacity reservations usage')
-      + statusHistory.panelOptions.withDescription('Percentage of reserved DB instances used by RDS instances, per AWS account, region, engine, instance class and availability zone')
+      + statusHistory.panelOptions.withDescription('Percentage of reserved DB instances used by RDS instances, per capacity reservation and availability zone')
       + statusHistory.queryOptions.withTargets([queries.usage.ratio])
       + statusHistory.options.withShowValue('auto')
       + statusHistory.options.withRowHeight(0.9)
@@ -60,7 +71,7 @@ local colors = common.colors;
 
     usage:
       barGauge.new('Current capacity reservations usage')
-      + barGauge.panelOptions.withDescription('Current percentage of reserved DB instances used by RDS instances, per AWS account, region, engine, instance class and availability zone')
+      + barGauge.panelOptions.withDescription('Current percentage of reserved DB instances used by RDS instances, per capacity reservation and availability zone')
       + barGauge.queryOptions.withTargets([queries.usage.ratio])
       + barGauge.options.withOrientation('horizontal')
       + barGauge.options.withDisplayMode('basic')
@@ -73,7 +84,7 @@ local colors = common.colors;
     local ts = generic.timeSeries,
 
     unused:
-      ts.base('Unused reserved DB instances', 'Number of reserved DB instances not used by any RDS instance, per AWS account, region, engine, instance class and availability zone', [queries.usage.unused]),
+      ts.base('Unused reserved DB instances', 'Number of reserved DB instances not used by any RDS instance, per capacity reservation and availability zone', [queries.usage.unused]),
   },
 
   table: {

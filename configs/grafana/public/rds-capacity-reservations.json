@@ -97,7 +97,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "count(rds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",state=\"active\"})\n"
+               "expr": "count(rds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\",state=\"active\"})\n"
             }
          ],
          "title": "Capacity reservations",
@@ -145,7 +145,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "sum(rds_capacity_reservation_available_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n"
+               "expr": "sum(rds_capacity_reservation_available_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\"})\n"
             }
          ],
          "title": "Unused capacity reservations",
@@ -193,7 +193,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "count(\n  ((rds_capacity_reservation_end_timestamp_seconds{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} - time()) / 86400 < 30 > 0)\n  and on (aws_account_id, aws_region, capacity_reservation_id)\n  rds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",state=\"active\"}\n)\n"
+               "expr": "count(\n  ((rds_capacity_reservation_end_timestamp_seconds{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\"} - time()) / 86400 < 30 > 0)\n  and on (aws_account_id, aws_region, capacity_reservation_id)\n  rds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\",state=\"active\"}\n)\n"
             }
          ],
          "title": "Capacity reservation ending soon",
@@ -216,7 +216,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Percentage of reserved DB instances used by RDS instances, per AWS account, region, engine, instance class and availability zone",
+         "description": "Percentage of reserved DB instances used by RDS instances, per capacity reservation and availability zone",
          "fieldConfig": {
             "defaults": {
                "color": {
@@ -263,8 +263,8 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "100 * (\n  sum by (aws_account_id, aws_region, engine, instance_class, availability_zone) (rds_capacity_reservation_reserved_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n  - sum by (aws_account_id, aws_region, engine, instance_class, availability_zone) (rds_capacity_reservation_available_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n)\n/ sum by (aws_account_id, aws_region, engine, instance_class, availability_zone) (rds_capacity_reservation_reserved_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n",
-               "legendFormat": "{{ aws_account_id }}:{{ aws_region }} {{ engine }} {{ instance_class }} {{ availability_zone }}"
+               "expr": "100 * (\n  sum by (aws_account_id, aws_region, capacity_reservation_id, availability_zone) (rds_capacity_reservation_reserved_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\"})\n  - sum by (aws_account_id, aws_region, capacity_reservation_id, availability_zone) (rds_capacity_reservation_available_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\"})\n)\n/ sum by (aws_account_id, aws_region, capacity_reservation_id, availability_zone) (rds_capacity_reservation_reserved_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\"})\n* on (aws_account_id, aws_region, capacity_reservation_id) group_left (capacity_reservation_name, engine, instance_class)\nrds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\"}\n",
+               "legendFormat": "{{ aws_account_id }}:{{ aws_region }} {{ capacity_reservation_name }} {{ availability_zone }} ({{ engine }} {{ instance_class }})"
             }
          ],
          "title": "Capacity reservations usage",
@@ -275,7 +275,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Current percentage of reserved DB instances used by RDS instances, per AWS account, region, engine, instance class and availability zone",
+         "description": "Current percentage of reserved DB instances used by RDS instances, per capacity reservation and availability zone",
          "fieldConfig": {
             "defaults": {
                "decimals": 0,
@@ -325,8 +325,8 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "100 * (\n  sum by (aws_account_id, aws_region, engine, instance_class, availability_zone) (rds_capacity_reservation_reserved_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n  - sum by (aws_account_id, aws_region, engine, instance_class, availability_zone) (rds_capacity_reservation_available_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n)\n/ sum by (aws_account_id, aws_region, engine, instance_class, availability_zone) (rds_capacity_reservation_reserved_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n",
-               "legendFormat": "{{ aws_account_id }}:{{ aws_region }} {{ engine }} {{ instance_class }} {{ availability_zone }}"
+               "expr": "100 * (\n  sum by (aws_account_id, aws_region, capacity_reservation_id, availability_zone) (rds_capacity_reservation_reserved_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\"})\n  - sum by (aws_account_id, aws_region, capacity_reservation_id, availability_zone) (rds_capacity_reservation_available_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\"})\n)\n/ sum by (aws_account_id, aws_region, capacity_reservation_id, availability_zone) (rds_capacity_reservation_reserved_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\"})\n* on (aws_account_id, aws_region, capacity_reservation_id) group_left (capacity_reservation_name, engine, instance_class)\nrds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\"}\n",
+               "legendFormat": "{{ aws_account_id }}:{{ aws_region }} {{ capacity_reservation_name }} {{ availability_zone }} ({{ engine }} {{ instance_class }})"
             }
          ],
          "title": "Current capacity reservations usage",
@@ -337,7 +337,7 @@
             "type": "datasource",
             "uid": "-- Mixed --"
          },
-         "description": "Number of reserved DB instances not used by any RDS instance, per AWS account, region, engine, instance class and availability zone",
+         "description": "Number of reserved DB instances not used by any RDS instance, per capacity reservation and availability zone",
          "fieldConfig": {
             "defaults": {
                "custom": {
@@ -372,8 +372,8 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "sum by (aws_account_id, aws_region, engine, instance_class, availability_zone) (rds_capacity_reservation_available_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n",
-               "legendFormat": "{{ aws_account_id }}:{{ aws_region }} {{ engine }} {{ instance_class }} {{ availability_zone }}"
+               "expr": "sum by (aws_account_id, aws_region, capacity_reservation_id, availability_zone) (rds_capacity_reservation_available_average{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\"})\n* on (aws_account_id, aws_region, capacity_reservation_id) group_left (capacity_reservation_name, engine, instance_class)\nrds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\",capacity_reservation_id=~\"$capacity_reservation_id\"}\n",
+               "legendFormat": "{{ aws_account_id }}:{{ aws_region }} {{ capacity_reservation_name }} {{ availability_zone }} ({{ engine }} {{ instance_class }})"
             }
          ],
          "title": "Unused reserved DB instances",
