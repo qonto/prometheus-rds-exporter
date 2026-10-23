@@ -782,6 +782,12 @@ It will start Grafana (with the dashboards), Prometheus, Grafana Tempo, and the 
 
 1. Connect on AWS using the AWS CLI
 
+1. Set the Grafana admin password in `.env` (see [local development environment](CONTRIBUTING.md#local-development-environment))
+
+    ```bash
+    cp .env.example .env # Then edit GF_SECURITY_ADMIN_PASSWORD in .env
+    ```
+
 1. Launch development stack from the root of the repository
 
     ```bash
@@ -792,7 +798,7 @@ It will start Grafana (with the dashboards), Prometheus, Grafana Tempo, and the 
 
 1. Connect on the services
 
-    - Grafana: <http://localhost:3000> (credential: admin/hackme)
+    - Grafana: <http://localhost:3000> (credential: `admin` and the password set in `.env`)
     - Prometheus: <http://localhost:9090>
     - Prometheus RDS exporter: <http://localhost:9043>
     - Grafana Tempo: exporter traces are available in Grafana, in `Explore` with the `Tempo` datasource
