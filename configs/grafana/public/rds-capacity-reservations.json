@@ -1013,6 +1013,18 @@
                {
                   "matcher": {
                      "id": "byName",
+                     "options": "aws_region"
+                  },
+                  "properties": [
+                     {
+                        "id": "custom.hidden",
+                        "value": true
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
                      "options": "dbidentifier"
                   },
                   "properties": [
@@ -1059,6 +1071,7 @@
                      "__name__": true,
                      "arn": true,
                      "ca_certificate_identifier": true,
+                     "cluster_identifier": true,
                      "container": true,
                      "context": true,
                      "dbi_resource_id": true,
@@ -1079,18 +1092,17 @@
                      "storage_type": true
                   },
                   "indexByName": {
-                     "availability_zone": 2,
+                     "availability_zone": 1,
                      "aws_account_id": 0,
-                     "aws_region": 1,
-                     "capacity_reservation_id": 11,
-                     "capacity_reservation_name": 3,
-                     "cluster_identifier": 5,
-                     "dbidentifier": 4,
-                     "engine": 7,
-                     "engine_version": 8,
-                     "instance_class": 9,
-                     "multi_az": 10,
-                     "role": 6
+                     "aws_region": 10,
+                     "capacity_reservation_id": 9,
+                     "capacity_reservation_name": 8,
+                     "dbidentifier": 2,
+                     "engine": 4,
+                     "engine_version": 5,
+                     "instance_class": 6,
+                     "multi_az": 7,
+                     "role": 3
                   }
                }
             }

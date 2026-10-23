@@ -337,6 +337,11 @@ local colors = common.colors;
         step.withValue(0) + step.withColor(colors.default),
       ])
       + table.standardOptions.withOverrides([
+        // The region is already part of availability_zone, hidden but kept for links
+        fieldOverride.byName.new('aws_region')
+        + table.standardOptions.override.byType.withPropertiesFromOptions(
+          table.fieldConfig.defaults.custom.withHidden(true)
+        ),
         fieldOverride.byName.new('dbidentifier')
         + table.standardOptions.override.byType.withPropertiesFromOptions(
           table.standardOptions.withLinks([
@@ -357,6 +362,7 @@ local colors = common.colors;
               __name__: true,
               arn: true,
               ca_certificate_identifier: true,
+              cluster_identifier: true,
               container: true,
               context: true,
               dbi_resource_id: true,
@@ -378,17 +384,16 @@ local colors = common.colors;
             },
             indexByName: {
               aws_account_id: 0,
-              aws_region: 1,
-              availability_zone: 2,
-              capacity_reservation_name: 3,
-              dbidentifier: 4,
-              cluster_identifier: 5,
-              role: 6,
-              engine: 7,
-              engine_version: 8,
-              instance_class: 9,
-              multi_az: 10,
-              capacity_reservation_id: 11,
+              availability_zone: 1,
+              dbidentifier: 2,
+              role: 3,
+              engine: 4,
+              engine_version: 5,
+              instance_class: 6,
+              multi_az: 7,
+              capacity_reservation_name: 8,
+              capacity_reservation_id: 9,
+              aws_region: 10,
             },
           },
         },
