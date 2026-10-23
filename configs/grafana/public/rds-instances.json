@@ -511,11 +511,37 @@
                   },
                   "properties": [
                      {
+                        "id": "custom.hidden",
+                        "value": true
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "capacity_reservation_name"
+                  },
+                  "properties": [
+                     {
                         "id": "links",
                         "value": [
                            {
                               "title": "",
                               "url": "/d/77e8e390-55ba-4cee-96e7-5efd92ab8102/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-capacity_reservation_id=${__data.fields.capacity_reservation_id}"
+                           }
+                        ]
+                     },
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "pattern": ".+",
+                                 "result": {
+                                    "color": "green"
+                                 }
+                              },
+                              "type": "regex"
                            }
                         ]
                      }
@@ -801,11 +827,37 @@
                   },
                   "properties": [
                      {
+                        "id": "custom.hidden",
+                        "value": true
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "capacity_reservation_name"
+                  },
+                  "properties": [
+                     {
                         "id": "links",
                         "value": [
                            {
                               "title": "",
                               "url": "/d/77e8e390-55ba-4cee-96e7-5efd92ab8102/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-capacity_reservation_id=${__data.fields.capacity_reservation_id}"
+                           }
+                        ]
+                     },
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "pattern": ".+",
+                                 "result": {
+                                    "color": "green"
+                                 }
+                              },
+                              "type": "regex"
                            }
                         ]
                      }
@@ -1511,11 +1563,37 @@
                   },
                   "properties": [
                      {
+                        "id": "custom.hidden",
+                        "value": true
+                     }
+                  ]
+               },
+               {
+                  "matcher": {
+                     "id": "byName",
+                     "options": "capacity_reservation_name"
+                  },
+                  "properties": [
+                     {
                         "id": "links",
                         "value": [
                            {
                               "title": "",
                               "url": "/d/77e8e390-55ba-4cee-96e7-5efd92ab8102/?${datasource:queryparam}&${__url_time_range}&var-aws_account_id=${__data.fields.aws_account_id}&var-aws_region=${__data.fields.aws_region}&var-capacity_reservation_id=${__data.fields.capacity_reservation_id}"
+                           }
+                        ]
+                     },
+                     {
+                        "id": "mappings",
+                        "value": [
+                           {
+                              "options": {
+                                 "pattern": ".+",
+                                 "result": {
+                                    "color": "green"
+                                 }
+                              },
+                              "type": "regex"
                            }
                         ]
                      }
@@ -1687,7 +1765,7 @@
                   "type": "prometheus",
                   "uid": "$datasource"
                },
-               "expr": "rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} * on (dbidentifier) group_left max(rds_allocated_storage_bytes{}) by (dbidentifier)\n",
+               "expr": "rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"} * on (dbidentifier) group_left max(rds_allocated_storage_bytes{}) by (dbidentifier)\n* on (aws_account_id, aws_region, capacity_reservation_id) group_left (capacity_reservation_name)\n(\n  group by (aws_account_id, aws_region, capacity_reservation_id, capacity_reservation_name) (rds_capacity_reservation_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n  # Keep instances without capacity reservation, or whose reservation is not collected\n  or on (aws_account_id, aws_region, capacity_reservation_id)\n  group by (aws_account_id, aws_region, capacity_reservation_id) (rds_instance_info{aws_account_id=~\"$aws_account_id\",aws_region=~\"$aws_region\"})\n)\n",
                "format": "table",
                "instant": true
             }
@@ -1719,20 +1797,21 @@
                      "aws_account_id": 0,
                      "aws_region": 1,
                      "ca_certificate_identifier": 17,
-                     "capacity_reservation_id": 10,
+                     "capacity_reservation_id": 21,
+                     "capacity_reservation_name": 16,
                      "cluster_identifier": 3,
                      "dbi_resource_id": 19,
                      "dbidentifier": 4,
-                     "deletion_protection": 13,
+                     "deletion_protection": 12,
                      "engine": 5,
                      "engine_version": 7,
                      "instance": 8,
                      "instance_class": 9,
-                     "job": 11,
-                     "multi_az": 12,
-                     "pending_maintenance": 14,
-                     "pending_modified_values": 15,
-                     "performance_insights_enabled": 16,
+                     "job": 10,
+                     "multi_az": 11,
+                     "pending_maintenance": 13,
+                     "pending_modified_values": 14,
+                     "performance_insights_enabled": 15,
                      "role": 6,
                      "storage_type": 18
                   }
