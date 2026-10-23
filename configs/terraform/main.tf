@@ -59,6 +59,15 @@ data "aws_iam_policy_document" "prometheus-rds-exporter" {
   }
 
   statement {
+    sid    = "AllowCapacityReservationDescriptions"
+    effect = "Allow"
+    actions = [
+      "rds:DescribeDBCapacityReservations",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
     sid    = "AllowGettingCloudWatchMetrics"
     effect = "Allow"
     actions = [

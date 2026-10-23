@@ -321,6 +321,14 @@ If you are running on [AWS EKS](https://aws.amazon.com/eks/), we strongly recomm
             "Resource": "*"
         },
         {
+            "Sid": "AllowCapacityReservationDescriptions",
+            "Effect": "Allow",
+            "Action": [
+                "rds:DescribeDBCapacityReservations"
+            ],
+            "Resource": "*"
+        },
+        {
             "Sid": "AllowGettingCloudWatchMetrics",
             "Effect": "Allow",
             "Action": [
