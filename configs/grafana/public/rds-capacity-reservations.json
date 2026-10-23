@@ -1079,17 +1079,18 @@
                      "storage_type": true
                   },
                   "indexByName": {
+                     "availability_zone": 2,
                      "aws_account_id": 0,
                      "aws_region": 1,
-                     "capacity_reservation_id": 10,
-                     "capacity_reservation_name": 2,
-                     "cluster_identifier": 4,
-                     "dbidentifier": 3,
-                     "engine": 6,
-                     "engine_version": 7,
-                     "instance_class": 8,
-                     "multi_az": 9,
-                     "role": 5
+                     "capacity_reservation_id": 11,
+                     "capacity_reservation_name": 3,
+                     "cluster_identifier": 5,
+                     "dbidentifier": 4,
+                     "engine": 7,
+                     "engine_version": 8,
+                     "instance_class": 9,
+                     "multi_az": 10,
+                     "role": 6
                   }
                }
             }
