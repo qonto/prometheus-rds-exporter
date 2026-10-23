@@ -99,3 +99,27 @@ You have to commit the changes to `go.mod` and `go.sum` before submitting the pu
 Please open a Github issue with your suggestion if you want to change dashboards (feel free to attach your changes in as JSON dashboard).
 
 For project's maintainers, look at [Grafana dashboard update](docs/grafana-dashboard-update.md)
+
+### Share dashboard screenshots
+
+To ease the review of dashboard changes, attach screenshots of the updated dashboards to your issue or pull request.
+
+Screenshots may leak sensitive data such as AWS account IDs, database identifiers, or capacity reservation IDs. To avoid that, we recommend the free [Word Replacer: Rules & Regex](https://addons.mozilla.org/fr/firefox/addon/word-replacer-rules-regex) Firefox extension, which replaces text in web pages before you take the screenshot.
+
+1. Install the [Word Replacer: Rules & Regex](https://addons.mozilla.org/fr/firefox/addon/word-replacer-rules-regex) extension
+
+1. Import the project configuration [`docs/word-replacer.json`](docs/word-replacer.json). Its rules only apply to the local Grafana (`localhost:3000`) and replace:
+
+    | Pattern | Replacement | Data |
+    | --- | --- | --- |
+    | `[0-9]{12}` | `000000000000` | AWS account IDs |
+    | `db-[A-Za-z0-9]+` | `REDACTED` | RDS DB instance resource IDs |
+    | `dbcr-[A-Za-z0-9]+` | `REDACTED` | RDS capacity reservation IDs |
+    | `cluster-[A-Za-z0-9]+` | `REDACTED` | Aurora cluster resource IDs |
+
+1. Add your own rules for other sensitive data
+
+    > [!IMPORTANT]
+    > We recommend adding a rule with your AWS account ID, to also redact it when it is displayed in another format (e.g. `1234-5678-9012`).
+
+1. Check the screenshot does not contain sensitive data before sharing it
