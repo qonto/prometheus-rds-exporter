@@ -185,7 +185,14 @@ local colors = common.colors;
       ]),
 
     instances:
-      self.__table('RDS instances', 'List of RDS instances in selected AWS account(s) and region(s)', [queries.all]),
+      self.__table('RDS instances', 'List of RDS instances in selected AWS account(s) and region(s)', [queries.all])
+      // The region is already part of availability_zone, hidden but kept for links
+      + table.standardOptions.withOverridesMixin([
+        fieldOverride.byName.new('aws_region')
+        + table.standardOptions.override.byType.withPropertiesFromOptions(
+          table.fieldConfig.defaults.custom.withHidden(true)
+        ),
+      ]),
 
     pendingMaintenances:
       self.__table('Instances with pending maintenance', 'RDS instances with pending maintenance', [queries.instancesWithPendingMaintenanceTable])
