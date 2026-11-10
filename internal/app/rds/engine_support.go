@@ -15,6 +15,32 @@ import (
 	"go.opentelemetry.io/otel/codes"
 )
 
+// supportedLifecycleEngines lists the engines accepted by the AWS
+// DescribeDBMajorEngineVersions API. Other engines exposed through the RDS API
+// (Neptune, DocumentDB, ...) are rejected with InvalidParameterValue.
+var supportedLifecycleEngines = map[string]struct{}{
+	"aurora-mysql":      {},
+	"aurora-postgresql": {},
+	"mariadb":           {},
+	"mysql":             {},
+	"oracle-ee":         {},
+	"oracle-ee-cdb":     {},
+	"oracle-se2":        {},
+	"oracle-se2-cdb":    {},
+	"postgres":          {},
+	"sqlserver-ee":      {},
+	"sqlserver-ex":      {},
+	"sqlserver-se":      {},
+	"sqlserver-web":     {},
+}
+
+// IsLifecycleEngineSupported returns true if engine lifecycle data can be
+// requested from the AWS API for the given engine.
+func IsLifecycleEngineSupported(engine string) bool {
+	_, ok := supportedLifecycleEngines[engine]
+	return ok
+}
+
 // EngineVersionLifecycle represents the lifecycle support information for a specific engine version
 type EngineVersionLifecycle struct {
 	Engine                 string     // e.g., "postgres"
@@ -77,6 +103,12 @@ func (s *EngineSupportService) GetEngineSupportMetrics(ctx context.Context, engi
 	if version == "" {
 		s.logger.Error("Empty version parameter provided", "engine", engine)
 		return EngineSupportMetrics{}, fmt.Errorf("version parameter cannot be empty")
+	}
+
+	// Skip engines not supported by the AWS API (e.g. neptune, docdb)
+	if !IsLifecycleEngineSupported(engine) {
+		s.logger.Debug("Engine lifecycle data is not available for this engine, skipping", "engine", engine, "version", version)
+		return EngineSupportMetrics{}, nil
 	}
 
 	// Fetch engine version lifecycle data (uses cache if available)
