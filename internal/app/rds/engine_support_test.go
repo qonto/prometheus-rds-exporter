@@ -849,3 +849,22 @@ func timePtr(t time.Time) *time.Time {
 func int64Ptr(i int64) *int64 {
 	return &i
 }
+
+func TestGetEngineSupportMetricsUnsupportedEngine(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.Default()
+
+	for _, engine := range []string{"neptune", "docdb", "timestream"} {
+		t.Run(engine, func(t *testing.T) {
+			client := mock.NewRDSClient()
+			client.WithDescribeDBMajorEngineVersionsError(fmt.Errorf("InvalidParameterValue: unrecognized engine name: %s", engine))
+			service := rds.NewEngineSupportService(client, logger)
+
+			metrics, err := service.GetEngineSupportMetrics(ctx, engine, "1.4.3.0")
+
+			assert.NoError(t, err)
+			assert.Equal(t, rds.EngineSupportMetrics{}, metrics)
+			assert.Equal(t, 0, client.GetDescribeDBMajorEngineVersionsCallCount())
+		})
+	}
+}
