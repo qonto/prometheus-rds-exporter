@@ -1,6 +1,7 @@
 local common = import '../common.libsonnet';
 local g = import '../g.libsonnet';
 local queries = import '../queries/instance.libsonnet';
+local variables = import '../variables.libsonnet';
 local generic = import 'generic.libsonnet';
 local colors = common.colors;
 
@@ -33,6 +34,24 @@ local colors = common.colors;
 
     ca:
       s.field('CA certificate identifier', 'Certificate Authority bundle used by this RDS instance for TLS connections', queries.instance.info, 'ca_certificate_identifier'),
+
+    availabilityZone:
+      s.field('Availability zone', 'Availability zone of the RDS instance (primary availability zone for Multi-AZ deployments)', queries.instance.info, 'availability_zone'),
+
+    capacityReservation:
+      s.field('Capacity reservation', 'On-Demand Capacity Reservation used by this RDS instance', queries.instance.capacityReservation, 'capacity_reservation_id')
+      + standardOptions.withNoValue('None')
+      + standardOptions.withMappings([
+        standardOptions.mapping.RegexMap.withType('regex')
+        + standardOptions.mapping.RegexMap.options.withPattern('.+')
+        + standardOptions.mapping.RegexMap.options.result.withColor(colors.ok),
+      ])
+      + standardOptions.withLinks([
+        {
+          title: 'Capacity reservation',
+          url: '/d/' + common.uuids.rdsCapacityReservations + '/?${datasource:queryparam}&${__url_time_range}&${' + variables.aws_account_id.name + ':queryparam}&${' + variables.aws_region.name + ':queryparam}&var-' + variables.capacity_reservation_id.name + '=${__value.text}',
+        },
+      ]),
 
     dbi:
       s.field('DBI resource ID', 'AWS RDS instance internal reference', queries.instance.info, 'dbi_resource_id'),

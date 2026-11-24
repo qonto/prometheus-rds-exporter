@@ -40,9 +40,11 @@ dashboard.new(title)
       p.stat.dbi { gridPos+: { w: 6, h: 2 } },
       p.stat.ca { gridPos+: { w: 3, h: 2 } },
       p.stat.snapshotRetention { gridPos+: { w: 3, h: 2 } },
-      p.stat.engineStandardSupportRemainingDays { gridPos+: { w: 12, h: 2 } },
-      p.stat.engineExtendedSupportRemainingDays { gridPos+: { w: 12, h: 2 } }
+      p.stat.engineStandardSupportRemainingDays { gridPos+: { w: 6, h: 2 } },
+      p.stat.engineExtendedSupportRemainingDays { gridPos+: { w: 6, h: 2 } }
       + g.panel.row.withCollapsed(true),
+      p.stat.capacityReservation { gridPos+: { w: 6, h: 2 } },
+      p.stat.availabilityZone { gridPos+: { w: 6, h: 2 } },
 
       g.panel.row.new('Main'),
       p.gauge.cpu { gridPos+: { w: 3, h: 3 } },
