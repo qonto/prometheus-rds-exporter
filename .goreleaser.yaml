@@ -123,6 +123,8 @@ dockers:
       - --label=org.opencontainers.image.licenses=MIT
       - "--pull"
       - "--platform=linux/amd64"
+      - "--provenance=false"  # Push a plain image, docker manifest create rejects image indexes
+      - "--sbom=false"
     use: buildx
   - image_templates:
       - "{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:{{ .Tag }}-arm64"
@@ -141,6 +143,8 @@ dockers:
       - --label=org.opencontainers.image.licenses=MIT
       - "--pull"
       - "--platform=linux/arm64"
+      - "--provenance=false"  # Push a plain image, docker manifest create rejects image indexes
+      - "--sbom=false"
     use: buildx
     goarch: arm64
 
