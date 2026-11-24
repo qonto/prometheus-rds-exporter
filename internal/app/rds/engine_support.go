@@ -64,6 +64,7 @@ func (s *EngineSupportService) extractMajorVersion(fullVersion string) string {
 	if len(parts) > 0 {
 		return parts[0]
 	}
+
 	return fullVersion
 }
 
@@ -72,10 +73,13 @@ func (s *EngineSupportService) GetEngineSupportMetrics(ctx context.Context, engi
 	// Validate input parameters
 	if engine == "" {
 		s.logger.Error("Empty engine parameter provided")
+
 		return EngineSupportMetrics{}, fmt.Errorf("engine parameter cannot be empty")
 	}
+
 	if version == "" {
 		s.logger.Error("Empty version parameter provided", "engine", engine)
+
 		return EngineSupportMetrics{}, fmt.Errorf("version parameter cannot be empty")
 	}
 
@@ -86,6 +90,7 @@ func (s *EngineSupportService) GetEngineSupportMetrics(ctx context.Context, engi
 			"engine", engine,
 			"version", version,
 			"error", err)
+
 		return EngineSupportMetrics{}, fmt.Errorf("failed to fetch engine lifecycle data: %w", err)
 	}
 
@@ -94,9 +99,11 @@ func (s *EngineSupportService) GetEngineSupportMetrics(ctx context.Context, engi
 
 	// Find the lifecycle data for the specific major version
 	var targetLifecycle *EngineVersionLifecycle
+
 	for _, lifecycle := range lifecycles {
 		if lifecycle.MajorEngineVersion == majorVersion {
 			targetLifecycle = &lifecycle
+
 			break
 		}
 	}
@@ -104,6 +111,7 @@ func (s *EngineSupportService) GetEngineSupportMetrics(ctx context.Context, engi
 	// If no lifecycle data found for this version, return empty metrics
 	if targetLifecycle == nil {
 		s.logger.Debug("No lifecycle data found for engine version", "engine", engine, "full_version", version, "major_version", majorVersion)
+
 		return EngineSupportMetrics{}, nil
 	}
 
@@ -112,6 +120,7 @@ func (s *EngineSupportService) GetEngineSupportMetrics(ctx context.Context, engi
 		s.logger.Debug("No support end dates available for engine version",
 			"engine", engine,
 			"version", version)
+
 		return EngineSupportMetrics{}, nil
 	}
 
@@ -135,6 +144,7 @@ func (s *EngineSupportService) FetchEngineVersionLifecycles(ctx context.Context,
 	// Validate input
 	if engine == "" {
 		s.logger.Error("Empty engine parameter provided to FetchEngineVersionLifecycles")
+
 		return nil, fmt.Errorf("engine parameter cannot be empty")
 	}
 
@@ -145,6 +155,7 @@ func (s *EngineSupportService) FetchEngineVersionLifecycles(ctx context.Context,
 	if cached, found := s.cache.Get(cacheKey); found {
 		if lifecycles, ok := cached.([]EngineVersionLifecycle); ok {
 			s.logger.Debug("Retrieved engine lifecycle data from cache", "engine", engine, "count", len(lifecycles))
+
 			return lifecycles, nil
 		} else {
 			// Cache corruption - log and continue with API call
@@ -165,6 +176,7 @@ func (s *EngineSupportService) FetchEngineVersionLifecycles(ctx context.Context,
 	}
 
 	var allLifecycles []EngineVersionLifecycle
+
 	paginator := aws_rds.NewDescribeDBMajorEngineVersionsPaginator(s.client, input)
 
 	for paginator.HasMorePages() {
@@ -179,13 +191,14 @@ func (s *EngineSupportService) FetchEngineVersionLifecycles(ctx context.Context,
 			s.logger.Error("Failed to describe DB major engine versions", "engine", engine, "error", err)
 
 			// Check for specific AWS error types for better error handling
-			if strings.Contains(err.Error(), "AccessDenied") {
+			switch {
+			case strings.Contains(err.Error(), "AccessDenied"):
 				s.logger.Error("Access denied when calling DescribeDBMajorEngineVersions - check IAM permissions",
 					"engine", engine,
 					"required_permission", "rds:DescribeDBMajorEngineVersions")
-			} else if strings.Contains(err.Error(), "InvalidParameterValue") {
+			case strings.Contains(err.Error(), "InvalidParameterValue"):
 				s.logger.Error("Invalid engine parameter provided to AWS API", "engine", engine)
-			} else if strings.Contains(err.Error(), "RequestLimitExceeded") || strings.Contains(err.Error(), "Throttling") {
+			case strings.Contains(err.Error(), "RequestLimitExceeded") || strings.Contains(err.Error(), "Throttling"):
 				s.logger.Error("AWS API rate limit exceeded for DescribeDBMajorEngineVersions", "engine", engine)
 			}
 
@@ -198,6 +211,7 @@ func (s *EngineSupportService) FetchEngineVersionLifecycles(ctx context.Context,
 			pageSpan.End()
 
 			s.logger.Error("Received nil response from DescribeDBMajorEngineVersions API", "engine", engine)
+
 			return nil, fmt.Errorf("received nil response from AWS API for engine %s", engine)
 		}
 
@@ -247,11 +261,13 @@ func (s *EngineSupportService) parseEngineVersionLifecycles(engine string, outpu
 
 	if output == nil {
 		s.logger.Error("Received nil output in parseEngineVersionLifecycles", "engine", engine)
+
 		return lifecycles
 	}
 
 	if output.DBMajorEngineVersions == nil {
 		s.logger.Debug("No DBMajorEngineVersions in API response", "engine", engine)
+
 		return lifecycles
 	}
 
@@ -264,6 +280,7 @@ func (s *EngineSupportService) parseEngineVersionLifecycles(engine string, outpu
 			s.logger.Debug("Skipping engine version with nil MajorEngineVersion",
 				"engine", engine,
 				"index", i)
+
 			continue
 		}
 
@@ -291,6 +308,7 @@ func (s *EngineSupportService) parseEngineVersionLifecycles(engine string, outpu
 						"version", versionString,
 						"lifecycle_index", j,
 						"support_name", string(supportedLifecycle.LifecycleSupportName))
+
 					continue
 				}
 
@@ -304,19 +322,20 @@ func (s *EngineSupportService) parseEngineVersionLifecycles(engine string, outpu
 					"end_date", endDate.Format("2006-01-02"))
 
 				// Map support types to our lifecycle structure
-				if strings.Contains(supportName, "standard") {
+				switch {
+				case strings.Contains(supportName, "standard"):
 					lifecycle.StandardSupportEndDate = endDate
 					s.logger.Debug("Set standard support end date",
 						"engine", engine,
 						"version", versionString,
 						"date", endDate.Format("2006-01-02"))
-				} else if strings.Contains(supportName, "extended") {
+				case strings.Contains(supportName, "extended"):
 					lifecycle.ExtendedSupportEndDate = endDate
 					s.logger.Debug("Set extended support end date",
 						"engine", engine,
 						"version", versionString,
 						"date", endDate.Format("2006-01-02"))
-				} else {
+				default:
 					s.logger.Debug("Unknown support type, skipping",
 						"engine", engine,
 						"version", versionString,

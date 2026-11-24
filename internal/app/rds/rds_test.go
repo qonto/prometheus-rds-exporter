@@ -412,6 +412,7 @@ func TestDBInstanceWithReplicaRole(t *testing.T) {
 	assert.Equal(t, rds.RolePrimary, metrics.Instances[primaryID].Role, "unexpected role for primary instance")
 	assert.Equal(t, rds.RoleReplica, metrics.Instances[replicaID].Role, "unexpected role for replica instance")
 }
+
 func TestDBClusterRole(t *testing.T) {
 	t.Parallel()
 

@@ -89,3 +89,5 @@ issues:
         - bodyclose
         # It's overkill to use `NewRequestWithContext` in tests
         - noctx
+        # Repeated literals (labels, regions, metric names) keep test cases readable
+        - goconst

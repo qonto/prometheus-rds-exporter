@@ -601,7 +601,7 @@ func (c *rdsCollector) getInstanceTagLabels(dbidentifier string, instance rds.Rd
 	return keys, values
 }
 
-func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
+func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) { //nolint:gocyclo // one branch per metric family, split out of scope
 	ch <- prometheus.MustNewConstMetric(c.exporterBuildInformation, prometheus.GaugeValue, 1, build.Version, build.CommitSHA, build.Date)
 	ch <- prometheus.MustNewConstMetric(c.errors, prometheus.CounterValue, c.counters.Errors)
 
@@ -859,6 +859,7 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) {
 		ch <- prometheus.MustNewConstMetric(c.instanceMaximumIops, prometheus.GaugeValue, float64(instance.MaximumIops), c.awsAccountID, c.awsRegion, instanceType)
 		ch <- prometheus.MustNewConstMetric(c.instanceMaximumThroughput, prometheus.GaugeValue, instance.MaximumThroughput, c.awsAccountID, c.awsRegion, instanceType)
 		ch <- prometheus.MustNewConstMetric(c.instanceMemory, prometheus.GaugeValue, float64(instance.Memory), c.awsAccountID, c.awsRegion, instanceType)
+
 		ch <- prometheus.MustNewConstMetric(c.instanceVCPU, prometheus.GaugeValue, float64(instance.Vcpu), c.awsAccountID, c.awsRegion, instanceType)
 		if instance.BaselineNetworkBandwidth > 0 {
 			ch <- prometheus.MustNewConstMetric(c.instanceBaselineNetworkBandwidth, prometheus.GaugeValue, instance.BaselineNetworkBandwidth, c.awsAccountID, c.awsRegion, instanceType)
@@ -890,7 +891,9 @@ func (c *rdsCollector) collectEngineSupportMetrics(ch chan<- prometheus.Metric, 
 			"dbidentifier", dbidentifier,
 			"engine", engine,
 			"engine_version", engineVersion)
+
 		c.counters.Errors++
+
 		return
 	}
 
@@ -915,6 +918,7 @@ func (c *rdsCollector) collectEngineSupportMetrics(ch chan<- prometheus.Metric, 
 		}
 
 		c.counters.Errors++
+
 		return
 	}
 
@@ -925,6 +929,7 @@ func (c *rdsCollector) collectEngineSupportMetrics(ch chan<- prometheus.Metric, 
 			"engine", engine,
 			"engine_version", engineVersion,
 			"reason", "no_lifecycle_data")
+
 		return
 	}
 
