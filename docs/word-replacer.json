@@ -1,0 +1,100 @@
+{
+  "format": "word-replacer",
+  "version": 1,
+  "exportedAt": "2026-10-23T12:24:32.413Z",
+  "rules": [
+    {
+      "id": "rule_mvkxyb5t_570b4807",
+      "enabled": true,
+      "find": "[0-9]{12}",
+      "replace": "000000000000",
+      "mode": "regex",
+      "caseSensitive": false,
+      "wholeWord": false,
+      "preserveCase": false,
+      "groupId": "group_mvkxmj8o_fdefd4ad",
+      "scope": {
+        "mode": "include",
+        "patterns": [
+          "localhost:3000"
+        ]
+      },
+      "note": "",
+      "order": 6,
+      "createdAt": 1792758214145,
+      "updatedAt": 1792758243798
+    },
+    {
+      "id": "rule_mvkxil4x_3fe6e851",
+      "enabled": true,
+      "find": "db-[A-Za-z0-9]+",
+      "replace": "REDACTED",
+      "mode": "regex",
+      "caseSensitive": true,
+      "wholeWord": false,
+      "preserveCase": false,
+      "groupId": "group_mvkxmj8o_fdefd4ad",
+      "scope": {
+        "mode": "include",
+        "patterns": [
+          "localhost:3000"
+        ]
+      },
+      "note": "",
+      "order": 7,
+      "createdAt": 1792757480577,
+      "updatedAt": 1792757674855
+    },
+    {
+      "id": "rule_mvkxlc2h_af0ad534",
+      "enabled": true,
+      "find": "dbcr-[A-Za-z0-9]+",
+      "replace": "REDACTED",
+      "mode": "regex",
+      "caseSensitive": true,
+      "wholeWord": false,
+      "preserveCase": false,
+      "groupId": "group_mvkxmj8o_fdefd4ad",
+      "scope": {
+        "mode": "include",
+        "patterns": [
+          "localhost:3000"
+        ]
+      },
+      "note": "",
+      "order": 8,
+      "createdAt": 1792757608793,
+      "updatedAt": 1792757681295
+    },
+    {
+      "id": "rule_mvkxqvic_b7dd0b0e",
+      "enabled": true,
+      "find": "cluster-[A-Za-z0-9]+",
+      "replace": "REDACTED",
+      "mode": "regex",
+      "caseSensitive": true,
+      "wholeWord": false,
+      "preserveCase": false,
+      "groupId": "group_mvkxmj8o_fdefd4ad",
+      "scope": {
+        "mode": "include",
+        "patterns": [
+          "localhost:3000"
+        ]
+      },
+      "note": "Aurora cluster ID",
+      "order": 9,
+      "createdAt": 1792757867268,
+      "updatedAt": 1792757903385
+    }
+  ],
+  "groups": [
+    {
+      "id": "group_mvkxmj8o_fdefd4ad",
+      "name": "Prometheus RDS exporter",
+      "color": "#6366f1",
+      "enabled": true,
+      "order": 1
+    }
+  ]
+}
