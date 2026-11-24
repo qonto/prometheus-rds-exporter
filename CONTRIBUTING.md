@@ -45,6 +45,25 @@ We use:
 
 * [Jsonnet](https://jsonnet.org/) and [Grafonnet](https://github.com/grafana/grafonnet) to manage dashboards as code. See [Grafana dashboards README](configs/grafana/README.md)
 
+## Local development environment
+
+The local development environment is a Docker compose stack that starts the exporter, Prometheus, and Grafana (with the project dashboards). See [Development environment](README.md#development-environment) in the README to start it.
+
+It follows the [Compose specification](https://docs.docker.com/compose/intro/compose-application-model/) defaults, so `docker compose` commands work from the root of the repository:
+
+```text
+compose.yaml                  # Docker compose stack
+dev/
+├── Dockerfile                # Exporter image built from local sources
+├── grafana/                  # Grafana entrypoint, datasources and dashboards provisioning
+├── prometheus/
+│   └── prometheus.yml        # Prometheus scrape configuration
+├── .grafana_data/            # Grafana local storage (git ignored)
+└── .prometheus_data/         # Prometheus local storage (git ignored)
+```
+
+The exporter runs in a container: run `docker compose up rds-exporter --build` to rebuild it after a code change.
+
 ## Pull Request Checklist
 
 * Branch from the `main` branch and, if needed, rebase to the current main branch before submitting your pull request. If it doesn't merge cleanly with main you may be asked to rebase your changes.

@@ -1,0 +1,3 @@
+# Local development environment data (see compose.yaml)
+dev/.grafana_data
+dev/.prometheus_data

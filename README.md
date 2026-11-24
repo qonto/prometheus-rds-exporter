@@ -776,16 +776,15 @@ To report a security issue, please visit [SECURITY.md](SECURITY.md)
 
 ### Development environment
 
-You can start a simple development environment using the Docker compose configuration in `/scripts/prometheus`.
+You can start a simple development environment using the Docker compose file `compose.yaml` at the root of the repository.
 
-It will start Grafana (with the dashboards), Prometheus, and the RDS exporter:
+It will start Grafana (with the dashboards), Prometheus, and the RDS exporter. Their configuration files and local data are in the `dev/` directory.
 
 1. Connect on AWS using the AWS CLI
 
-1. Launch development stack
+1. Launch development stack from the root of the repository
 
     ```bash
-    cd scripts/prometheus
     docker compose up --build
     ```
 
