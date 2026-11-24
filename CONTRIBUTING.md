@@ -47,19 +47,23 @@ We use:
 
 ## Local development environment
 
-The local development environment is a Docker compose stack that starts the exporter, Prometheus, and Grafana (with the project dashboards). See [Development environment](README.md#development-environment) in the README to start it.
+The local development environment is a Docker compose stack that starts the exporter, Prometheus, Grafana (with the project dashboards), and Grafana Tempo. See [Development environment](README.md#development-environment) in the README to start it.
 
 It follows the [Compose specification](https://docs.docker.com/compose/intro/compose-application-model/) defaults, so `docker compose` commands work from the root of the repository:
 
 ```text
 compose.yaml                  # Docker compose stack
+.env.example                  # Local configuration template, copy it to .env (git ignored)
 dev/
 ├── Dockerfile                # Exporter image built from local sources
 ├── grafana/                  # Grafana entrypoint, datasources and dashboards provisioning
 ├── prometheus/
 │   └── prometheus.yml        # Prometheus scrape configuration
+├── tempo/
+│   └── tempo.yaml            # Grafana Tempo configuration
 ├── .grafana_data/            # Grafana local storage (git ignored)
-└── .prometheus_data/         # Prometheus local storage (git ignored)
+├── .prometheus_data/         # Prometheus local storage (git ignored)
+└── .tempo_data/              # Tempo local storage (git ignored)
 ```
 
 The exporter runs in a container: run `docker compose up rds-exporter --build` to rebuild it after a code change.
