@@ -235,8 +235,9 @@ func TestGetEngineSupportMetrics(t *testing.T) {
 	client := mock.NewRDSClient()
 
 	// Mock response with PostgreSQL engine versions
-	standardEndDate := time.Date(2025, 12, 31, 0, 0, 0, 0, time.UTC)
-	extendedEndDate := time.Date(2026, 12, 31, 0, 0, 0, 0, time.UTC)
+	// Dates are relative to now so the test doesn't expire
+	standardEndDate := time.Now().AddDate(1, 0, 0)
+	extendedEndDate := time.Now().AddDate(2, 0, 0)
 
 	mockResponse := &aws_rds.DescribeDBMajorEngineVersionsOutput{
 		DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{
@@ -370,15 +371,16 @@ func TestCalculateRemainingDaysEdgeCases(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := service.CalculateRemainingDays(tt.endDate)
 
-			if tt.expected == nil && tt.name == "nil date returns nil" {
+			switch {
+			case tt.expected == nil && tt.name == "nil date returns nil":
 				assert.Nil(t, result)
-			} else if tt.expected == nil && tt.name == "far future date" {
+			case tt.expected == nil && tt.name == "far future date":
 				require.NotNil(t, result)
 				assert.Greater(t, *result, int64(1000)) // Should be many days in future
-			} else if tt.expected == nil && tt.name == "far past date" {
+			case tt.expected == nil && tt.name == "far past date":
 				require.NotNil(t, result)
 				assert.Less(t, *result, int64(-1000)) // Should be many days in past
-			} else {
+			default:
 				require.NotNil(t, result)
 				// Allow for small differences due to test execution time
 				assert.InDelta(t, *tt.expected, *result, 1)
@@ -481,16 +483,17 @@ func TestFetchEngineVersionLifecyclesErrorHandling(t *testing.T) {
 		assert.Nil(t, lifecycles)
 	})
 
-	t.Run("nil API response handled gracefully", func(t *testing.T) {
+	t.Run("empty API response handled gracefully", func(t *testing.T) {
+		// The AWS SDK paginator dereferences the page output, so a nil output
+		// with a nil error can't reach FetchEngineVersionLifecycles.
 		client := mock.NewRDSClient()
-		client.WithDescribeDBMajorEngineVersionsOutput(nil)
+		client.WithDescribeDBMajorEngineVersionsOutput(&aws_rds.DescribeDBMajorEngineVersionsOutput{})
 		service := rds.NewEngineSupportService(client, logger)
 
 		lifecycles, err := service.FetchEngineVersionLifecycles(ctx, "postgres")
 
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "received nil response from AWS API")
-		assert.Nil(t, lifecycles)
+		require.NoError(t, err)
+		assert.Empty(t, lifecycles)
 	})
 }
 
@@ -503,6 +506,7 @@ func TestAPIResponseParsing(t *testing.T) {
 		client.WithDescribeDBMajorEngineVersionsOutput(&aws_rds.DescribeDBMajorEngineVersionsOutput{
 			DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{},
 		})
+
 		service := rds.NewEngineSupportService(client, logger)
 
 		lifecycles, err := service.FetchEngineVersionLifecycles(ctx, "postgres")
@@ -529,6 +533,7 @@ func TestAPIResponseParsing(t *testing.T) {
 				},
 			},
 		})
+
 		service := rds.NewEngineSupportService(client, logger)
 
 		lifecycles, err := service.FetchEngineVersionLifecycles(ctx, "postgres")
@@ -557,6 +562,7 @@ func TestAPIResponseParsing(t *testing.T) {
 				},
 			},
 		})
+
 		service := rds.NewEngineSupportService(client, logger)
 
 		lifecycles, err := service.FetchEngineVersionLifecycles(ctx, "postgres")
@@ -585,6 +591,7 @@ func TestAPIResponseParsing(t *testing.T) {
 				},
 			},
 		})
+
 		service := rds.NewEngineSupportService(client, logger)
 
 		lifecycles, err := service.FetchEngineVersionLifecycles(ctx, "postgres")
@@ -615,6 +622,7 @@ func TestAPIResponseParsing(t *testing.T) {
 				},
 			},
 		})
+
 		service := rds.NewEngineSupportService(client, logger)
 
 		lifecycles, err := service.FetchEngineVersionLifecycles(ctx, "postgres")
@@ -650,6 +658,7 @@ func TestAPIResponseParsing(t *testing.T) {
 				},
 			},
 		})
+
 		service := rds.NewEngineSupportService(client, logger)
 
 		lifecycles, err := service.FetchEngineVersionLifecycles(ctx, "postgres")
@@ -795,6 +804,7 @@ func TestGetEngineSupportMetricsIntegration(t *testing.T) {
 				},
 			},
 		})
+
 		service := rds.NewEngineSupportService(client, logger)
 
 		metrics, err := service.GetEngineSupportMetrics(ctx, "postgres", "13")
@@ -827,6 +837,7 @@ func TestGetEngineSupportMetricsIntegration(t *testing.T) {
 				},
 			},
 		})
+
 		service := rds.NewEngineSupportService(client, logger)
 
 		metrics, err := service.GetEngineSupportMetrics(ctx, "postgres", "11")

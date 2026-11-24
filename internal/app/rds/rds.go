@@ -419,6 +419,7 @@ func (r *RDSFetcher) GetInstancesMetrics() (Metrics, error) {
 	}
 
 	var clusterMetrics map[string]ClusterMetrics
+
 	if r.configuration.CollectClusterMetrics {
 		clusterFilters, err := r.getDBClusterFilters(ctx)
 		if err != nil {
@@ -482,7 +483,7 @@ func (r *RDSFetcher) getDBInstanceFilters(ctx context.Context) ([]aws_rds_types.
 		return filters, nil
 	}
 
-	var tagFilters []tag_types.TagFilter
+	tagFilters := make([]tag_types.TagFilter, 0, len(r.configuration.TagSelections))
 
 	for k, v := range r.configuration.TagSelections {
 		keyCopy := k
@@ -515,12 +516,13 @@ func (r *RDSFetcher) getDBInstanceFilters(ctx context.Context) ([]aws_rds_types.
 		}
 	}
 
-	if len(arns) == 0 {
+	if len(arns) == 0 { //nolint:nestif // unchanged legacy logic, refactor out of scope
 		r.logger.Warn(fmt.Sprintf("no resources any matching tag selection (won't limit which dbs to get metrics for): %v", r.configuration.TagSelections))
 		resourcesSpan.SetStatus(codes.Error, "did not find any RDS instances matching tag selection")
 	} else {
 		// Extract instance IDs from ARNs
 		var instanceIDs []string
+
 		for _, arn := range arns {
 			// ARN format: arn:aws:rds:region:account:db:instance-id
 			parts := strings.Split(arn, ":")
@@ -540,7 +542,7 @@ func (r *RDSFetcher) getDBInstanceFilters(ctx context.Context) ([]aws_rds_types.
 
 			resourcesSpan.SetStatus(codes.Ok, "found RDS instances matching tag selection")
 		} else {
-			r.logger.Warn(fmt.Sprintf("failed to extract instance IDs from ARNs, won't limit which dbs to get metrics for"))
+			r.logger.Warn("failed to extract instance IDs from ARNs, won't limit which dbs to get metrics for")
 			resourcesSpan.SetStatus(codes.Error, "failed to extract instance IDs from ARNs")
 		}
 	}
@@ -555,7 +557,7 @@ func (r *RDSFetcher) getDBClusterFilters(ctx context.Context) ([]aws_rds_types.F
 		return filters, nil
 	}
 
-	var tagFilters []tag_types.TagFilter
+	tagFilters := make([]tag_types.TagFilter, 0, len(r.configuration.TagSelections))
 
 	for k, v := range r.configuration.TagSelections {
 		keyCopy := k
@@ -588,12 +590,13 @@ func (r *RDSFetcher) getDBClusterFilters(ctx context.Context) ([]aws_rds_types.F
 		}
 	}
 
-	if len(arns) == 0 {
+	if len(arns) == 0 { //nolint:nestif // unchanged legacy logic, refactor out of scope
 		r.logger.Warn(fmt.Sprintf("no resources any matching tag selection (won't limit which clusters to get metrics for): %v", r.configuration.TagSelections))
 		resourcesSpan.SetStatus(codes.Error, "did not find any RDS clusters matching tag selection")
 	} else {
 		// Extract cluster IDs from ARNs
 		var clusterIDs []string
+
 		for _, arn := range arns {
 			// ARN format: arn:aws:rds:region:account:cluster:cluster-id
 			parts := strings.Split(arn, ":")
@@ -613,7 +616,7 @@ func (r *RDSFetcher) getDBClusterFilters(ctx context.Context) ([]aws_rds_types.F
 
 			resourcesSpan.SetStatus(codes.Ok, "found RDS clusters matching tag selection")
 		} else {
-			r.logger.Warn(fmt.Sprintf("failed to extract cluster IDs from ARNs, won't limit which clusters to get metrics for"))
+			r.logger.Warn("failed to extract cluster IDs from ARNs, won't limit which clusters to get metrics for")
 			resourcesSpan.SetStatus(codes.Error, "failed to extract cluster IDs from ARNs")
 		}
 	}
@@ -674,7 +677,6 @@ func (r *RDSFetcher) computeInstanceMetrics(ctx context.Context, dbInstance aws_
 		var err error
 
 		logFilesSize, err = r.getLogFilesSize(ctx, *dbIdentifier)
-
 		if err != nil {
 			return RdsInstanceMetrics{}, fmt.Errorf("can't get log files size for %s: %w", *dbIdentifier, err)
 		}

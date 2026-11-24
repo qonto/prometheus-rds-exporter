@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
       - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff  # v5.6.0
         with:
-          go-version: "1.22"
+          go-version: "1.24"
       - name: Install dependencies
         run: |
           go get .
@@ -56,7 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4.3.1
       - name: Install helm-unittest
-        run: helm plugin install --version $HELM_UNITTEST_VERSION https://github.com/helm-unittest/helm-unittest.git
+        run: helm plugin install --verify=false --version $HELM_UNITTEST_VERSION https://github.com/helm-unittest/helm-unittest.git
       - name: Run Helm test
         run: make helm-test
 
