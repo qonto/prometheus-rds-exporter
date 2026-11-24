@@ -53,7 +53,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.25.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/klauspost/compress v1.17.9 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/knadh/koanf/maps v0.1.1 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
