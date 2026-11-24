@@ -43,9 +43,9 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 			},
 			engineVersionsResponse: createEngineVersionsResponse("postgres", []engineVersionData{
 				{
-					version:           "13",
-					standardEndDate:   time.Now().AddDate(0, 6, 0),  // 6 months from now
-					extendedEndDate:   time.Now().AddDate(1, 0, 0),  // 1 year from now
+					version:            "13",
+					standardEndDate:    time.Now().AddDate(0, 6, 0), // 6 months from now
+					extendedEndDate:    time.Now().AddDate(1, 0, 0), // 1 year from now
 					hasStandardSupport: true,
 					hasExtendedSupport: true,
 				},
@@ -54,11 +54,13 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 			expectedExtendedMetrics: 1,
 			expectedAPICallCount:    1,
 			validateMetricValues: func(t *testing.T, standardMetrics, extendedMetrics []*dto.Metric) {
+				t.Helper()
+
 				// Standard support should be around 180 days
 				standardValue := standardMetrics[0].GetGauge().GetValue()
 				assert.Greater(t, standardValue, 170.0)
 				assert.Less(t, standardValue, 190.0)
-				
+
 				// Extended support should be around 365 days
 				extendedValue := extendedMetrics[0].GetGauge().GetValue()
 				assert.Greater(t, extendedValue, 355.0)
@@ -74,22 +76,22 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 			},
 			engineVersionsResponse: createEngineVersionsResponse("postgres", []engineVersionData{
 				{
-					version:           "13",
-					standardEndDate:   time.Now().AddDate(0, 3, 0),  // 3 months from now
-					extendedEndDate:   time.Now().AddDate(0, 9, 0),  // 9 months from now
+					version:            "13",
+					standardEndDate:    time.Now().AddDate(0, 3, 0), // 3 months from now
+					extendedEndDate:    time.Now().AddDate(0, 9, 0), // 9 months from now
 					hasStandardSupport: true,
 					hasExtendedSupport: true,
 				},
 				{
-					version:           "14",
-					standardEndDate:   time.Now().AddDate(0, 12, 0), // 12 months from now
+					version:            "14",
+					standardEndDate:    time.Now().AddDate(0, 12, 0), // 12 months from now
 					hasStandardSupport: true,
 					hasExtendedSupport: false,
 				},
 				{
-					version:           "15",
-					standardEndDate:   time.Now().AddDate(1, 6, 0),  // 18 months from now
-					extendedEndDate:   time.Now().AddDate(2, 0, 0),  // 2 years from now
+					version:            "15",
+					standardEndDate:    time.Now().AddDate(1, 6, 0), // 18 months from now
+					extendedEndDate:    time.Now().AddDate(2, 0, 0), // 2 years from now
 					hasStandardSupport: true,
 					hasExtendedSupport: true,
 				},
@@ -98,16 +100,18 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 			expectedExtendedMetrics: 2, // Only versions 13 and 15 have extended support
 			expectedAPICallCount:    1, // Single API call for postgres engine
 			validateMetricValues: func(t *testing.T, standardMetrics, extendedMetrics []*dto.Metric) {
+				t.Helper()
+
 				// Verify we have the expected number of metrics
 				assert.Len(t, standardMetrics, 3)
 				assert.Len(t, extendedMetrics, 2)
-				
+
 				// All standard support values should be positive (future dates)
 				for _, metric := range standardMetrics {
 					value := metric.GetGauge().GetValue()
 					assert.Greater(t, value, 0.0, "Standard support should be positive for future dates")
 				}
-				
+
 				// All extended support values should be positive (future dates)
 				for _, metric := range extendedMetrics {
 					value := metric.GetGauge().GetValue()
@@ -116,7 +120,7 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 			},
 		},
 		{
-			name: "mixed engine types - only PostgreSQL should have metrics",
+			name: "mixed engine types - only engines with lifecycle data have metrics",
 			instances: []aws_rds_types.DBInstance{
 				createPostgreSQLInstance("postgres-instance", "14.9"),
 				createMySQLInstance("mysql-instance", "8.0.35"),
@@ -124,20 +128,22 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 			},
 			engineVersionsResponse: createEngineVersionsResponse("postgres", []engineVersionData{
 				{
-					version:           "14",
-					standardEndDate:   time.Now().AddDate(0, 8, 0),
+					version:            "14",
+					standardEndDate:    time.Now().AddDate(0, 8, 0),
 					hasStandardSupport: true,
 					hasExtendedSupport: false,
 				},
 			}),
 			expectedStandardMetrics: 1, // Only PostgreSQL instance
 			expectedExtendedMetrics: 0, // No extended support for this version
-			expectedAPICallCount:    1, // Only called for PostgreSQL
+			expectedAPICallCount:    3, // One call per engine (postgres, mysql, mariadb)
 			validateMetricValues: func(t *testing.T, standardMetrics, extendedMetrics []*dto.Metric) {
+				t.Helper()
+
 				// Verify only PostgreSQL instance has metrics
 				assert.Len(t, standardMetrics, 1)
 				assert.Len(t, extendedMetrics, 0)
-				
+
 				// Verify the metric is for the PostgreSQL instance
 				labels := standardMetrics[0].GetLabel()
 				var engine, dbidentifier string
@@ -160,9 +166,9 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 			},
 			engineVersionsResponse: createEngineVersionsResponse("postgres", []engineVersionData{
 				{
-					version:           "11",
-					standardEndDate:   time.Now().AddDate(0, 0, -60), // 60 days ago
-					extendedEndDate:   time.Now().AddDate(0, 0, -30), // 30 days ago
+					version:            "11",
+					standardEndDate:    time.Now().AddDate(0, 0, -60), // 60 days ago
+					extendedEndDate:    time.Now().AddDate(0, 0, -30), // 30 days ago
 					hasStandardSupport: true,
 					hasExtendedSupport: true,
 				},
@@ -171,12 +177,14 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 			expectedExtendedMetrics: 1,
 			expectedAPICallCount:    1,
 			validateMetricValues: func(t *testing.T, standardMetrics, extendedMetrics []*dto.Metric) {
+				t.Helper()
+
 				// Standard support should be negative (around -60 days)
 				standardValue := standardMetrics[0].GetGauge().GetValue()
 				assert.Less(t, standardValue, 0.0)
 				assert.Greater(t, standardValue, -65.0)
 				assert.Less(t, standardValue, -55.0)
-				
+
 				// Extended support should be negative (around -30 days)
 				extendedValue := extendedMetrics[0].GetGauge().GetValue()
 				assert.Less(t, extendedValue, 0.0)
@@ -192,8 +200,8 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 			engineVersionsResponse: &aws_rds.DescribeDBMajorEngineVersionsOutput{
 				DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{
 					{
-						Engine:             aws.String("postgres"),
-						MajorEngineVersion: aws.String("16"),
+						Engine:                    aws.String("postgres"),
+						MajorEngineVersion:        aws.String("16"),
 						SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{}, // No lifecycle data
 					},
 				},
@@ -202,6 +210,8 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 			expectedExtendedMetrics: 0,
 			expectedAPICallCount:    1,
 			validateMetricValues: func(t *testing.T, standardMetrics, extendedMetrics []*dto.Metric) {
+				t.Helper()
+
 				// Should have no metrics when no lifecycle data is available
 				assert.Empty(t, standardMetrics)
 				assert.Empty(t, extendedMetrics)
@@ -231,6 +241,7 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 				CollectMaintenances:    false,
 				CollectQuotas:          false,
 				CollectUsages:          false,
+				CollectEngineSupport:   true,
 			}
 
 			collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
@@ -244,6 +255,7 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 
 			// Extract engine support metrics
 			var standardSupportMetrics, extendedSupportMetrics []*dto.Metric
+
 			for _, mf := range metricFamilies {
 				switch mf.GetName() {
 				case "rds_standard_support_engine_remaining_days":
@@ -266,7 +278,10 @@ func TestEngineSupport_EndToEndMetricCollection(t *testing.T) {
 			}
 
 			// Verify all metrics have proper labels
-			allMetrics := append(standardSupportMetrics, extendedSupportMetrics...)
+			allMetrics := make([]*dto.Metric, 0, len(standardSupportMetrics)+len(extendedSupportMetrics))
+			allMetrics = append(allMetrics, standardSupportMetrics...)
+			allMetrics = append(allMetrics, extendedSupportMetrics...)
+
 			for _, metric := range allMetrics {
 				verifyMetricLabels(t, metric, awsAccountID, awsRegion)
 			}
@@ -285,8 +300,8 @@ func TestEngineSupport_CacheExpirationAndRefresh(t *testing.T) {
 	// Create mock engine version data
 	engineVersionsResponse := createEngineVersionsResponse("postgres", []engineVersionData{
 		{
-			version:           "14",
-			standardEndDate:   time.Now().AddDate(0, 6, 0),
+			version:            "14",
+			standardEndDate:    time.Now().AddDate(0, 6, 0),
 			hasStandardSupport: true,
 			hasExtendedSupport: false,
 		},
@@ -309,6 +324,7 @@ func TestEngineSupport_CacheExpirationAndRefresh(t *testing.T) {
 		CollectMaintenances:    false,
 		CollectQuotas:          false,
 		CollectUsages:          false,
+		CollectEngineSupport:   true,
 	}
 
 	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
@@ -318,7 +334,7 @@ func TestEngineSupport_CacheExpirationAndRefresh(t *testing.T) {
 	registry1.MustRegister(collector)
 	_, err := registry1.Gather()
 	require.NoError(t, err)
-	
+
 	firstCallCount := rdsClient.GetDescribeDBMajorEngineVersionsCallCount()
 	assert.Equal(t, 1, firstCallCount, "First collection should call API")
 
@@ -327,7 +343,7 @@ func TestEngineSupport_CacheExpirationAndRefresh(t *testing.T) {
 	registry2.MustRegister(collector)
 	_, err = registry2.Gather()
 	require.NoError(t, err)
-	
+
 	secondCallCount := rdsClient.GetDescribeDBMajorEngineVersionsCallCount()
 	assert.Equal(t, 1, secondCallCount, "Second collection should use cache")
 
@@ -335,14 +351,14 @@ func TestEngineSupport_CacheExpirationAndRefresh(t *testing.T) {
 	// This simulates cache expiration
 	ctx := context.Background()
 	shortTTLService := rds.NewEngineSupportServiceWithCache(rdsClient, *logger, cache.New(1*time.Millisecond, 1*time.Millisecond))
-	
+
 	// Wait for cache to expire
 	time.Sleep(10 * time.Millisecond)
-	
+
 	// This should trigger a new API call due to expired cache
 	_, err = shortTTLService.GetEngineSupportMetrics(ctx, "postgres", "14")
 	require.NoError(t, err)
-	
+
 	// Verify API was called again after cache expiration
 	finalCallCount := rdsClient.GetDescribeDBMajorEngineVersionsCallCount()
 	assert.Equal(t, 2, finalCallCount, "Should call API again after cache expiration")
@@ -351,10 +367,10 @@ func TestEngineSupport_CacheExpirationAndRefresh(t *testing.T) {
 // TestEngineSupport_APIErrorHandling tests various API error scenarios
 func TestEngineSupport_APIErrorHandling(t *testing.T) {
 	tests := []struct {
-		name                 string
-		apiError             error
-		expectMetrics        bool
-		expectErrorIncrease  bool
+		name                string
+		apiError            error
+		expectMetrics       bool
+		expectErrorIncrease bool
 	}{
 		{
 			name:                "AccessDenied error",
@@ -401,6 +417,7 @@ func TestEngineSupport_APIErrorHandling(t *testing.T) {
 				CollectMaintenances:    false,
 				CollectQuotas:          false,
 				CollectUsages:          false,
+				CollectEngineSupport:   true,
 			}
 
 			collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
@@ -418,6 +435,7 @@ func TestEngineSupport_APIErrorHandling(t *testing.T) {
 
 			// Check for engine support metrics
 			var hasStandardSupport, hasExtendedSupport bool
+
 			for _, mf := range metricFamilies {
 				switch mf.GetName() {
 				case "rds_standard_support_engine_remaining_days":
@@ -586,6 +604,7 @@ func TestEngineSupport_ComplexAPIResponses(t *testing.T) {
 				CollectMaintenances:    false,
 				CollectQuotas:          false,
 				CollectUsages:          false,
+				CollectEngineSupport:   true,
 			}
 
 			collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
@@ -599,6 +618,7 @@ func TestEngineSupport_ComplexAPIResponses(t *testing.T) {
 
 			// Extract engine support metrics
 			var standardSupportMetrics, extendedSupportMetrics []*dto.Metric
+
 			for _, mf := range metricFamilies {
 				switch mf.GetName() {
 				case "rds_standard_support_engine_remaining_days":
@@ -621,9 +641,9 @@ func TestEngineSupport_ComplexAPIResponses(t *testing.T) {
 // Helper functions for creating test data
 
 type engineVersionData struct {
-	version           string
-	standardEndDate   time.Time
-	extendedEndDate   time.Time
+	version            string
+	standardEndDate    time.Time
+	extendedEndDate    time.Time
 	hasStandardSupport bool
 	hasExtendedSupport bool
 }
@@ -633,6 +653,7 @@ func createPostgreSQLInstance(identifier, version string) aws_rds_types.DBInstan
 	instance.DBInstanceIdentifier = aws.String(identifier)
 	instance.Engine = aws.String("postgres")
 	instance.EngineVersion = aws.String(version)
+
 	return instance
 }
 
@@ -641,6 +662,7 @@ func createMySQLInstance(identifier, version string) aws_rds_types.DBInstance {
 	instance.DBInstanceIdentifier = aws.String(identifier)
 	instance.Engine = aws.String("mysql")
 	instance.EngineVersion = aws.String(version)
+
 	return instance
 }
 
@@ -649,11 +671,12 @@ func createMariaDBInstance(identifier, version string) aws_rds_types.DBInstance 
 	instance.DBInstanceIdentifier = aws.String(identifier)
 	instance.Engine = aws.String("mariadb")
 	instance.EngineVersion = aws.String(version)
+
 	return instance
 }
 
-func createEngineVersionsResponse(engine string, versions []engineVersionData) *aws_rds.DescribeDBMajorEngineVersionsOutput {
-	var dbMajorEngineVersions []aws_rds_types.DBMajorEngineVersion
+func createEngineVersionsResponse(engine string, versions []engineVersionData) *aws_rds.DescribeDBMajorEngineVersionsOutput { //nolint:unparam // engine kept explicit for readability
+	dbMajorEngineVersions := make([]aws_rds_types.DBMajorEngineVersion, 0, len(versions))
 
 	for _, v := range versions {
 		var lifecycles []aws_rds_types.SupportedEngineLifecycle
@@ -673,8 +696,8 @@ func createEngineVersionsResponse(engine string, versions []engineVersionData) *
 		}
 
 		dbMajorEngineVersions = append(dbMajorEngineVersions, aws_rds_types.DBMajorEngineVersion{
-			Engine:             aws.String(engine),
-			MajorEngineVersion: aws.String(v.version),
+			Engine:                    aws.String(engine),
+			MajorEngineVersion:        aws.String(v.version),
 			SupportedEngineLifecycles: lifecycles,
 		})
 	}
@@ -685,6 +708,8 @@ func createEngineVersionsResponse(engine string, versions []engineVersionData) *
 }
 
 func verifyMetricLabels(t *testing.T, metric *dto.Metric, expectedAccountID, expectedRegion string) {
+	t.Helper()
+
 	labels := make(map[string]string)
 	for _, label := range metric.GetLabel() {
 		labels[label.GetName()] = label.GetValue()
