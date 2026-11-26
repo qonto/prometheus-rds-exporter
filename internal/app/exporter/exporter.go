@@ -117,6 +117,9 @@ type rdsCollector struct {
 	swapUsage                        *prometheus.Desc
 	writeIOPS                        *prometheus.Desc
 	readIOPS                         *prometheus.Desc
+	diskQueueDepth                   *prometheus.Desc
+	readLatency                      *prometheus.Desc
+	writeLatency                     *prometheus.Desc
 	replicaLag                       *prometheus.Desc
 	replicationSlotDiskUsage         *prometheus.Desc
 	maximumUsedTransactionIDs        *prometheus.Desc
@@ -308,6 +311,18 @@ func NewCollector(logger slog.Logger, collectorConfiguration Configuration, awsA
 			"Average number of disk read I/O operations per second",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
 		),
+		readLatency: prometheus.NewDesc("rds_read_latency_seconds",
+			"Average amount of time taken per disk read I/O operation",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		writeLatency: prometheus.NewDesc("rds_write_latency_seconds",
+			"Average amount of time taken per disk write I/O operation",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
+		diskQueueDepth: prometheus.NewDesc("rds_disk_queue_depth_average",
+			"Average number of outstanding I/O operations waiting to access the disk",
+			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
+		),
 		replicaLag: prometheus.NewDesc("rds_replica_lag_seconds",
 			"For read replica configurations, the amount of time a read replica DB instance lags behind the source DB instance. Applies to MariaDB, Microsoft SQL Server, MySQL, Oracle, and PostgreSQL read replicas",
 			[]string{"aws_account_id", "aws_region", "dbidentifier"}, nil,
@@ -453,8 +468,11 @@ func (c *rdsCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.quotaDBInstances
 	ch <- c.quotaMaxDBInstanceSnapshots
 	ch <- c.quotaTotalStorage
+	ch <- c.diskQueueDepth
 	ch <- c.readIOPS
+	ch <- c.readLatency
 	ch <- c.readThroughput
+	ch <- c.writeLatency
 	ch <- c.replicaLag
 	ch <- c.replicationSlotDiskUsage
 	ch <- c.status
@@ -851,6 +869,18 @@ func (c *rdsCollector) Collect(ch chan<- prometheus.Metric) { //nolint:gocyclo /
 
 		if instance.ReadIOPS != nil {
 			ch <- prometheus.MustNewConstMetric(c.readIOPS, prometheus.GaugeValue, *instance.ReadIOPS, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.DiskQueueDepth != nil {
+			ch <- prometheus.MustNewConstMetric(c.diskQueueDepth, prometheus.GaugeValue, *instance.DiskQueueDepth, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.ReadLatency != nil {
+			ch <- prometheus.MustNewConstMetric(c.readLatency, prometheus.GaugeValue, *instance.ReadLatency, c.awsAccountID, c.awsRegion, dbidentifier)
+		}
+
+		if instance.WriteLatency != nil {
+			ch <- prometheus.MustNewConstMetric(c.writeLatency, prometheus.GaugeValue, *instance.WriteLatency, c.awsAccountID, c.awsRegion, dbidentifier)
 		}
 
 		if instance.WriteIOPS != nil {
