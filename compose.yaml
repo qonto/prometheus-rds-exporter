@@ -1,0 +1,88 @@
+---
+# Local development environment: exporter, Prometheus, Grafana, and Grafana Tempo
+# Usage: docker compose up --build (see "Development environment" in README.md)
+# Configuration files and local data are in the dev/ directory
+
+services:
+
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./dev/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./dev/.prometheus_data:/prometheus
+    ports:
+      - 127.0.0.1:9090:9090
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml  # Default
+      - --storage.tsdb.path=/prometheus  # Default
+      - --web.console.libraries=/usr/share/prometheus/console_libraries  # Default
+      - --web.console.templates=/usr/share/prometheus/consoles  # Default
+      - --web.enable-lifecycle  # Enable HTTP reloads and shutdowns of Prometheus
+      - --web.enable-remote-write-receiver  # Receive Tempo metrics generator series (service graphs, span metrics)
+      - --enable-feature=exemplar-storage
+
+  grafana:
+    image: grafana/grafana:10.2.2
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:?set in .env, see .env.example}
+    volumes:
+      - ./dev/.grafana_data:/var/lib/grafana  # Grafana persistent storage
+      - ./configs/grafana/public:/var/tmp/prometheus-rds-exporter-dashboards  # Grafana dashboards folder is used for dashboard provisioning
+      - ./dev/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources/  # Datasource provisioning
+      - ./dev/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards/
+      - ./dev/grafana/entrypoint.sh:/usr/share/grafana/entrypoint.sh
+    tmpfs:
+      - /var/tmp
+    ports:
+      - 127.0.0.1:3000:3000
+    entrypoint: ["/usr/share/grafana/entrypoint.sh"]
+    depends_on:
+      - prometheus
+      - tempo
+
+  tempo:
+    image: grafana/tempo:3.1.1
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    command:
+      - -target=all
+      - -config.file=/etc/tempo.yaml
+    volumes:
+      - ./dev/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - ./dev/.tempo_data:/var/tempo  # Tempo persistent storage
+    tmpfs:
+      - /tmp
+    ports:
+      - 127.0.0.1:4317:4317  # OTLP gRPC, to send traces from an exporter running on the host
+    depends_on:
+      - prometheus
+
+  rds-exporter:
+    build:
+      context: .
+      dockerfile: dev/Dockerfile
+    environment:
+      - AWS_SDK_LOAD_CONFIG=1
+      - AWS_PROFILE=${AWS_PROFILE-}
+      - AWS_REGION=${AWS_REGION-}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID-}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN-}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY-}
+      - PROMETHEUS_RDS_EXPORTER_LOG_FORMAT=text
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4317
+    volumes:
+      - $HOME/.aws:/app/.aws:ro
+    command: ["./prometheus-rds-exporter", "--debug", "--enable-otel-traces"]
+    ports:
+      - 127.0.0.1:9043:9043
+    depends_on:
+      - prometheus
+      - tempo

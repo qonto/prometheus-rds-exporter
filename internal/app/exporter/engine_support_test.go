@@ -22,9 +22,9 @@ import (
 
 // Helper function to check if a string contains a substring
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || (len(s) > len(substr) && 
-		(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr || 
-		 findSubstring(s, substr))))
+	return len(s) >= len(substr) && (s == substr || (len(s) > len(substr) &&
+		(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr ||
+			findSubstring(s, substr))))
 }
 
 func findSubstring(s, substr string) bool {
@@ -33,6 +33,7 @@ func findSubstring(s, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -54,6 +55,7 @@ func TestEngineSupport_MetricDescriptors(t *testing.T) {
 		CollectMaintenances:    false,
 		CollectQuotas:          false,
 		CollectUsages:          false,
+		CollectEngineSupport:   true,
 	}
 
 	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
@@ -64,11 +66,13 @@ func TestEngineSupport_MetricDescriptors(t *testing.T) {
 	close(ch)
 
 	var standardSupportDesc, extendedSupportDesc *prometheus.Desc
+
 	for desc := range ch {
 		descStr := desc.String()
 		if contains(descStr, "rds_standard_support_engine_remaining_days") {
 			standardSupportDesc = desc
 		}
+
 		if contains(descStr, "rds_extended_support_engine_remaining_days") {
 			extendedSupportDesc = desc
 		}
@@ -101,16 +105,16 @@ func TestEngineSupport_PostgreSQLEngineFiltering(t *testing.T) {
 		DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{
 			{
 				Engine:             aws.String("postgres"),
-				MajorEngineVersion: aws.String("14.9"), // Match the full version for now
+				MajorEngineVersion: aws.String("14"),
 				SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{
 					{
-						LifecycleSupportName:     aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
-						LifecycleSupportEndDate:  &standardEndDate,
+						LifecycleSupportName:      aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
+						LifecycleSupportEndDate:   &standardEndDate,
 						LifecycleSupportStartDate: aws.Time(time.Now().AddDate(-1, 0, 0)),
 					},
 					{
-						LifecycleSupportName:     aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
-						LifecycleSupportEndDate:  &extendedEndDate,
+						LifecycleSupportName:      aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
+						LifecycleSupportEndDate:   &extendedEndDate,
 						LifecycleSupportStartDate: aws.Time(time.Now().AddDate(-1, 0, 0)),
 					},
 				},
@@ -135,6 +139,7 @@ func TestEngineSupport_PostgreSQLEngineFiltering(t *testing.T) {
 		CollectMaintenances:    false,
 		CollectQuotas:          false,
 		CollectUsages:          false,
+		CollectEngineSupport:   true,
 	}
 
 	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
@@ -149,6 +154,7 @@ func TestEngineSupport_PostgreSQLEngineFiltering(t *testing.T) {
 
 	// Find engine support metrics
 	var standardSupportMetrics, extendedSupportMetrics *dto.MetricFamily
+
 	for _, mf := range metricFamilies {
 		switch mf.GetName() {
 		case "rds_standard_support_engine_remaining_days":
@@ -162,6 +168,7 @@ func TestEngineSupport_PostgreSQLEngineFiltering(t *testing.T) {
 	if standardSupportMetrics != nil {
 		for _, metric := range standardSupportMetrics.GetMetric() {
 			var dbidentifier, engine string
+
 			for _, label := range metric.GetLabel() {
 				switch label.GetName() {
 				case "dbidentifier":
@@ -170,6 +177,7 @@ func TestEngineSupport_PostgreSQLEngineFiltering(t *testing.T) {
 					engine = label.GetValue()
 				}
 			}
+
 			assert.Equal(t, "postgres", engine, "Only PostgreSQL instances should have engine support metrics")
 			assert.Equal(t, "postgres-instance", dbidentifier, "Should be the PostgreSQL instance")
 		}
@@ -178,6 +186,7 @@ func TestEngineSupport_PostgreSQLEngineFiltering(t *testing.T) {
 	if extendedSupportMetrics != nil {
 		for _, metric := range extendedSupportMetrics.GetMetric() {
 			var dbidentifier, engine string
+
 			for _, label := range metric.GetLabel() {
 				switch label.GetName() {
 				case "dbidentifier":
@@ -186,6 +195,7 @@ func TestEngineSupport_PostgreSQLEngineFiltering(t *testing.T) {
 					engine = label.GetValue()
 				}
 			}
+
 			assert.Equal(t, "postgres", engine, "Only PostgreSQL instances should have engine support metrics")
 			assert.Equal(t, "postgres-instance", dbidentifier, "Should be the PostgreSQL instance")
 		}
@@ -213,16 +223,16 @@ func TestEngineSupport_MetricEmission(t *testing.T) {
 		DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{
 			{
 				Engine:             aws.String("postgres"),
-				MajorEngineVersion: aws.String("13.7"), // Match the full version for now
+				MajorEngineVersion: aws.String("13"),
 				SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{
 					{
-						LifecycleSupportName:     aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
-						LifecycleSupportEndDate:  &standardEndDate,
+						LifecycleSupportName:      aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
+						LifecycleSupportEndDate:   &standardEndDate,
 						LifecycleSupportStartDate: aws.Time(time.Now().AddDate(-2, 0, 0)),
 					},
 					{
-						LifecycleSupportName:     aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
-						LifecycleSupportEndDate:  &extendedEndDate,
+						LifecycleSupportName:      aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
+						LifecycleSupportEndDate:   &extendedEndDate,
 						LifecycleSupportStartDate: aws.Time(time.Now().AddDate(-2, 0, 0)),
 					},
 				},
@@ -247,6 +257,7 @@ func TestEngineSupport_MetricEmission(t *testing.T) {
 		CollectMaintenances:    false,
 		CollectQuotas:          false,
 		CollectUsages:          false,
+		CollectEngineSupport:   true,
 	}
 
 	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
@@ -260,9 +271,11 @@ func TestEngineSupport_MetricEmission(t *testing.T) {
 
 	// Find and verify standard support metric
 	var standardSupportMetric *dto.MetricFamily
+
 	for _, mf := range metricFamilies {
 		if mf.GetName() == "rds_standard_support_engine_remaining_days" {
 			standardSupportMetric = mf
+
 			break
 		}
 	}
@@ -271,7 +284,7 @@ func TestEngineSupport_MetricEmission(t *testing.T) {
 	require.Len(t, standardSupportMetric.GetMetric(), 1, "Should have one metric for the PostgreSQL instance")
 
 	metric := standardSupportMetric.GetMetric()[0]
-	
+
 	// Verify labels
 	labelMap := make(map[string]string)
 	for _, label := range metric.GetLabel() {
@@ -291,9 +304,11 @@ func TestEngineSupport_MetricEmission(t *testing.T) {
 
 	// Find and verify extended support metric
 	var extendedSupportMetric *dto.MetricFamily
+
 	for _, mf := range metricFamilies {
 		if mf.GetName() == "rds_extended_support_engine_remaining_days" {
 			extendedSupportMetric = mf
+
 			break
 		}
 	}
@@ -302,7 +317,7 @@ func TestEngineSupport_MetricEmission(t *testing.T) {
 	require.Len(t, extendedSupportMetric.GetMetric(), 1, "Should have one metric for the PostgreSQL instance")
 
 	extMetric := extendedSupportMetric.GetMetric()[0]
-	
+
 	// Verify extended support metric value is reasonable (should be around 260 days)
 	extValue := extMetric.GetGauge().GetValue()
 	assert.Greater(t, extValue, 250.0, "Extended support should have more than 250 days remaining")
@@ -311,11 +326,11 @@ func TestEngineSupport_MetricEmission(t *testing.T) {
 
 func TestEngineSupport_ErrorScenarios(t *testing.T) {
 	tests := []struct {
-		name                    string
-		setupMock              func(*rds_mock.RDSClient)
-		expectMetrics          bool
-		expectAPICall          bool
-		expectedErrorCount     float64
+		name               string
+		setupMock          func(*rds_mock.RDSClient)
+		expectMetrics      bool
+		expectAPICall      bool
+		expectedErrorCount float64
 	}{
 		{
 			name: "API call failure",
@@ -323,7 +338,7 @@ func TestEngineSupport_ErrorScenarios(t *testing.T) {
 				postgresInstance := rds_mock.NewRdsInstance()
 				postgresInstance.Engine = aws.String("postgres")
 				postgresInstance.EngineVersion = aws.String("14.9")
-				
+
 				client.WithDBInstances(*postgresInstance).
 					WithDescribeDBMajorEngineVersionsError(assert.AnError)
 			},
@@ -337,18 +352,18 @@ func TestEngineSupport_ErrorScenarios(t *testing.T) {
 				postgresInstance := rds_mock.NewRdsInstance()
 				postgresInstance.Engine = aws.String("postgres")
 				postgresInstance.EngineVersion = aws.String("14.9")
-				
+
 				// Empty response - no lifecycle data
 				engineVersionsOutput := &aws_rds.DescribeDBMajorEngineVersionsOutput{
 					DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{
 						{
-							Engine:             aws.String("postgres"),
-							MajorEngineVersion: aws.String("14.9"), // Match the full version for now
+							Engine:                    aws.String("postgres"),
+							MajorEngineVersion:        aws.String("14"),
 							SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{},
 						},
 					},
 				}
-				
+
 				client.WithDBInstances(*postgresInstance).
 					WithDescribeDBMajorEngineVersionsOutput(engineVersionsOutput)
 			},
@@ -362,14 +377,14 @@ func TestEngineSupport_ErrorScenarios(t *testing.T) {
 				postgresInstance := rds_mock.NewRdsInstance()
 				postgresInstance.Engine = aws.String("postgres")
 				postgresInstance.EngineVersion = aws.String("14.9")
-				
+
 				standardEndDate := time.Now().AddDate(0, 6, 0)
-				
+
 				engineVersionsOutput := &aws_rds.DescribeDBMajorEngineVersionsOutput{
 					DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{
 						{
 							Engine:             aws.String("postgres"),
-							MajorEngineVersion: aws.String("14.9"), // Match the full version for now
+							MajorEngineVersion: aws.String("14"),
 							SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{
 								{
 									LifecycleSupportName:    aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
@@ -380,7 +395,7 @@ func TestEngineSupport_ErrorScenarios(t *testing.T) {
 						},
 					},
 				}
-				
+
 				client.WithDBInstances(*postgresInstance).
 					WithDescribeDBMajorEngineVersionsOutput(engineVersionsOutput)
 			},
@@ -389,16 +404,16 @@ func TestEngineSupport_ErrorScenarios(t *testing.T) {
 			expectedErrorCount: 0,
 		},
 		{
-			name: "Non-PostgreSQL engine ignored",
+			name: "Engine without lifecycle data emits no metrics",
 			setupMock: func(client *rds_mock.RDSClient) {
 				mysqlInstance := rds_mock.NewRdsInstance()
 				mysqlInstance.Engine = aws.String("mysql")
 				mysqlInstance.EngineVersion = aws.String("8.0.35")
-				
+
 				client.WithDBInstances(*mysqlInstance)
 			},
 			expectMetrics:      false,
-			expectAPICall:      false, // Should not call API for non-PostgreSQL engines
+			expectAPICall:      true, // The API is called for every engine
 			expectedErrorCount: 0,
 		},
 	}
@@ -424,6 +439,7 @@ func TestEngineSupport_ErrorScenarios(t *testing.T) {
 				CollectMaintenances:    false,
 				CollectQuotas:          false,
 				CollectUsages:          false,
+				CollectEngineSupport:   true,
 			}
 
 			collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
@@ -437,6 +453,7 @@ func TestEngineSupport_ErrorScenarios(t *testing.T) {
 
 			// Check if engine support metrics are present
 			var hasStandardSupport, hasExtendedSupport bool
+
 			for _, mf := range metricFamilies {
 				switch mf.GetName() {
 				case "rds_standard_support_engine_remaining_days":
@@ -485,16 +502,16 @@ func TestEngineSupport_NegativeValues(t *testing.T) {
 		DBMajorEngineVersions: []aws_rds_types.DBMajorEngineVersion{
 			{
 				Engine:             aws.String("postgres"),
-				MajorEngineVersion: aws.String("11.20"), // Match the full version for now
+				MajorEngineVersion: aws.String("11"),
 				SupportedEngineLifecycles: []aws_rds_types.SupportedEngineLifecycle{
 					{
-						LifecycleSupportName:     aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
-						LifecycleSupportEndDate:  &standardEndDate,
+						LifecycleSupportName:      aws_rds_types.LifecycleSupportNameOpenSourceRdsStandardSupport,
+						LifecycleSupportEndDate:   &standardEndDate,
 						LifecycleSupportStartDate: aws.Time(time.Now().AddDate(-3, 0, 0)),
 					},
 					{
-						LifecycleSupportName:     aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
-						LifecycleSupportEndDate:  &extendedEndDate,
+						LifecycleSupportName:      aws_rds_types.LifecycleSupportNameOpenSourceRdsExtendedSupport,
+						LifecycleSupportEndDate:   &extendedEndDate,
 						LifecycleSupportStartDate: aws.Time(time.Now().AddDate(-3, 0, 0)),
 					},
 				},
@@ -519,6 +536,7 @@ func TestEngineSupport_NegativeValues(t *testing.T) {
 		CollectMaintenances:    false,
 		CollectQuotas:          false,
 		CollectUsages:          false,
+		CollectEngineSupport:   true,
 	}
 
 	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)
@@ -532,9 +550,11 @@ func TestEngineSupport_NegativeValues(t *testing.T) {
 
 	// Find standard support metric
 	var standardSupportMetric *dto.MetricFamily
+
 	for _, mf := range metricFamilies {
 		if mf.GetName() == "rds_standard_support_engine_remaining_days" {
 			standardSupportMetric = mf
+
 			break
 		}
 	}
@@ -552,9 +572,11 @@ func TestEngineSupport_NegativeValues(t *testing.T) {
 
 	// Find extended support metric
 	var extendedSupportMetric *dto.MetricFamily
+
 	for _, mf := range metricFamilies {
 		if mf.GetName() == "rds_extended_support_engine_remaining_days" {
 			extendedSupportMetric = mf
+
 			break
 		}
 	}
@@ -595,6 +617,7 @@ func TestEngineSupport_MetricsDisabled(t *testing.T) {
 		CollectMaintenances:    false,
 		CollectQuotas:          false,
 		CollectUsages:          false,
+		CollectEngineSupport:   true,
 	}
 
 	collector := exporter.NewCollector(*logger, configuration, awsAccountID, awsRegion, rdsClient, ec2Client, cloudWatchClient, servicequotasClient, nil)

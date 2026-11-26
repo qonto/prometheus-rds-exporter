@@ -22,6 +22,6 @@ updates:
       interval: weekly
 
   - package-ecosystem: "docker"
-    directory: "/scripts/prometheus"
+    directory: "/dev"
     schedule:
       interval: weekly

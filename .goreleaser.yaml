@@ -123,6 +123,8 @@ dockers:
       - --label=org.opencontainers.image.licenses=MIT
       - "--pull"
       - "--platform=linux/amd64"
+      - "--provenance=false"  # Push a plain image, docker manifest create rejects image indexes
+      - "--sbom=false"
     use: buildx
   - image_templates:
       - "{{ .Env.DOCKER_REGISTRY }}/{{ .Env.DOCKER_IMAGE_NAME }}:{{ .Tag }}-arm64"
@@ -141,6 +143,8 @@ dockers:
       - --label=org.opencontainers.image.licenses=MIT
       - "--pull"
       - "--platform=linux/arm64"
+      - "--provenance=false"  # Push a plain image, docker manifest create rejects image indexes
+      - "--sbom=false"
     use: buildx
     goarch: arm64
 
@@ -174,8 +178,22 @@ release:
     This version introduces the `rds:DescribeDBMajorEngineVersions` requirement in the IAM policy
     to retrieve standard and extended support metrics.
 
-    Please add `rds:DescribeDBMajorEngineVersions` IAM permission (See example in `configs/aws/policy.json`) 
+    Please add `rds:DescribeDBMajorEngineVersions` IAM permission (See example in `configs/aws/policy.json`)
     or disable `collect-engine-support` feature.
+
+    ---
+    {{ end }}
+    {{ if eq .Tag "0.19.0" }}
+    ## ⚠️ Breaking Change
+
+    This version introduces the `rds:DescribeDBCapacityReservations` requirement in the IAM policy
+    to retrieve On-Demand Capacity Reservations metrics.
+
+    Please add `rds:DescribeDBCapacityReservations` IAM permission (See example in `configs/aws/policy.json`)
+    or disable `collect-capacity-reservations` feature.
+
+    `rds_instance_info` has two new labels (`capacity_reservation_id`, `availability_zone`): queries matching
+    on all its labels (without `by` or `on`) may need to be updated.
 
     ---
     {{ end }}

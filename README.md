@@ -48,6 +48,11 @@ It collects key metrics about:
 | rds_api_call_total | `api`, `aws_account_id`, `aws_region` | Number of call to AWS API |
 | rds_backup_retention_period_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | Automatic DB snapshots retention period |
 | rds_ca_certificate_valid_until | `aws_account_id`, `aws_region`, `dbidentifier` | Timestamp of the expiration of the Instance certificate |
+| rds_capacity_reservation_available_average | `aws_account_id`, `aws_region`, `capacity_reservation_id`, `engine`, `instance_class`, `availability_zone` | Number of DB instances reserved by the active On-Demand Capacity Reservation in the availability zone and not used by any DB instance |
+| rds_capacity_reservation_end_timestamp_seconds | `aws_account_id`, `aws_region`, `capacity_reservation_id` | Timestamp when the On-Demand Capacity Reservation expires |
+| rds_capacity_reservation_info | `aws_account_id`, `aws_region`, `capacity_reservation_id`, `capacity_reservation_name`, `engine`, `instance_class`, `state`, `arn` | On-Demand Capacity Reservation information |
+| rds_capacity_reservation_reserved_average | `aws_account_id`, `aws_region`, `capacity_reservation_id`, `engine`, `instance_class`, `availability_zone` | Number of DB instances reserved by the active On-Demand Capacity Reservation in the availability zone |
+| rds_capacity_reservation_start_timestamp_seconds | `aws_account_id`, `aws_region`, `capacity_reservation_id` | Timestamp when the future-dated On-Demand Capacity Reservation becomes active |
 | rds_cluster_info | `aws_account_id`, `aws_region`, `cluster_identifier`, `cluster_resource_id`, `engine`, `engine_version`, `arn` | RDS cluster information |
 | rds_cluster_acu_max_average | `aws_account_id`, `aws_region`, `cluster_identifier` | Maximum number of ACU |
 | rds_cluster_acu_min_average | `aws_account_id`, `aws_region`, `cluster_identifier` | Minimum number of ACU |
@@ -67,7 +72,7 @@ It collects key metrics about:
 | rds_instance_baseline_iops_average | `aws_account_id`, `aws_region`, `instance_class` | Baseline IOPS of underlying EC2 instance class |
 | rds_instance_baseline_throughput_bytes | `aws_account_id`, `aws_region`, `instance_class` | Baseline throughput of underlying EC2 instance class |
 | rds_instance_baseline_network_bandwidth_bytes | `aws_account_id`, `aws_region`, `instance_class` | Baseline network bandwidth of underlying EC2 instance class |
-| rds_instance_info | `arn`, `aws_account_id`, `aws_region`, `dbi_resource_id`, `dbidentifier`, `cluster_identifier`, `deletion_protection`, `engine`, `engine_version`, `instance_class`, `multi_az`, `performance_insights_enabled`, `pending_maintenance`, `pending_modified_values`, `role`, `source_dbidentifier`, `storage_type`, `ca_certificate_identifier` | RDS instance information |
+| rds_instance_info | `arn`, `aws_account_id`, `aws_region`, `dbi_resource_id`, `dbidentifier`, `cluster_identifier`, `deletion_protection`, `engine`, `engine_version`, `instance_class`, `multi_az`, `performance_insights_enabled`, `pending_maintenance`, `pending_modified_values`, `role`, `source_dbidentifier`, `storage_type`, `ca_certificate_identifier`, `capacity_reservation_id`, `availability_zone` | RDS instance information |
 | rds_instance_log_files_size_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Total of log files on the instance |
 | rds_instance_max_iops_average | `aws_account_id`, `aws_region`, `instance_class` | Maximum IOPS of underlying EC2 instance class |
 | rds_instance_max_throughput_bytes | `aws_account_id`, `aws_region`, `instance_class` | Maximum throughput of underlying EC2 instance class |
@@ -223,6 +228,12 @@ RDS cluster details</br>
 <a href="configs/grafana/public/rds-cluster.json">JSON</a>
 
 </td>
+<td>
+
+RDS capacity reservations</br>
+<a href="configs/grafana/public/rds-capacity-reservations.json">JSON</a>
+
+</td>
 </tr>
 </table>
 
@@ -244,6 +255,7 @@ Configuration could be defined in [prometheus-rds-exporter.yaml](https://github.
 | collect-quotas               | Collect AWS RDS quotas (AWS quotas API)                                                                                           | true                    |
 | collect-usages               | Collect AWS RDS usages (AWS Cloudwatch API)                                                                                       | true                    |
 | collect-engine-support       | Collect engine version support lifecycle information (AWS RDS API)                                                                | true                    |
+| collect-capacity-reservations | Collect On-Demand Capacity Reservations (AWS RDS API)                                                                            | true                    |
 | tag-selections               | Tags to select database instances with. Refer to [dedicated section on tag configuration](#tag-configuration)                     |                         |
 | debug                        | Enable debug mode                                                                                                                 |                         |
 | enable-otel-traces           | Enable OpenTelemetry traces. See [configuration](https://opentelemetry.io/docs/languages/sdk-configuration/otlp-exporter/)        | false                   |
@@ -317,6 +329,14 @@ If you are running on [AWS EKS](https://aws.amazon.com/eks/), we strongly recomm
             "Effect": "Allow",
             "Action": [
                 "rds:DescribePendingMaintenanceActions"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Sid": "AllowCapacityReservationDescriptions",
+            "Effect": "Allow",
+            "Action": [
+                "rds:DescribeDBCapacityReservations"
             ],
             "Resource": "*"
         },
@@ -776,24 +796,32 @@ To report a security issue, please visit [SECURITY.md](SECURITY.md)
 
 ### Development environment
 
-You can start a simple development environment using the Docker compose configuration in `/scripts/prometheus`.
+You can start a simple development environment using the Docker compose file `compose.yaml` at the root of the repository.
 
-It will start Grafana (with the dashboards), Prometheus, and the RDS exporter:
+It will start Grafana (with the dashboards), Prometheus, Grafana Tempo, and the RDS exporter. Their configuration files and local data are in the `dev/` directory.
 
 1. Connect on AWS using the AWS CLI
 
-1. Launch development stack
+1. Set the Grafana admin password in `.env` (see [local development environment](CONTRIBUTING.md#local-development-environment))
 
     ```bash
-    cd scripts/prometheus
+    cp .env.example .env # Then edit GF_SECURITY_ADMIN_PASSWORD in .env
+    ```
+
+1. Launch development stack from the root of the repository
+
+    ```bash
     docker compose up --build
     ```
 
+   Tips: As the exporter is running in container, you MUST run `docker compose up rds-exporter --build` after each change
+
 1. Connect on the services
 
-    - Grafana: <http://localhost:3000> (credential: admin/hackme)
+    - Grafana: <http://localhost:3000> (credential: `admin` and the password set in `.env`)
     - Prometheus: <http://localhost:9090>
     - Prometheus RDS exporter: <http://localhost:9043>
+    - Grafana Tempo: exporter traces are available in Grafana, in `Explore` with the `Tempo` datasource
 
 ### Running the tests
 
@@ -830,3 +858,9 @@ Traces can be forwarded to any OpenTelemetry server using gRPC protocol.
     ```bash
     prometheus-rds-exporter --enable-otel-traces
     ```
+
+The local development environment (`compose.yaml`) includes Grafana Tempo and enables traces by default. Tempo receives OTLP gRPC traces on `localhost:4317`, so you can also send traces from an exporter running on your host:
+
+```bash
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317 make run args="--enable-otel-traces --debug --log-format text"
+```

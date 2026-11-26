@@ -29,5 +29,6 @@ func overrideInvalidInstanceTypes(instanceType string) string {
 	if strings.HasPrefix(instanceType, "x2g.") {
 		return strings.Replace(instanceType, "x2g.", "x2gd.", 1)
 	}
+
 	return instanceType
 }

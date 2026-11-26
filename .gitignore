@@ -29,4 +29,7 @@ go.work
 
 # Build files
 dist
+
+# Local development environment configuration (see .env.example)
+.env
 .DS_Store

@@ -4,6 +4,7 @@ local common = import '../common.libsonnet';
 local variables = import '../variables.libsonnet';
 local p = import '../panels/instances.libsonnet';
 local quota = import '../panels/quota.libsonnet';
+local r = import '../panels/reservations.libsonnet';
 
 local uid = 'qonto-prometheus-rds-exporter-instances';
 local title = 'RDS instances';
@@ -32,6 +33,8 @@ dashboard.new(title)
       p.stat.deprecatedCertificates { gridPos+: { w: 3, h: 3 } },
       p.stat.standardSupportEnding { gridPos+: { w: 3, h: 3 } },
       p.stat.extendedSupportEnding { gridPos+: { w: 3, h: 3 } },
+      r.stat.unused { gridPos+: { w: 3, h: 3 } },
+      r.stat.ending { gridPos+: { w: 3, h: 3 } },
 
       g.panel.row.new('Pending operations'),
       p.table.pendingMaintenances { gridPos+: { w: 12, h: 5 } },
@@ -40,6 +43,9 @@ dashboard.new(title)
       g.panel.row.new('Standard and extended support'),
       p.table.standardSupportEnding { gridPos+: { w: 12, h: 5 } },
       p.table.extendedSupportEnding { gridPos+: { w: 12, h: 5 } },
+
+      g.panel.row.new('Capacity reservations'),
+      r.table.ending { gridPos+: { w: 24, h: 5 } },
 
       g.panel.row.new('Inventory'),
       p.table.instances { gridPos+: { w: 24, h: 7 } },

@@ -1,12 +1,13 @@
 ---
 run:
   concurrency: 4
-  deadline: 2m
+  timeout: 2m
   issues-exit-code: 1
   tests: true
 
 output:
-  formats: colored-line-number
+  formats:
+    - format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
 
@@ -78,8 +79,8 @@ linters-settings:
 
 issues:
   exclude-use-default: false
-  max-per-linter: 1024
-  max-same: 1024
+  max-issues-per-linter: 1024
+  max-same-issues: 1024
 
   exclude-rules:
     # Exclude some linters from running on test files
@@ -89,3 +90,5 @@ issues:
         - bodyclose
         # It's overkill to use `NewRequestWithContext` in tests
         - noctx
+        # Repeated literals (labels, regions, metric names) keep test cases readable
+        - goconst
