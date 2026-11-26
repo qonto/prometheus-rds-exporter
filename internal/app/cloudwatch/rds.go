@@ -38,6 +38,7 @@ type RdsMetrics struct {
 	NetworkReceiveThroughput         *float64
 	NetworkTransmitThroughput        *float64
 	ReadIOPS                         *float64
+	ReadLatency                      *float64
 	ReadThroughput                   *float64
 	ReplicaLag                       *float64
 	ReplicationSlotDiskUsage         *float64
@@ -47,6 +48,7 @@ type RdsMetrics struct {
 	SwapUsage                        *float64
 	TransactionLogsDiskUsage         *float64
 	WriteIOPS                        *float64
+	WriteLatency                     *float64
 	WriteThroughput                  *float64
 }
 
@@ -82,6 +84,10 @@ func (m *RdsMetrics) Update(field string, value float64) error {
 		m.ReplicationSlotDiskUsage = &value
 	case "MaximumUsedTransactionIDs":
 		m.MaximumUsedTransactionIDs = &value
+	case "ReadLatency":
+		m.ReadLatency = &value
+	case "WriteLatency":
+		m.WriteLatency = &value
 	case "ReadThroughput":
 		m.ReadThroughput = &value
 	case "WriteThroughput":
@@ -102,8 +108,8 @@ func (m *RdsMetrics) Update(field string, value float64) error {
 }
 
 // getCloudWatchMetricsName returns names of Cloudwatch metrics to collect
-func getCloudWatchMetricsName() [21]string {
-	return [21]string{
+func getCloudWatchMetricsName() [23]string {
+	return [23]string{
 		"CPUUtilization",
 		"DBLoad",
 		"DBLoadCPU",
@@ -115,6 +121,7 @@ func getCloudWatchMetricsName() [21]string {
 		"NetworkReceiveThroughput",
 		"NetworkTransmitThroughput",
 		"ReadIOPS",
+		"ReadLatency",
 		"ReadThroughput",
 		"ReplicaLag",
 		"ReplicationSlotDiskUsage",
@@ -124,6 +131,7 @@ func getCloudWatchMetricsName() [21]string {
 		"StorageNetworkTransmitThroughput",
 		"TransactionLogsDiskUsage",
 		"WriteIOPS",
+		"WriteLatency",
 		"WriteThroughput",
 	}
 }
