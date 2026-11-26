@@ -90,6 +90,7 @@ It collects key metrics about:
 | rds_quota_max_dbinstances_average | `aws_account_id`, `aws_region` | Maximum number of RDS instances allowed in the AWS account |
 | rds_quota_maximum_db_instance_snapshots_average | `aws_account_id`, `aws_region` | Maximum number of manual DB instance snapshots |
 | rds_quota_total_storage_bytes | `aws_account_id`, `aws_region` | Maximum total storage for all DB instances |
+| rds_disk_queue_depth_average | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of outstanding I/O operations waiting to access the disk |
 | rds_read_iops_average | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of disk read I/O operations per second |
 | rds_read_latency_seconds | `aws_account_id`, `aws_region`, `dbidentifier` | Average amount of time taken per disk read I/O operation |
 | rds_read_throughput_bytes | `aws_account_id`, `aws_region`, `dbidentifier` | Average number of bytes read from disk per second |

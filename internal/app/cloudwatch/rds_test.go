@@ -20,6 +20,7 @@ var db1ExpecteRdsMetrics = cloudwatch.RdsMetrics{
 	DBLoadCPU:                 aws.Float64(2),
 	DBLoadNonCPU:              aws.Float64(4),
 	DatabaseConnections:       aws.Float64(42),
+	DiskQueueDepth:            aws.Float64(3),
 	FreeStorageSpace:          aws.Float64(5),
 	FreeableMemory:            aws.Float64(10),
 	MaximumUsedTransactionIDs: aws.Float64(1000000),
@@ -41,6 +42,7 @@ var db2ExpecteRdsMetrics = cloudwatch.RdsMetrics{
 	DBLoadCPU:                 aws.Float64(8),
 	DBLoadNonCPU:              aws.Float64(1),
 	DatabaseConnections:       aws.Float64(1000),
+	DiskQueueDepth:            aws.Float64(5),
 	FreeStorageSpace:          aws.Float64(10),
 	FreeableMemory:            aws.Float64(10),
 	MaximumUsedTransactionIDs: aws.Float64(1000000),
@@ -103,6 +105,11 @@ func generateMockedMetricsForInstance(id int, m cloudwatch.RdsMetrics) []aws_clo
 			Id:     aws.String(fmt.Sprintf("readiops_%d", id)),
 			Label:  aws.String("ReadIOPS"),
 			Values: []float64{*m.ReadIOPS},
+		},
+		{
+			Id:     aws.String(fmt.Sprintf("diskqueuedepth_%d", id)),
+			Label:  aws.String("DiskQueueDepth"),
+			Values: []float64{*m.DiskQueueDepth},
 		},
 		{
 			Id:     aws.String(fmt.Sprintf("readlatency_%d", id)),
@@ -192,6 +199,7 @@ func TestGetDBInstanceTypeInformation(t *testing.T) {
 		assert.Equal(t, value.FreeableMemory, result.Instances[id].FreeableMemory, "FreeableMemory mismatch")
 		assert.Equal(t, value.MaximumUsedTransactionIDs, result.Instances[id].MaximumUsedTransactionIDs, "MaximumUsedTransactionIDs mismatch")
 		assert.Equal(t, value.ReadIOPS, result.Instances[id].ReadIOPS, "ReadIOPS mismatch")
+		assert.Equal(t, value.DiskQueueDepth, result.Instances[id].DiskQueueDepth, "DiskQueueDepth mismatch")
 		assert.Equal(t, value.ReadLatency, result.Instances[id].ReadLatency, "ReadLatency mismatch")
 		assert.Equal(t, value.WriteLatency, result.Instances[id].WriteLatency, "WriteLatency mismatch")
 		assert.Equal(t, value.ReadThroughput, result.Instances[id].ReadThroughput, "ReadThroughput mismatch")

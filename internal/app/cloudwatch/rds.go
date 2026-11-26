@@ -29,6 +29,7 @@ type CloudWatchMetrics struct {
 type RdsMetrics struct {
 	CPUUtilization                   *float64
 	DatabaseConnections              *float64
+	DiskQueueDepth                   *float64
 	DBLoad                           *float64
 	DBLoadCPU                        *float64
 	DBLoadNonCPU                     *float64
@@ -64,6 +65,8 @@ func (m *RdsMetrics) Update(field string, value float64) error {
 		m.CPUUtilization = &value
 	case "DatabaseConnections":
 		m.DatabaseConnections = &value
+	case "DiskQueueDepth":
+		m.DiskQueueDepth = &value
 	case "FreeStorageSpace":
 		m.FreeStorageSpace = &value
 	case "FreeableMemory":
@@ -108,13 +111,14 @@ func (m *RdsMetrics) Update(field string, value float64) error {
 }
 
 // getCloudWatchMetricsName returns names of Cloudwatch metrics to collect
-func getCloudWatchMetricsName() [23]string {
-	return [23]string{
+func getCloudWatchMetricsName() [24]string {
+	return [24]string{
 		"CPUUtilization",
 		"DBLoad",
 		"DBLoadCPU",
 		"DBLoadNonCPU",
 		"DatabaseConnections",
+		"DiskQueueDepth",
 		"FreeStorageSpace",
 		"FreeableMemory",
 		"MaximumUsedTransactionIDs",
